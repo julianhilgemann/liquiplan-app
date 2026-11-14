@@ -1,0 +1,4 @@
+# local working copies and backups
+*.vor-ui-politur.html
+*.bak
+.DS_Store

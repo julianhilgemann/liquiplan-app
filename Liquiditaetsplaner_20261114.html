@@ -80,6 +80,7 @@ select, input[type="text"], input[type="number"], input[type="date"], input[type
 select { -webkit-appearance: none; appearance: none; padding-right: 28px; text-overflow: ellipsis;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 9px center; background-size: 10px 14px; }
+input[type="date"], input[type="month"] { padding-top: 4px; padding-bottom: 4px; } /* their inner date parts add 1px each way: same height as a text field */
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ring); outline-offset: 0; border-color: var(--focus); }
@@ -144,7 +145,7 @@ textarea { width: 100%; min-height: 110px; font: 12.5px/1.5 var(--mono); }
 .top .seg button { padding: 0 9px; }
 
 #selPreset { width: 8.75rem; }
-#selScenario { width: 11rem; }
+#selScenario { width: 13rem; } /* fits „Eigene Leitzinsschritte“ */
 /* solver status: a fixed slot so changing text never moves the toolbar */
 .badge { display: inline-flex; align-items: center; gap: 7px; width: 11rem; height: 32px; padding: 0 2px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; flex: none; }
 .badge > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -190,15 +191,17 @@ details.grp > summary:hover { background: var(--surface-2); }
 .grp-body { padding: 2px 16px 16px; display: grid; gap: 12px; }
 .f { display: grid; gap: 4px; min-width: 0; }
 .f > span { font-size: 12.5px; font-weight: 500; color: var(--ink-2); }
-.f input, .f select { width: 100%; color: var(--input); }
-.f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.f3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.f input, .f select { width: 100%; min-width: 0; color: var(--input); }
+.f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+.f3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: end; }
 .rows { display: grid; gap: 8px; }
 .rowcard { border-radius: var(--r); padding: 10px; display: grid; gap: 8px; background: var(--surface-2); }
 .rowcard .f2, .rowcard .f3 { gap: 8px; }
 .rowcard-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
 .rowcard-head > span:last-child { display: inline-flex; align-items: center; gap: 2px; }
 .rowcard-head .chk { font-weight: 500; margin-right: 4px; }
+/* narrowest phones: entry cards fit the drawer (actions move below the title, paired fields stack, long labels hyphenate) */
+@media (max-width: 360px) { .rowcard-head { flex-wrap: wrap; } .rowcard-head > span:last-child { margin-left: auto; } .rowcard .f2 { grid-template-columns: minmax(0, 1fr); } .f > span { overflow-wrap: anywhere; -webkit-hyphens: auto; hyphens: auto; } }
 
 /* ---------- cards ---------- */
 .card { background: var(--surface); border: 1px solid var(--card-line); border-radius: var(--r-lg); padding: 18px 20px 20px; min-width: 0; }
@@ -332,6 +335,8 @@ table.tbl { border-collapse: separate; border-spacing: 0; width: 100%; font-size
 .strat-k strong { color: var(--ink); font-weight: 600; }
 .strat-d { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
 @media (max-width: 900px) { .strats { grid-template-columns: minmax(0, 1fr); } }
+/* narrowest phones: the two-way switch takes the card width, so „Gesamtvermögen“ stays inside the card */
+@media (max-width: 360px) { #sec-strat .card-head .seg { flex: 1 1 100%; } #sec-strat .seg button { padding: 0 6px; } }
 
 /* ---------- methodology / glossary / tests ---------- */
 .prose { max-width: 72ch; font-size: 14.5px; line-height: 1.6; }
@@ -358,6 +363,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 .modal-in p { margin: 0; }
 .modal-in textarea { min-height: 220px; }
 .modal-in .ctl { margin-top: 4px; }
+#modalFile { width: 100%; min-width: 0; font-size: 13px; color: var(--ink-2); } /* never wider than the dialog */
+#modalFile::file-selector-button { font: inherit; font-weight: 500; color: var(--ink); background: var(--fill); border: 0; border-radius: 7px; min-height: 28px; padding: 0 10px; margin-right: 10px; cursor: pointer; }
+#modalFile::file-selector-button:hover { background: var(--fill-2); }
 .empty { padding: 28px 12px; text-align: center; color: var(--muted); }
 /* no data yet: skeleton tiles and one clear way forward */
 .main.is-empty > .card:not(#emptyState), .main.is-empty #nav, .main.is-empty #presetNote { display: none !important; }
@@ -366,6 +374,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 .main.is-empty.stale .kpis { opacity: 1; }
 .sk { display: inline-block; max-width: 100%; height: 0.7em; border-radius: 6px; background: var(--fill); vertical-align: middle; }
 .kpis.skeleton .sub .sk { height: 0.6em; }
+.kpis.skeleton .kpi > * { min-width: 0; } /* a placeholder bar never widens its tile */
 .empty-state { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 40px 24px 36px; }
 .empty-state.hide { display: none; }
 .es-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--fill); color: var(--muted); display: grid; place-items: center; margin-bottom: 4px; }
@@ -492,6 +501,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 
 /* ---------- ladder, one year per page ---------- */
 .pager { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.ctl.nowrap { flex-wrap: nowrap; } /* arrows and their select stay on one line */
+.pager > .btn, .ctl.nowrap > .btn { align-self: stretch; } /* as tall as the control beside them */
 .yrs { display: flex; gap: 6px; overflow-x: auto; flex: 1; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .yrs::-webkit-scrollbar { display: none; }
 .yrs button { border: 0; background: var(--fill); border-radius: 999px; padding: 0 14px; font-size: 13px; font-weight: 500; white-space: nowrap; min-height: 30px; }
@@ -551,13 +562,15 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   .btn.sm { min-height: 40px; }
   .seg button { min-height: 40px; }
   .tbl td.in input { min-height: 36px; }
-  .menu-pop button { padding: 11px 12px; }
+  .menu-pop button { padding: 11px 12px; min-height: 44px; }
+  #modalFile::file-selector-button { min-height: 40px; }
   .theme-switch { width: 84px; height: 44px; }
-  .top .ctl .theme-switch { top: 10px; }
   .top .ctl #btnInputs { top: 10px; right: 112px; width: 44px; }
   .ts-thumb { width: 40px; height: 40px; }
   .theme-switch[aria-checked="true"] .ts-thumb { transform: translateX(40px); }
 }
+/* phone layout: the switch beside the title moves up with the taller controls (on tablets it stays in the row) */
+@media (pointer: coarse) and (max-width: 720px) { .top .ctl .theme-switch { top: 10px; } }
 /* Reduce Motion: nothing slides */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
@@ -659,7 +672,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       <div class="card-head"><h2 data-i18n="wfTitle">Cashflow-Wasserfall</h2>
         <div class="ctl">
           <div class="seg" role="group"><button type="button" id="wfYear" aria-pressed="true" data-i18n="perYear">Jahr</button><button type="button" id="wfMonth" aria-pressed="false" data-i18n="perMonth">Monat</button></div>
-          <button class="btn sm" id="wfPrev" type="button" aria-label="zurück">‹</button><select id="wfSel" aria-label="Periode"></select><button class="btn sm" id="wfNext" type="button" aria-label="weiter">›</button>
+          <div class="ctl nowrap"><button class="btn sm" id="wfPrev" type="button" aria-label="zurück">‹</button><select id="wfSel" aria-label="Periode"></select><button class="btn sm" id="wfNext" type="button" aria-label="weiter">›</button></div>
         </div>
       </div>
       <div class="wf-top"><p class="wf-sum" id="wfSum"></p><div class="legend" id="wfLegend"></div></div>
@@ -2798,8 +2811,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       var oid = 'o' + i + '-';
       return el('div', { class: 'rowcard' },
         el('div', { class: 'rowcard-head' }, el('span', { text: o.label || t('newOne') }), el('span', null, dup('oneoffs', i), el('button', { class: 'btn sm ghost', type: 'button', text: t('remove'), onclick: function () { touch(function (st) { st.oneoffs.splice(i, 1); }, true); } }))),
-        el('div', { class: 'f3' }, field({ id: oid + 'label', label: t('f_label'), type: 'text', value: o.label || '', set: function (v) { touch(function () { o.label = v; }, true); } }),
-          field({ id: oid + 'date', label: t('f_date'), type: 'date', value: o.date, set: function (v) { if (C.parseISO(v)) touch(function () { o.date = v; }); } }),
+        field({ id: oid + 'label', label: t('f_label'), type: 'text', value: o.label || '', set: function (v) { touch(function () { o.label = v; }, true); } }),
+        el('div', { class: 'f2' }, field({ id: oid + 'date', label: t('f_date'), type: 'date', value: o.date, set: function (v) { if (C.parseISO(v)) touch(function () { o.date = v; }); } }),
           field({ id: oid + 'amt', label: t('f_amountPM'), value: o.amount, set: function (v) { touch(function () { o.amount = v; }); } })));
     });
     body.appendChild(group('one', t('grp_one'), isOpen('one', false), [el('div', { class: 'rows' }, ooRows),
@@ -2810,9 +2823,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       var nid = 'n' + i + '-';
       return el('div', { class: 'rowcard' },
         el('div', { class: 'rowcard-head' }, el('span', { text: t('newPin') + ' ' + (i + 1) }), el('span', null, dup('pins', i), el('button', { class: 'btn sm ghost', type: 'button', text: t('remove'), onclick: function () { touch(function (st) { st.pins.splice(i, 1); }, true); } }))),
-        el('div', { class: 'f3' }, field({ id: nid + 'month', label: t('f_month'), type: 'month', value: String(pn.month || '').slice(0, 7), set: function (v) { if (C.parseISO(v)) touch(function () { pn.month = v; }); } }),
-          field({ id: nid + 'prod', label: t('f_prod'), type: 'select', value: pn.productId, options: prodOpts, set: function (v) { touch(function () { pn.productId = v; }); } }),
-          field({ id: nid + 'amt', label: t('f_amount'), value: pn.amount, min: 0, set: function (v) { touch(function () { pn.amount = v; }); } })));
+        field({ id: nid + 'prod', label: t('f_prod'), type: 'select', value: pn.productId, options: prodOpts, set: function (v) { touch(function () { pn.productId = v; }); } }),
+        field({ id: nid + 'month', label: t('f_month'), type: 'month', value: String(pn.month || '').slice(0, 7), set: function (v) { if (C.parseISO(v)) touch(function () { pn.month = v; }); } }),
+        field({ id: nid + 'amt', label: t('f_amount'), value: pn.amount, min: 0, set: function (v) { touch(function () { pn.amount = v; }); } }));
     });
     body.appendChild(group('pins', A.term('pin', t('grp_pins')), isOpen('pins', false), [pinRows.length ? el('div', { class: 'rows' }, pinRows) : el('p', { class: 'small muted', text: t('pinNone') }),
       el('button', { class: 'btn sm', type: 'button', text: t('add'), disabled: !s.products.length, onclick: function () { touch(function (st) { var d = C.parseISO(st.startDate), m0 = C.ymOf(C.ymIdx(d.y, d.m) + (d.d === 1 ? 0 : 1)); st.pins.push({ id: 'n' + Date.now().toString(36), month: m0.y + '-' + C.pad(m0.m), productId: st.products[0].id, amount: Math.max(5000, +st.products[0].min || 0) }); }, true); } })]));
@@ -4294,9 +4307,14 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   function openModal(title, hint, text, fileName, onApply) {
     $('modalTitle').textContent = title; $('modalHint').textContent = hint; $('modalText').value = text; modalApply = onApply; modalName = fileName;
     $('modalApply').classList.toggle('hide', !onApply); $('modalFile').classList.toggle('hide', !onApply); $('modalFile').value = '';
-    $('modal').classList.add('open'); $('modalText').focus();
+    behind(true); $('modal').classList.add('open'); $('modalText').focus();
   }
-  function closeModal() { $('modal').classList.remove('open'); }
+  function behind(on) { [document.querySelector('.top'), $('wizard'), $('shell')].forEach(function (n) { if (n) n.inert = on; }); } // as the progress dialog does
+  function closeModal() {
+    if (!$('modal').classList.contains('open')) return;
+    $('modal').classList.remove('open'); behind(false);
+    try { $('btnMenu').focus(); } catch (e) { /* ignore */ } // back to where the dialog was opened from
+  }
   function applyState(obj) { // accepts our own state or the wizard JSON of specification G; nothing is changed unless the whole input is valid
     if (LP.wizardJson.is(obj)) obj = LP.wizardJson.read(obj);
     else if (obj && obj.state && typeof obj.state === 'object') obj = obj.state;
@@ -4396,13 +4414,14 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     try { sysDark.addEventListener('change', syncTheme); } catch (e) { /* ignore */ }
     syncTheme();
     var menu = $('menuExport');
+    function closeMenu() { menu.classList.remove('open'); $('btnMenu').setAttribute('aria-expanded', 'false'); } // the button's state follows the menu
     $('btnMenu').onclick = function (e) { e.stopPropagation(); var op = menu.classList.toggle('open'); $('btnMenu').setAttribute('aria-expanded', op); };
-    document.addEventListener('click', function (e) { if (!menu.contains(e.target)) { menu.classList.remove('open'); $('btnMenu').setAttribute('aria-expanded', 'false'); } });
-    $('btnDlHtml').onclick = function () { menu.classList.remove('open'); A.saveFile('Liquiditaetsplaner_' + stamp() + '.html', A.buildHtml(), 'text/html'); };
-    $('btnDlXlsx').onclick = function () { menu.classList.remove('open'); A.exportXlsx(); };
-    $('btnDlJson').onclick = function () { menu.classList.remove('open'); openModal(t('stateTitle'), t('stateHint'), JSON.stringify(A.state, null, 2), 'Liquiditaetsplan_' + stamp() + '.json', null); };
-    $('btnImJson').onclick = function () { menu.classList.remove('open'); openModal(t('stateTitle'), t('stateHint'), '', 'Liquiditaetsplan.json', applyState); };
-    $('btnRates').onclick = function () { menu.classList.remove('open'); openModal(t('ratesTitle'), t('ratesHint'), JSON.stringify(ratesOf(A.state), null, 2), 'Zinssaetze_' + stamp() + '.json', applyRates); };
+    document.addEventListener('click', function (e) { if (!menu.contains(e.target)) closeMenu(); });
+    $('btnDlHtml').onclick = function () { closeMenu(); A.saveFile('Liquiditaetsplaner_' + stamp() + '.html', A.buildHtml(), 'text/html'); };
+    $('btnDlXlsx').onclick = function () { closeMenu(); A.exportXlsx(); };
+    $('btnDlJson').onclick = function () { closeMenu(); openModal(t('stateTitle'), t('stateHint'), JSON.stringify(A.state, null, 2), 'Liquiditaetsplan_' + stamp() + '.json', null); };
+    $('btnImJson').onclick = function () { closeMenu(); openModal(t('stateTitle'), t('stateHint'), '', 'Liquiditaetsplan.json', applyState); };
+    $('btnRates').onclick = function () { closeMenu(); openModal(t('ratesTitle'), t('ratesHint'), JSON.stringify(ratesOf(A.state), null, 2), 'Zinssaetze_' + stamp() + '.json', applyRates); };
     $('modalClose').onclick = closeModal;
     $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) closeModal(); });
     $('modalCopy').onclick = function () {
@@ -4420,7 +4439,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     $('ladYear').onclick = function () { A.lad.mode = 'year'; A.lad.open = null; A.renderLadder(); }; $('ladAll').onclick = function () { A.lad.mode = 'all'; A.lad.open = null; A.renderLadder(); };
     $('btnResetOv').onclick = function () { A.resetOverrides(); };
     $('btnSelftest').onclick = function () { A.selftest(); };
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); menu.classList.remove('open'); if (isNarrow()) toggleSide(false); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeMenu(); if (isNarrow()) toggleSide(false); } });
     var rz = null; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(A.resizeCharts, 150); });
     // re-colour the charts when the viewer switches between light and dark
     var th = null, recolor = function () { clearTimeout(th); th = setTimeout(function () { A.renderAll(); }, 60); };

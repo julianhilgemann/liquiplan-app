@@ -373,6 +373,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 .empty-state h2 { font-size: 20px; margin-top: 4px; }
 .empty-state p { max-width: 52ch; margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
 .es-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+.empty-state:not(.ready) .es-ready, .empty-state.ready .es-empty { display: none; }
 @media (max-width: 720px) { .es-acts { width: 100%; } .es-acts .btn { flex: 1 1 100%; min-height: 44px; } }
 
 /* ---------- progress dialog while optimising ---------- */
@@ -428,9 +429,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 .wiz-menu-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; margin-top: 6px; padding: 6px 2px 0; border-top: 1px solid var(--line); }
 .btn.ghost.danger { color: var(--crit); }
 .btn.ghost.danger.armed { background: var(--crit); color: #ffffff; }
-.wiz-main { display: grid; gap: 14px; min-width: 0; }
+.wiz-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
 .wiz-tomenu { display: none; }
-.wiz-body { display: grid; gap: 0; padding: 20px 24px 12px; }
+.wiz-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 20px 24px 12px; }
 .wiz-body > h3 { font-size: 19px; letter-spacing: -0.015em; }
 .wiz-kind { font-size: 12.5px; color: var(--muted); margin: 2px 0 12px; }
 .q { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 6px 16px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
@@ -446,7 +447,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 .wrow .q { border-top-color: var(--line-2); }
 .wrow-head + .q { border-top: 0; }
 .wrow-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 42px; font-size: 13.5px; font-weight: 600; }
-.wrow-head > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wrow-head > span { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wrow-acts { display: flex; flex: none; gap: 2px; margin-right: -8px; }
 .wrow-acts .btn { font-weight: 500; }
 .wiz-norows { margin: 8px 0 0 24px; }
@@ -520,6 +521,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   .brand { width: 100%; min-height: 44px; padding-right: 156px; }
   .top .ctl #btnInputs { position: absolute; top: 16px; right: 92px; width: 32px; }
   .top .ctl #btnWizard { grid-column: 1 / -1; }
+  .wiz .top .ctl #btnWizard { grid-column: auto; }
   .top .ctl .theme-switch { position: absolute; top: 16px; right: 16px; } /* beside the title */
   .top .ctl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; align-items: end; }
   .top .ctl > * { min-width: 0; }
@@ -537,8 +539,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 }
 /* touch: controls reach the 44 pt target */
 @media (pointer: coarse) {
-  .btn, .seg button, .nav button, .yrs button, .wiz-steps button, select, input[type="text"], input[type="number"], input[type="date"], input[type="month"] { min-height: 44px; }
+  .btn, .nav button, .yrs button, .wiz-steps button, select, input[type="text"], input[type="number"], input[type="date"], input[type="month"] { min-height: 44px; }
   .btn.sm { min-height: 40px; }
+  .seg button { min-height: 40px; }
   .tbl td.in input { min-height: 36px; }
   .menu-pop button { padding: 11px 12px; }
   .theme-switch { width: 84px; height: 44px; }
@@ -612,9 +615,11 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     <section class="kpis" id="kpis" aria-label="Kennzahlen"></section>
     <section class="card empty-state hide" id="emptyState" aria-labelledby="emptyTitle">
       <div class="es-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 4.5V21a2 2 0 0 0 2 2h16.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="14" width="3.6" height="6.5" rx="1.4" fill="currentColor"/><rect x="14.2" y="8.5" width="3.6" height="12" rx="1.4" fill="currentColor"/><rect x="19.4" y="11.5" width="3.6" height="9" rx="1.4" fill="currentColor"/></svg></div>
-      <h2 id="emptyTitle" data-i18n="e_title">Noch keine Daten</h2>
-      <p data-i18n="e_text">Für eine Analyse braucht der Planer ein Startguthaben oder einen monatlichen Bedarf. Erfasse beides im Assistenten – oder sieh dir zuerst ein vollständiges Beispiel an.</p>
-      <div class="es-acts"><button class="btn primary" type="button" id="emptyWizard" data-i18n="e_wizard">Assistent öffnen</button><button class="btn" type="button" id="emptyExample" data-i18n="e_example">Beispiel „G“ laden</button></div>
+      <h2 id="emptyTitle"><span class="es-empty" data-i18n="e_title">Noch keine Daten</span><span class="es-ready" data-i18n="e_readyTitle">Bereit zur Berechnung</span></h2>
+      <p class="es-ready" data-i18n="e_readyText">Die Eingaben sind erfasst. Die Festgeld-Leiter wird berechnet, sobald du auf „Optimieren“ drückst – das dauert etwa 20 Sekunden.</p>
+      <p class="es-empty" data-i18n="e_text">Für eine Analyse braucht der Planer ein Startguthaben oder einen monatlichen Bedarf. Erfasse beides im Assistenten – oder sieh dir zuerst ein vollständiges Beispiel an.</p>
+      <div class="es-acts es-empty"><button class="btn primary" type="button" id="emptyWizard" data-i18n="e_wizard">Assistent öffnen</button><button class="btn" type="button" id="emptyExample" data-i18n="e_example">Beispiel „G“ laden</button></div>
+      <div class="es-acts es-ready"><button class="btn cta" type="button" id="readyRun"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.25 8a5.25 5.25 0 1 1-1.54-3.71" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12.6 1.9v2.9H9.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="optimize">Optimieren</span></button><button class="btn" type="button" id="readyWizard" data-i18n="e_wizard">Assistent öffnen</button></div>
     </section>
     <nav class="nav" id="nav" aria-label="Abschnitte"></nav>
 
@@ -2349,7 +2354,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     w_lead: 'Sechs Kapitel, nur die ersten beiden sind Pflicht. Alles lässt sich später ändern.', w_example: 'Beispiel „G“ laden', w_exampleLoaded: 'Beispiel G geladen.',
     w_allCh: 'Alle Kapitel', w_finish: 'Zur Analyse', w_reqShort: 'Pflicht', w_doneShort: 'erledigt',
     e_title: 'Noch keine Daten', e_text: 'Für eine Analyse braucht der Planer ein Startguthaben oder einen monatlichen Bedarf. Erfasse beides im Assistenten – oder sieh dir zuerst ein vollständiges Beispiel an.',
-    e_wizard: 'Assistent öffnen', e_example: 'Beispiel „G“ laden', e_status: 'Keine Daten',
+    e_wizard: 'Assistent öffnen', e_example: 'Beispiel „G“ laden', e_status: 'Keine Daten', s_notRun: 'Noch nicht berechnet',
+    e_readyTitle: 'Bereit zur Berechnung', e_readyText: 'Die Eingaben sind erfasst. Die Festgeld-Leiter wird berechnet, sobald du auf „Optimieren“ drückst – das dauert etwa 20 Sekunden.',
     r_title: 'Optimiere die Festgeld-Leiter …', r_titleScen: 'Plan fertig – Szenarien laufen …', r_done: 'Fertig.', r_load: 'Solver starten',
     r_verify: 'Plan unabhängig nachrechnen und prüfen', r_scen: 'Zinsszenarien vergleichen', r_abort: 'Abbrechen', r_view: 'Ergebnis ansehen',
     r_aborted: 'Berechnung abgebrochen.', sc_abort: 'abgebrochen – „Optimieren“ rechnet neu',
@@ -2439,7 +2445,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     w_lead: 'Six chapters, only the first two are required. Everything can be changed later.', w_example: 'Load example G', w_exampleLoaded: 'Example G loaded.',
     w_allCh: 'All chapters', w_finish: 'To the analysis', w_reqShort: 'Required', w_doneShort: 'done',
     e_title: 'No data yet', e_text: 'The planner needs starting money or a monthly need to analyse anything. Enter both in the wizard – or look at a complete example first.',
-    e_wizard: 'Open the wizard', e_example: 'Load example G', e_status: 'No data',
+    e_wizard: 'Open the wizard', e_example: 'Load example G', e_status: 'No data', s_notRun: 'Not calculated yet',
+    e_readyTitle: 'Ready to calculate', e_readyText: 'Your inputs are in. The deposit ladder is calculated when you press “Optimise” – it takes about 20 seconds.',
     r_title: 'Optimising the deposit ladder …', r_titleScen: 'Plan ready – scenarios running …', r_done: 'Done.', r_load: 'Start the solver',
     r_verify: 'Recalculate and verify the plan independently', r_scen: 'Compare rate scenarios', r_abort: 'Cancel', r_view: 'View result',
     r_aborted: 'Calculation cancelled.', sc_abort: 'cancelled – “Optimise” recalculates',
@@ -2854,6 +2861,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   }
   function badgeDone(ms) {
     if (!hasData(A.state)) { setBusy(false, t('e_status')); $('solverBadge').title = t('e_status'); return; } // nothing to plan with (an older result may still be in memory)
+    if (!A.view && !A.lastError) { setBusy(false, t('s_notRun')); $('solverBadge').title = t('s_notRun'); return; } // waiting for "Optimieren"
     if (ms == null && A.view) ms = A.view.ms; // the time of the plan on screen, also after a worker restart
     var name = A.solver.info.solver || '…', secs = ms ? ' · ' + new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(ms / 1000) + ' s' : '', ver = t('s_verified');
     var full = t('s_ready') + ': ' + name + (A.view ? ' · ' + ver + secs : '');
@@ -2863,7 +2871,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   A.onSolverInfo = function () { if (!A.busy) badgeDone(); A.renderChainInfo(); };
   A.markStale = function () { // inputs changed: no calculation until "Optimieren" is pressed
     var any = hasData(A.state);
-    clearTimeout(debounce); A.stale = true; $('main').classList.add('stale'); $('staleNote').classList.toggle('hide', !any); $('btnOptimize').classList.toggle('due', any);
+    clearTimeout(debounce); A.stale = true; $('main').classList.add('stale'); $('staleNote').classList.toggle('hide', !(any && A.view)); $('btnOptimize').classList.toggle('due', any);
     runSeq++; A.solver.cancelAll(); // a run for the previous inputs is of no use any more
     A.busy = false; $('progressBar').style.width = '0'; $('solverBadge').className = 'badge'; $('solverText').textContent = t('s_stale'); $('solverBadge').title = t('s_stale');
     runClose();
@@ -3034,7 +3042,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     var box = $('kpis'); box.innerHTML = '';
     var v = A.view;
     function tile(cls, lab, val, sub, valCls) { box.appendChild(el('div', { class: 'kpi ' + (cls || '') }, el('div', { class: 'lab', html: lab }), el('div', { class: 'val ' + (valCls || ''), html: val }), sub ? el('div', { class: 'sub', html: sub }) : null)); }
-    if (!hasData(A.state)) { // skeleton: the tiles that will appear, without numbers
+    if (!hasData(A.state) || (!v && !A.lastError)) { // skeleton: the tiles that will appear, without numbers
       var sk = function (w) { return '<span class="sk" style="width:' + w + '"></span>'; };
       tile('hero', esc(t('k_safe')), sk('11rem'), sk('16rem')); tile('', esc(t('k_runway')), sk('6rem'), sk('4rem')); tile('', esc(t('k_interest')), sk('5rem'), sk('6rem'));
       tile('wide', esc(t('k_gain')), sk('5rem'), sk('8rem')); tile('k-lock', esc(t('k_locked')), sk('4rem'), sk('7rem')); tile('full', esc(t('k_next')), sk('20rem'), '', 'sm');
@@ -3539,9 +3547,10 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     $('methodBody').innerHTML = LP.i18n.method[A.lang].map(function (p) { return p.replace(/\{(\w+)\}/g, function (m, k) { return LP.i18n.gloss[k] ? A.term(k) : m; }); }).join('');
   };
   function renderAll() {
-    var empty = !hasData(A.state);
-    $('main').classList.toggle('is-empty', empty); $('emptyState').classList.toggle('hide', !empty);
-    renderKpis(); if (empty) { if (!A.busy) badgeDone(); return; } // the result views stay hidden until there is something to show
+    var empty = !hasData(A.state), ready = !empty && !A.view && !A.lastError, gate = empty || ready;
+    $('main').classList.toggle('is-empty', gate); $('emptyState').classList.toggle('hide', !gate); $('emptyState').classList.toggle('ready', ready);
+    $('btnOptimize').classList.toggle('due', !A.busy && !empty && (ready || !!A.stale)); // dot = a calculation is waiting: no result yet, or one older than the inputs
+    renderKpis(); if (gate) { if (!A.busy) badgeDone(); return; } // the result views stay hidden until there is a result
     renderMain(); renderStrat(); renderLadder(); renderWf(); renderActions(); renderScen(); renderGrid();
   }
   A.renderAll = renderAll;
@@ -4189,9 +4198,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   };
   W.finish = function () { // "Proceed to future projection"
     sortRows(A.state); A.state.wizDone = true; A.save();
-    var stale = A.stale || !A.view;
-    W.hide(); window.scrollTo(0, 0);
-    if (stale && A.hasData(A.state)) A.run(); // nothing entered: the analysis shows its empty state instead of zeros
+    W.hide(); window.scrollTo(0, 0); // no calculation here: the analysis offers "Optimieren"
   };
   var armed = null;
   function reset() { // two taps: there is no confirm dialog inside the viewer
@@ -4200,7 +4207,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     clearTimeout(armed); armed = null; b.textContent = t('w_reset'); b.classList.remove('armed');
     var d = new Date(), keep = A.lang;
     A.state = A.normalize({ lang: keep, presetId: 'custom', startDate: C.iso(d.getFullYear(), d.getMonth() + 1, d.getDate()), weekly: { on: false, nextDate: '' }, sec: { events: false, deposits: false, flows: false, offers: false }, products: [] });
-    A.save(); A.fillSelects(); A.markStale(); W.step = 0; W.seen = {}; W.render();
+    A.view = null; A.save(); A.fillSelects(); A.markStale(); W.step = 0; W.seen = {}; W.render();
   }
   $('wizBack').onclick = function () { W.go(W.step - 1); };
   $('wizNext').onclick = function () { if (W.step >= 5) W.finish(); else W.go(W.step + 1); };
@@ -4358,10 +4365,11 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     };
     $('selScenario').onchange = function () { A.state.rateScenario = $('selScenario').value; A.save(); A.markStale(); };
     $('btnOptimize').onclick = function () { A.run(); }; $('btnStaleRun').onclick = function () { A.run(); };
-    $('emptyWizard').onclick = function () { A.wizard.show(0); };
-    $('emptyExample').onclick = function () { // load example G and show its analysis
+    $('emptyWizard').onclick = function () { A.wizard.show(0); }; $('readyWizard').onclick = function () { A.wizard.show(0); };
+    $('readyRun').onclick = function () { A.run(); };
+    $('emptyExample').onclick = function () { // load example G; the analysis waits for "Optimieren"
       var keep = A.lang; A.state = A.normalize(LP.presets.g()); A.state.lang = keep; A.state.wizDone = true;
-      A.save(); A.renderStatic(); A.renderSide(); A.run();
+      A.save(); A.renderStatic(); A.renderSide(); A.markStale(); // ready to calculate; "Optimieren" starts it
     };
     $('langDe').onclick = function () { setLang('de'); }; $('langEn').onclick = function () { setLang('en'); };
     var THEME = 'liquiditaetsplaner:theme';
@@ -4415,8 +4423,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   A.renderStatic(); A.renderSide(); A.renderAll();
   if (isNarrow()) $('shell').classList.remove('drawer');
   syncInputsBtn(); window.addEventListener('resize', syncInputsBtn);
-  A.solver.start();
-  A.run(); // first open: load the preset and optimise at once (in the background while the wizard is shown)
+  A.solver.start(); // warms up the solver only; nothing is calculated until "Optimieren" is pressed
   if (!A.state.wizDone) A.wizard.show(0);
 })();
 </script>

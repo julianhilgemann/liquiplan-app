@@ -2,3 +2,6 @@
 *.vor-ui-politur.html
 *.bak
 .DS_Store
+
+# local analysis reports (kept out of the repository)
+Solver-Reproducibility-Report_*

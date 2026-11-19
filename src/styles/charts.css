@@ -1,0 +1,17 @@
+.chart { width: 100%; height: 400px; }
+.chart.sm { height: 320px; }
+@media (max-width: 720px) { .chart { height: 320px; } .chart.sm { height: 290px; } }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.legend i.ln { height: 0; border-top: 2px solid var(--ink); width: 16px; border-radius: 0; vertical-align: 3px; }
+.legend i.ln.dash { border-top-style: dashed; }
+#chartLegend, #strLegend { gap: 2px 2px; margin-left: -8px; }
+.legend .lg { display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; padding: 0 8px; min-height: 28px; border-radius: 7px; font-size: 12.5px; color: var(--ink-2); }
+.legend .lg i { margin: 0; }
+.legend .lg:hover { background: var(--fill); }
+.legend .lg[aria-pressed="false"] { color: var(--muted); }
+.legend .lg[aria-pressed="false"] span { text-decoration: line-through; text-decoration-color: var(--muted); }
+.legend .lg[aria-pressed="false"] i:not(.ln) { background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.legend .lg[aria-pressed="false"] i.ln { border-top-color: var(--muted) !important; }
+.legend .lg-all { border: 0; background: transparent; color: var(--link); font-size: 12.5px; padding: 0 8px; min-height: 28px; border-radius: 7px; }
+.legend .lg-all:hover { background: var(--fill); }

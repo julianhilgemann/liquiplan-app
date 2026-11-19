@@ -5,3 +5,6 @@
 
 # local analysis reports (kept out of the repository)
 Solver-Reproducibility-Report_*
+
+# the built single-file app (node build.mjs); the Pages workflow builds its own
+dist/

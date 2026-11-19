@@ -1,0 +1,12 @@
+<div id="staleNote" class="stale-note hide" role="status"><span data-i18n="staleNote">Eingaben geändert – die Ergebnisse zeigen noch den letzten Stand.</span><button class="btn sm cta" type="button" id="btnStaleRun"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.25 8a5.25 5.25 0 1 1-1.54-3.71" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12.6 1.9v2.9H9.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="optimize">Optimieren</span></button></div>
+<div id="presetNote" class="note hide"></div>
+<div id="verifyError" class="note err hide" role="alert"></div>
+<section class="kpis" id="kpis" aria-label="Kennzahlen"></section>
+<section class="card empty-state hide" id="emptyState" aria-labelledby="emptyTitle">
+  <div class="es-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 4.5V21a2 2 0 0 0 2 2h16.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="14" width="3.6" height="6.5" rx="1.4" fill="currentColor"/><rect x="14.2" y="8.5" width="3.6" height="12" rx="1.4" fill="currentColor"/><rect x="19.4" y="11.5" width="3.6" height="9" rx="1.4" fill="currentColor"/></svg></div>
+  <h2 id="emptyTitle"><span class="es-empty" data-i18n="e_title">Noch keine Daten</span><span class="es-ready" data-i18n="e_readyTitle">Bereit zur Berechnung</span></h2>
+  <p class="es-ready" id="readyText"></p>
+  <p class="es-empty" data-i18n="e_text">Für eine Analyse braucht der Planer ein Startguthaben oder einen monatlichen Bedarf. Erfasse beides im Assistenten – oder sieh dir zuerst ein vollständiges Beispiel an.</p>
+  <div class="es-acts es-empty"><button class="btn primary" type="button" id="emptyWizard" data-i18n="e_wizard">Assistent öffnen</button><button class="btn" type="button" id="emptyExample" data-i18n="e_example">Beispiel „G“ laden</button></div>
+</section>
+<nav class="nav" id="nav" aria-label="Abschnitte"></nav>

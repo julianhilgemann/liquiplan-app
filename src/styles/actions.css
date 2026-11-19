@@ -1,0 +1,24 @@
+/* ---------- actions ---------- */
+.acts { border: 1px solid var(--line); border-radius: var(--r); overflow: auto; max-height: 560px; }
+.acts-tbl tr.grp td { background: var(--surface-2); padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+.acts-tbl tbody tr.grp:not(:first-child) td { border-top: 1px solid var(--line-2); }
+.acts-tbl .grp-when { font-weight: 600; }
+.acts-tbl .grp-sum { float: right; margin-left: 16px; color: var(--ink-2); font-size: 12.5px; }
+.acts-tbl td { padding-top: 8px; padding-bottom: 8px; }
+.acts-tbl td.amt { font-weight: 600; }
+.acts-tbl tr.mat td { color: var(--ink-2); }
+.acts-tbl tr.mat td.amt { font-weight: 400; }
+.acts-tbl .tag { display: inline-block; font-size: 11.5px; font-weight: 500; padding: 0 8px; line-height: 20px; border-radius: 999px; background: var(--fill); color: var(--ink-2); margin-right: 6px; }
+.acts-tbl tr.place .tag:first-child { background: var(--chip-place); color: var(--chip-place-ink); }
+.acts-tbl tr.mat .tag:first-child { background: var(--chip-mat); color: var(--chip-mat-ink); }
+@media (max-width: 720px) {
+  .acts-tbl thead { display: none; }
+  .acts-tbl, .acts-tbl tbody { display: block; }
+  .acts-tbl tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .acts-tbl tr.grp { display: block; padding: 0; border: 0; }
+  .acts-tbl td, .acts-tbl td:first-child { display: block; position: static; padding: 0; border: 0; text-align: left; white-space: normal; background: transparent; }
+  .acts-tbl tr.grp td { padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+  .acts-tbl td::before { content: attr(data-l); display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
+  .acts-tbl tr.grp td::before { content: none; }
+  .acts-tbl .grp-sum { float: none; display: block; margin: 2px 0 0; }
+}

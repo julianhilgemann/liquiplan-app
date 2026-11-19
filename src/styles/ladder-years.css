@@ -1,0 +1,31 @@
+/* ---------- ladder, one year per page ---------- */
+.pager { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.ctl.nowrap { flex-wrap: nowrap; } /* arrows and their select stay on one line */
+.pager > .btn, .ctl.nowrap > .btn { align-self: stretch; } /* as tall as the control beside them */
+.yrs { display: flex; gap: 6px; overflow-x: auto; flex: 1; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.yrs::-webkit-scrollbar { display: none; }
+.yrs button { border: 0; background: var(--fill); border-radius: 999px; padding: 0 14px; font-size: 13px; font-weight: 500; white-space: nowrap; min-height: 30px; }
+.yrs button:hover:not([aria-pressed="true"]) { background: var(--fill-2); }
+.yrs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.gantt.yv { min-width: 0; width: 100%; }
+.yv-head { display: grid; grid-template-columns: repeat(12, 1fr); border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--ink-2); text-align: center; padding: 7px 0; }
+.yv-head span.off { color: var(--muted); opacity: 0.6; }
+.yv-head span.ts { color: var(--accent); font-weight: 700; box-shadow: inset 0 -2px 0 var(--accent); }
+.yv-rows { position: relative; }
+.yv-row { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 9px 0 1px; position: relative; }
+.yv-row:hover { background: var(--surface-2); }
+.yv-row.sel { background: var(--fill); }
+.yv-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 10px; padding: 0 10px; font-size: 13px; line-height: 1.35; }
+.yv-main { font-weight: 600; }
+.yv-side { color: var(--ink-2); font-size: 12px; }
+.yv-track { display: block; position: relative; height: 20px; margin-top: 5px; background-image: linear-gradient(to right, var(--line) 1px, transparent 1px); background-size: calc(100% / 12) 100%; }
+.yv-bar { position: absolute; top: 4px; height: 12px; border-radius: 4px; min-width: 6px; }
+.yv-t { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); }
+.yv-bar.cut-l { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.yv-bar.cut-r { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.yv-bar.pin { box-shadow: inset 0 0 0 2px var(--ink); }
+.yv-rows > .detail { margin: 0; border-radius: 0; border-bottom: 1px solid var(--line); }
+.yv-tstar { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); pointer-events: none; }
+.yv-tstar i { position: absolute; top: 2px; left: 4px; font-style: normal; font-size: 11px; font-weight: 600; color: var(--accent); background: var(--surface); padding: 0 3px; border-radius: 3px; }
+.yv-sum { padding: 10px; font-size: 12.5px; color: var(--ink-2); }
+@media (max-width: 720px) { .detail dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

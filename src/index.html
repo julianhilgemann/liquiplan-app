@@ -1,0 +1,146 @@
+<!--# The page template. `node build.mjs` expands it into the single-file app, dist/index.html. -->
+<!--# Lines that start like this one are notes for readers of the source; the build drops them. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liquiditätsplaner – Festgeld-Leiter mit Überlebenshorizont</title>
+<!--# Before the first paint: apply the saved light/dark choice, so the page never flashes the other theme. -->
+<script id="src-theme">try { var lpTheme = window.localStorage.getItem('liquiditaetsplaner:theme'); if (lpTheme === 'light' || lpTheme === 'dark') document.documentElement.setAttribute('data-theme', lpTheme); } catch (e) { /* storage unavailable: follow the system */ }</script>
+<!--# Styles, in cascade order: the design system first (tokens, base, controls), then one file per part -->
+<!--# of the page, and the overrides for narrow and touch screens last. Keep the order when adding a file. -->
+<style id="css"><!-- @include styles/tokens.css -->
+
+<!-- @include styles/base.css -->
+
+<!-- @include styles/controls.css -->
+
+<!-- @include styles/toolbar.css -->
+
+<!-- @include styles/shell.css -->
+<!-- @include styles/inputs.css -->
+
+<!-- @include styles/cards.css -->
+<!-- @include styles/kpis.css -->
+<!-- @include styles/notes.css -->
+<!-- @include styles/charts.css -->
+
+<!-- @include styles/tables.css -->
+
+<!-- @include styles/ladder.css -->
+
+<!-- @include styles/actions.css -->
+
+<!-- @include styles/waterfall.css -->
+
+<!-- @include styles/strategies.css -->
+
+<!-- @include styles/methodology.css -->
+<!-- @include styles/dialogs.css -->
+<!-- @include styles/empty-state.css -->
+
+<!-- @include styles/progress.css -->
+
+<!-- @include styles/wizard.css -->
+<!-- @include styles/stale.css -->
+
+
+<!-- @include styles/ladder-years.css -->
+
+<!-- @include styles/responsive.css -->
+</style>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" async onload="window.__echartsReady&&window.__echartsReady()"></script>
+</head>
+<body>
+<!--# The static page skeleton. Everything inside #app is kept as A.skeleton and written back by "HTML herunterladen". -->
+<div id="app"><!-- @include markup/toolbar.html -->
+
+<!-- @include markup/wizard.html -->
+
+<!-- @include markup/workspace.html -->
+
+<!-- @include markup/overlays.html -->
+</div>
+<!--# The inputs a downloaded copy was saved with. Empty in the published app. -->
+<script id="embedded-state" type="application/json">{"docId":"lp20261114b","savedAt":null,"state":null}</script>
+<!--# The script blocks below are a functional split, not only a visual one: the solver worker is started from the -->
+<!--# text of src-core + src-solver, and "HTML herunterladen" writes all three blocks back out. Every file is an IIFE -->
+<!--# that hangs its API on the global LP, so the order inside a block is the load order. -->
+<!--# src-core: runs on the main thread and in the worker. -->
+<script id="src-core"><!-- @include core/core.js -->
+
+<!-- @include core/presets.js -->
+</script>
+<!--# src-solver: runs in the worker (and on the main thread only as the fallback when workers are unavailable). -->
+<script id="src-solver"><!-- @include solver/model.js -->
+
+<!-- @include solver/simplex.js -->
+
+<!-- @include solver/backends.js -->
+
+<!-- @include solver/engine.js -->
+
+<!-- @include solver/optimize.js -->
+
+<!-- @include solver/workerglue.js -->
+</script>
+<!--# src-app: runs on the main thread only. -->
+<script id="src-app"><!-- @include app/sim.js -->
+
+<!-- @include app/i18n/de.js -->
+
+<!-- @include app/i18n/en.js -->
+
+<!-- @include app/i18n/glossary.js -->
+
+<!-- @include app/i18n/methodology.js -->
+
+<!-- @include app/ui/dom.js -->
+
+<!-- @include app/ui/state.js -->
+
+<!-- @include app/ui/format.js -->
+
+<!-- @include app/ui/tooltip.js -->
+
+<!-- @include app/ui/solver-client.js -->
+
+<!-- @include app/ui/drawer.js -->
+
+<!-- @include app/views/shared.js -->
+
+<!-- @include app/views/progress.js -->
+
+<!-- @include app/views/kpis.js -->
+
+<!-- @include app/views/timeline.js -->
+
+<!-- @include app/views/strategies.js -->
+
+<!-- @include app/views/ladder.js -->
+
+<!-- @include app/views/waterfall.js -->
+
+<!-- @include app/views/actions.js -->
+
+<!-- @include app/views/scenarios.js -->
+
+<!-- @include app/views/grid.js -->
+
+<!-- @include app/views/render.js -->
+
+<!-- @include app/views/pipeline.js -->
+
+<!-- @include app/xlsx.js -->
+
+<!-- @include app/wizard.js -->
+
+<!-- @include app/export.js -->
+
+<!-- @include app/selftest.js -->
+
+<!-- @include app/main.js -->
+</script>
+</body>
+</html>

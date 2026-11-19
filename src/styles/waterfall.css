@@ -1,0 +1,5 @@
+/* ---------- waterfall ---------- */
+.wf-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 6px; }
+.wf-sum { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.wf-sum strong { color: var(--ink); font-weight: 600; }
+.wf-top .legend { margin: 0; }

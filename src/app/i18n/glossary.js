@@ -1,0 +1,34 @@
+/* ===== i18n/glossary.js: glossary, each term as [German term, German text, English term, English text] ===== */
+(function (root) {
+  'use strict';
+  var LP = root.LP;
+
+  var GLOSS = {
+    tstar: ['Überlebenshorizont T*', 'Letzter Monat, bis zu dem jeder Monatsbedarf gedeckt ist, ohne dass die Liquidität unter den Sockel fällt. Das ist das Hauptziel der Optimierung.', 'Survival horizon T*', 'Last month up to which every monthly need is covered without liquidity dropping below the buffer. This is the primary objective.'],
+    sockel: ['Sockel', 'Mindestliquidität, die nie angetastet wird. Im Monatsraster kann für einzelne Monate ein anderer Mindestwert gesetzt werden.', 'Buffer', 'Minimum liquidity that is never touched. The monthly grid allows a different minimum for single months.'],
+    lead: ['Sicherheitsvorlauf', 'Fälligkeiten zählen erst nach 0, 1 oder 3 Monaten als verfügbar. So hängt kein Monatsbedarf an einer Auszahlung, die sich verspäten könnte. Auch Wiederanlagen warten diesen Vorlauf ab.', 'Safety lead', 'Maturities only count as available after 0, 1 or 3 months, so no monthly need depends on a payout that might arrive late. Reinvestments wait for the lead as well.'],
+    denom: ['Stückelung', 'Tranchen werden nur in ganzen Schritten dieses Betrags angelegt.', 'Denomination', 'Tranches are only placed in whole steps of this amount.'],
+    leiter: ['Festgeld-Leiter (Zinstreppe)', 'Mehrere Festgelder mit gestaffelten Fälligkeiten, sodass regelmäßig Geld frei wird.', 'Deposit ladder', 'Several fixed deposits with staggered maturities, so that money becomes available at regular intervals.'],
+    tg: ['Tagesgeld', 'Täglich verfügbares, variabel verzinstes Konto. Überweisungen brauchen einen Bankarbeitstag (T+1).', 'Overnight money', 'Instant-access account with a variable rate. Transfers take one business day (T+1).'],
+    giro: ['Girokonto', 'Zahlungskonto ohne Zinsen. Es hält im Modell nur den Bedarf des nächsten Monats.', 'Current account', 'Payment account without interest. In the model it only holds next month\'s need.'],
+    cfm: ['Cashflow-Matching (Dedication)', 'Anlagen werden so gewählt, dass ihre Rückflüsse zeitlich zu den geplanten Ausgaben passen.', 'Cash-flow matching (dedication)', 'Investments are chosen so that their repayments match the planned expenses in time.'],
+    lab: ['Liquiditätsablaufbilanz', 'Gegenüberstellung von Zu- und Abflüssen in Laufzeitbändern; die Differenz ist die Liquiditätslücke je Band.', 'Liquidity gap analysis', 'Inflows versus outflows in maturity bands; the difference is the liquidity gap per band.'],
+    frist: ['Fristenkongruenz', 'Geld wird nicht länger gebunden, als es bis zu seinem Verwendungszeitpunkt entbehrlich ist.', 'Maturity matching', 'Money is not locked for longer than it can be spared until it is needed.'],
+    bucket: ['Bucket-Strategie', 'Aufteilung des Vermögens in Töpfe nach Verwendungszeitpunkt: sofort (Giro), bald (Tagesgeld), später (Festgeld).', 'Bucket strategy', 'Splitting wealth into buckets by time of use: now (current account), soon (overnight), later (deposits).'],
+    milp: ['MILP', 'Gemischt-ganzzahliges lineares Programm: ein lineares Optimierungsmodell, in dem einige Variablen ganzzahlig sein müssen (hier: Stückelung und Mindestbeträge).', 'MILP', 'Mixed-integer linear programme: a linear optimisation model in which some variables must be integers (here: denominations and minimum amounts).'],
+    lprel: ['LP-Relaxation', 'Dasselbe Modell ohne Ganzzahligkeit. Schnell lösbar und eine obere Schranke für das, was ganzzahlig erreichbar ist.', 'LP relaxation', 'The same model without integrality. Fast to solve and an upper bound on what integers can reach.'],
+    lexi: ['Lexikographische Optimierung', 'Ziele werden strikt nacheinander optimiert: Ein nachrangiges Ziel darf ein höheres nie verschlechtern. Es gibt keine gewichtete Summe.', 'Lexicographic optimisation', 'Objectives are optimised strictly one after another: a lower objective may never worsen a higher one. There is no weighted sum.'],
+    abg: ['Abgeltungsteuer', '25 % auf Kapitalerträge zuzüglich 5,5 % Solidaritätszuschlag und ggf. Kirchensteuer. Im Modell wird sie einmal jährlich im Dezember auf die Zinsen über dem Sparerpauschbetrag abgerechnet.', 'German flat tax', '25 % on investment income plus 5.5 % solidarity surcharge and church tax where applicable. The model settles it once a year in December on interest above the allowance.'],
+    spb: ['Sparerpauschbetrag', 'Zinsen bis zu diesem Betrag pro Jahr bleiben steuerfrei (1.000 € allein, 2.000 € gemeinsam veranlagt).', 'Saver\'s allowance', 'Interest up to this amount per year is tax-free (€1,000 single, €2,000 jointly assessed).'],
+    esi: ['Einlagensicherung', 'Gesetzlich sind 100.000 € je Person und Bank abgesichert. Die Option begrenzt die Summe der Festgelder je Bank.', 'Deposit guarantee', 'By law €100,000 per person and bank are protected. The option caps the sum of deposits per bank.'],
+    conv: ['Zinskonvention', 'Einfach: alle Zinsen am Ende. Jährliche Auszahlung: Zinsen fließen jedes Jahr aufs Tagesgeld. Thesaurierend: Zinsen werden jährlich dem Festgeld zugeschlagen.', 'Interest convention', 'Simple: all interest at the end. Annual payout: interest flows to overnight money each year. Compounding: interest is added to the deposit each year.'],
+    idx: ['Indexierung', 'Jährliche Anpassung eines Betrags, z. B. um die Inflation. Der Sprung erfolgt jeweils nach 12 Monaten.', 'Indexation', 'Yearly adjustment of an amount, e.g. for inflation. The step happens every 12 months.'],
+    t1: ['T+1', 'Eine Überweisung vom Tagesgeld ist am nächsten Bankarbeitstag auf dem Zielkonto.', 'T+1', 'A transfer from overnight money arrives on the next business day.'],
+    bat: ['Bankarbeitstag', 'Montag bis Freitag ohne bundeseinheitliche Feiertage sowie ohne 24.12. und 31.12.', 'Business day', 'Monday to Friday excluding German nationwide holidays, 24 Dec and 31 Dec.'],
+    base: ['Baseline', 'Einfacher Vergleichsplan, der nur simuliert wird: „Alles im Tagesgeld“ und „naiv zinsmaximierend“ (immer das Produkt mit dem höchsten Zins).', 'Baseline', 'Simple comparison plan that is only simulated: “all in overnight money” and “naive rate maximiser” (always the product with the highest rate).'],
+    pin: ['Fixierte Tranche', 'Eine von Hand festgelegte Anlage (Monat, Produkt, Betrag), die der Optimierer als gegeben hinnimmt.', 'Pinned tranche', 'A manually fixed placement (month, product, amount) that the optimiser takes as given.'],
+    slack: ['Schlupf', 'Betrag, der im ersten nicht mehr gedeckten Monat mindestens fehlt.', 'Slack', 'Amount that is missing at least in the first month that is no longer covered.']
+  };
+
+  LP.i18n.gloss = GLOSS;
+})(typeof self !== 'undefined' ? self : globalThis);

@@ -1,0 +1,16 @@
+.toasts { position: fixed; right: 16px; bottom: 16px; z-index: 120; display: grid; gap: 8px; max-width: min(420px, calc(100vw - 32px)); }
+.toast { background: var(--ink); color: var(--surface); padding: 11px 14px; border-radius: 12px; font-size: 13.5px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22); }
+.toast.err { background: var(--crit); color: #fff; }
+:root[data-theme="dark"] .toast.err { color: #1d0b0a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .toast.err { color: #1d0b0a; } }
+.modal { position: fixed; inset: 0; z-index: 110; background: var(--scrim); display: none; align-items: center; justify-content: center; padding: 16px; }
+.modal.open { display: flex; }
+.modal-in { background: var(--surface); border-radius: var(--r-lg); padding: 20px; width: min(640px, 100%); max-height: 90vh; overflow: auto; display: grid; gap: 12px; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3); }
+.modal-in h2 { font-size: 17px; }
+.modal-in p { margin: 0; }
+.modal-in textarea { min-height: 220px; }
+.modal-in .ctl { margin-top: 4px; }
+#modalFile { width: 100%; min-width: 0; font-size: 13px; color: var(--ink-2); } /* never wider than the dialog */
+#modalFile::file-selector-button { font: inherit; font-weight: 500; color: var(--ink); background: var(--fill); border: 0; border-radius: 7px; min-height: 28px; padding: 0 10px; margin-right: 10px; cursor: pointer; }
+#modalFile::file-selector-button:hover { background: var(--fill-2); }
+.empty { padding: 28px 12px; text-align: center; color: var(--muted); }

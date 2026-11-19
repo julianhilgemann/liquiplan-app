@@ -1,0 +1,23 @@
+/* no data yet: skeleton tiles and one clear way forward */
+.main.is-empty > .card:not(#emptyState), .main.is-empty #nav, .main.is-empty #presetNote { display: none !important; }
+.kpis.skeleton .lab { color: var(--muted); }
+.main.is-empty #emptyState { order: -1; } /* the explanation comes first, the skeleton below */
+.main.is-empty.stale .kpis { opacity: 1; }
+.sk { display: inline-block; max-width: 100%; height: 0.7em; border-radius: 6px; background: var(--fill); vertical-align: middle; }
+.kpis.skeleton .sub .sk { height: 0.6em; }
+.kpis.skeleton .kpi > * { min-width: 0; } /* a placeholder bar never widens its tile */
+.empty-state { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 40px 24px 36px; }
+.empty-state.hide { display: none; }
+.es-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--fill); color: var(--muted); display: grid; place-items: center; margin-bottom: 4px; }
+.es-icon svg { width: 36px; height: 36px; margin: 0 0 1px 1px; } /* optically centred: the glyph's mass sits right of its axis */
+.empty-state h2 { font-size: 20px; margin-top: 4px; }
+.empty-state p { max-width: 52ch; margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.es-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+.empty-state:not(.ready) .es-ready, .empty-state.ready .es-empty { display: none; }
+@media (max-width: 720px) { .es-acts { width: 100%; } .es-acts .btn { flex: 1 1 100%; min-height: 44px; } }
+/* blank slate (no data yet): the toolbar keeps only Optimise (inactive), language and theme; no inputs panel, no placeholder tiles */
+#app.blank:not(.wiz) .top .ctl > :not(#btnOptimize):not(.seg):not(.theme-switch) { display: none !important; }
+#app.blank:not(.wiz) .shell { grid-template-columns: minmax(0, 1fr); }
+#app.blank:not(.wiz) .side, #app.blank:not(.wiz) .scrim, #app.blank:not(.wiz) .kpis { display: none !important; }
+.btn.cta[disabled] { background: var(--fill); color: var(--muted); box-shadow: none; opacity: 0.75; } /* greyed out: nothing to optimise yet */
+.btn.cta[disabled]::after { display: none; }

@@ -1,0 +1,26 @@
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><h1 data-i18n="title">Liquiditätsplaner</h1><span data-i18n="subtitle">Festgeld-Leiter mit Überlebenshorizont</span></div>
+    <div class="ctl">
+      <button class="btn" id="btnWizard" type="button" aria-controls="wizard" data-i18n="wizard">Assistent</button>
+      <button class="btn icon" id="btnInputs" type="button" aria-controls="side" aria-expanded="true" aria-label="Eingaben" title="Eingaben"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.72 5.17L10.63 4.93L10.83 2.47L13.17 2.47L13.37 4.93L14.28 5.17L15.21 5.56L16.03 6.03L17.91 4.44L19.56 6.09L17.97 7.97L18.44 8.79L18.83 9.72L19.07 10.63L21.53 10.83L21.53 13.17L19.07 13.37L18.83 14.28L18.44 15.21L17.97 16.03L19.56 17.91L17.91 19.56L16.03 17.97L15.21 18.44L14.28 18.83L13.37 19.07L13.17 21.53L10.83 21.53L10.63 19.07L9.72 18.83L8.79 18.44L7.97 17.97L6.09 19.56L4.44 17.91L6.03 16.03L5.56 15.21L5.17 14.28L4.93 13.37L2.47 13.17L2.47 10.83L4.93 10.63L5.17 9.72L5.56 8.79L6.03 7.97L4.44 6.09L6.09 4.44L7.97 6.03L8.79 5.56Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <label><span data-i18n="preset">Beispiel</span><select id="selPreset"></select></label>
+      <label><span data-i18n="rateScenario">Zinsszenario</span><select id="selScenario"></select></label>
+      <button class="btn cta" id="btnOptimize" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.25 8a5.25 5.25 0 1 1-1.54-3.71" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12.6 1.9v2.9H9.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="optimize">Optimieren</span></button>
+      <span class="badge" id="solverBadge" role="status" aria-live="polite"><span class="dot"></span><span id="solverText">…</span></span>
+      <div class="seg" role="group" aria-label="Sprache / Language"><button type="button" id="langDe" aria-pressed="true">DE</button><button type="button" id="langEn" aria-pressed="false">EN</button></div>
+      <div class="menu" id="menuExport">
+        <button class="btn" id="btnMenu" type="button" aria-haspopup="true" aria-expanded="false" data-i18n="exportMenu">Export / Import</button>
+        <div class="menu-pop" role="menu">
+          <button type="button" role="menuitem" id="btnDlHtml" data-i18n="dlHtml">HTML herunterladen</button>
+          <button type="button" role="menuitem" id="btnDlXlsx" data-i18n="dlXlsx">Excel herunterladen</button>
+          <button type="button" role="menuitem" id="btnDlJson" data-i18n="dlJson">Zustand als JSON exportieren</button>
+          <button type="button" role="menuitem" id="btnImJson" data-i18n="imJson">Zustand aus JSON importieren</button>
+          <button type="button" role="menuitem" id="btnRates" data-i18n="ratesJson">Zinssätze als JSON (Export/Import)</button>
+        </div>
+      </div>
+      <button type="button" class="theme-switch" id="themeSwitch" role="switch" aria-checked="false" aria-label="Dunkler Modus" title="Dunkler Modus"><span class="ts-thumb"></span><svg class="ts-sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.13 1.13M11.67 11.67l1.13 1.13M3.2 12.8l1.13-1.13M11.67 4.33l1.13-1.13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><svg class="ts-moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 9.9A5.9 5.9 0 0 1 6.1 2.4a5.9 5.9 0 1 0 7.5 7.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+</header>

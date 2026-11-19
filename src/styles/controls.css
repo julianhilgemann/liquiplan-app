@@ -1,0 +1,51 @@
+/* ---------- controls ---------- */
+select, input[type="text"], input[type="number"], input[type="date"], input[type="month"], textarea {
+  background-color: var(--surface); border: 1px solid var(--field-line); border-radius: var(--r-sm); padding: 5px 9px; min-height: 32px; max-width: 100%; font-size: 14px;
+}
+select { -webkit-appearance: none; appearance: none; padding-right: 28px; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 9px center; background-size: 10px 14px; }
+input[type="date"], input[type="month"] { padding-top: 4px; padding-bottom: 4px; } /* their inner date parts add 1px each way: same height as a text field */
+input[aria-invalid="true"] { border-color: var(--crit); background-color: var(--crit-bg); } /* a number that could not be read: the last valid value stays in force */
+select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ring); outline-offset: 0; border-color: var(--focus); }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); flex: none; }
+input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent); }
+textarea { width: 100%; min-height: 110px; font: 12.5px/1.5 var(--mono); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 14px; border: 0; border-radius: var(--r-sm); background: var(--fill); color: var(--ink); font-size: 14px; font-weight: 500; white-space: nowrap; }
+.btn:hover:not([disabled]) { background: var(--fill-2); }
+.btn:active:not([disabled]) { background: var(--fill-3); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover:not([disabled]) { background: var(--accent-hover); }
+/* the one main action: Apple-blue capsule, light top highlight, small recalculate glyph */
+.btn.cta { position: relative; border-radius: 999px; padding: 0 16px 0 12px; gap: 6px; color: #ffffff; font-weight: 600; background: linear-gradient(180deg, #1a78e5 0%, #0062c4 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 1px 2px rgba(0, 70, 150, 0.28); }
+.btn.cta:hover:not([disabled]) { background: linear-gradient(180deg, #116fdc 0%, #0058b3 100%); }
+.btn.cta:active:not([disabled]) { background: #0058b3; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22); }
+.btn.cta svg { width: 15px; height: 15px; flex: none; }
+.btn.cta.sm { padding: 0 12px 0 9px; }
+.btn.cta.sm svg { width: 13px; height: 13px; }
+.btn.cta.due::after { content: ""; position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: #ffb340; box-shadow: 0 0 0 2px var(--surface); }
+.btn.ghost { background: transparent; color: var(--link); }
+.btn.ghost:hover:not([disabled]) { background: var(--fill); }
+.btn.icon { width: 32px; padding: 0; }
+.btn.icon svg { width: 18px; height: 18px; flex: none; }
+.btn.sm { min-height: 28px; padding: 0 10px; font-size: 13px; border-radius: 7px; }
+.btn[disabled] { opacity: 0.4; cursor: default; }
+
+/* segmented control: equal segments, a raised thumb marks the selection, the label weight never changes */
+.seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; background: var(--fill); border-radius: 9px; flex: none; }
+.seg button { border: 0; background: transparent; border-radius: 7px; padding: 0 12px; min-height: 28px; font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.seg button:hover:not([aria-pressed="true"]) { background: var(--fill); }
+.seg button[aria-pressed="true"] { background: var(--thumb); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.06); }
+
+/* appearance: one switch, sun and moon; the thumb sits behind the active mode, which takes its own colour */
+.theme-switch { position: relative; flex: none; display: grid; grid-template-columns: 1fr 1fr; align-items: center; width: 64px; height: 32px; padding: 2px; border: 0; border-radius: 999px; background: var(--fill); color: var(--muted); }
+.theme-switch:hover { background: var(--fill-2); }
+.theme-switch svg { position: relative; z-index: 1; width: 16px; height: 16px; justify-self: center; }
+.ts-thumb { position: absolute; top: 2px; left: 2px; width: 30px; height: 28px; border-radius: 999px; background: var(--thumb); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 0 0 0.5px rgba(0, 0, 0, 0.05); transition: transform 0.16s ease-out; }
+.theme-switch[aria-checked="true"] .ts-thumb { transform: translateX(30px); }
+.theme-switch[aria-checked="false"] .ts-sun { color: #d97b00; }
+.theme-switch[aria-checked="true"] .ts-moon { color: #b8c6ff; }
+.theme-switch[aria-checked="true"] .ts-moon path { fill: currentColor; }
+.chk { display: flex; align-items: center; gap: 8px; cursor: pointer; }

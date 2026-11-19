@@ -1,0 +1,50 @@
+:root {
+  /* a calm working surface: grouped white cards on a light neutral, system type, black controls; blue is kept for links and keyboard focus */
+  --bg: #f5f5f7; --surface: #ffffff; --surface-2: #f5f5f7; --ink: #1d1d1f; --ink-2: #48484c; --muted: #66666b;
+  --line: #e5e5ea; --line-2: #d1d1d6; --card-line: #e8e8ed; --field-line: #8e8e93;
+  --fill: rgba(118, 118, 128, 0.12); --fill-2: rgba(118, 118, 128, 0.2); --fill-3: rgba(118, 118, 128, 0.28); --thumb: #ffffff;
+  --accent: #1d1d1f; --accent-hover: #424245; --accent-ink: #ffffff; --link: #0066cc; --focus: #0071e3; --ring: rgba(0, 113, 227, 0.32);
+  --good: #0a7a2a; --good-bg: #e5f4e8; --warn: #845600; --warn-bg: #fdf1d3; --crit: #c0302f; --crit-bg: #fbe8e7;
+  --input: #1d1d1f; --override: #fff3c4; --bar: rgba(255, 255, 255, 0.8); --scrim: rgba(0, 0, 0, 0.32);
+  --c-giro: #eda100; --c-tg: #1baf7a; --c-f1: #86b6ef; --c-f2: #3987e5; --c-f3: #1c5cab; --c-f4: #0d366b; --c-ex: #6250d6;
+  --c-opt: #2a78d6; --c-naive: #eb6834; --c-crit: #d03b3b; --grid: #ececf0; --axis: #d1d1d6;
+  --c-up: #2a78d6; --c-down: #d03b3b; --c-tot: #6e6e73;
+  --chip-place: rgba(42, 120, 214, 0.13); --chip-place-ink: #0b4f9e; --chip-mat: rgba(27, 175, 122, 0.15); --chip-mat-ink: #0a6646;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --r-lg: 14px; --r: 10px; --r-sm: 8px; --radius: var(--r-lg);
+  --top-h: 68px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --ink: #f5f5f7; --ink-2: #d1d1d6; --muted: #98989f;
+    --line: #38383a; --line-2: #48484a; --card-line: #2c2c2e; --field-line: #75757b;
+    --fill: rgba(118, 118, 128, 0.24); --fill-2: rgba(118, 118, 128, 0.34); --fill-3: rgba(118, 118, 128, 0.44); --thumb: #636366;
+    --accent: #f5f5f7; --accent-hover: #ffffff; --accent-ink: #1d1d1f; --link: #2997ff; --focus: #0a84ff; --ring: rgba(10, 132, 255, 0.45);
+    --good: #57c46b; --good-bg: #16301c; --warn: #f0c257; --warn-bg: #3a2e10; --crit: #ff8f8a; --crit-bg: #3d1b1a;
+    --input: #f5f5f7; --override: #4a3d10; --bar: rgba(28, 28, 30, 0.78); --scrim: rgba(0, 0, 0, 0.55);
+    --c-giro: #c98500; --c-tg: #199e70; --c-f1: #86b6ef; --c-f2: #3987e5; --c-f3: #256abf; --c-f4: #184f95; --c-ex: #9085e9;
+    --c-opt: #3987e5; --c-naive: #d95926; --c-crit: #d03b3b; --grid: #2c2c2e; --axis: #3a3a3c;
+    --c-up: #3987e5; --c-down: #e5534b; --c-tot: #98989f;
+    --chip-place: rgba(57, 135, 229, 0.24); --chip-place-ink: #9cc6ff; --chip-mat: rgba(25, 158, 112, 0.26); --chip-mat-ink: #7fdcb5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --ink: #f5f5f7; --ink-2: #d1d1d6; --muted: #98989f;
+  --line: #38383a; --line-2: #48484a; --card-line: #2c2c2e; --field-line: #75757b;
+  --fill: rgba(118, 118, 128, 0.24); --fill-2: rgba(118, 118, 128, 0.34); --fill-3: rgba(118, 118, 128, 0.44); --thumb: #636366;
+  --accent: #f5f5f7; --accent-hover: #ffffff; --accent-ink: #1d1d1f; --link: #2997ff; --focus: #0a84ff; --ring: rgba(10, 132, 255, 0.45);
+  --good: #57c46b; --good-bg: #16301c; --warn: #f0c257; --warn-bg: #3a2e10; --crit: #ff8f8a; --crit-bg: #3d1b1a;
+  --input: #f5f5f7; --override: #4a3d10; --bar: rgba(28, 28, 30, 0.78); --scrim: rgba(0, 0, 0, 0.55);
+  --c-giro: #c98500; --c-tg: #199e70; --c-f1: #86b6ef; --c-f2: #3987e5; --c-f3: #256abf; --c-f4: #184f95; --c-ex: #9085e9;
+  --c-opt: #3987e5; --c-naive: #d95926; --c-crit: #d03b3b; --grid: #2c2c2e; --axis: #3a3a3c;
+    --c-up: #3987e5; --c-down: #e5534b; --c-tot: #98989f;
+    --chip-place: rgba(57, 135, 229, 0.24); --chip-place-ink: #9cc6ff; --chip-mat: rgba(25, 158, 112, 0.26); --chip-mat-ink: #7fdcb5;
+  color-scheme: dark;
+}
+/* Increase Contrast: stronger separators, secondary text at full strength */
+@media (prefers-contrast: more) {
+  :root { --muted: var(--ink-2); --line: var(--line-2); --card-line: var(--line-2); --field-line: var(--ink-2); --fill: var(--fill-2); }
+}

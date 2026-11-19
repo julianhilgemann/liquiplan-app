@@ -1,0 +1,20 @@
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-in">
+    <h2 id="modalTitle"></h2>
+    <p class="small muted" id="modalHint"></p>
+    <textarea id="modalText" spellcheck="false" aria-label="JSON"></textarea>
+    <input type="file" id="modalFile" accept=".json,application/json" aria-label="Datei">
+    <div class="ctl" style="justify-content:flex-end"><button class="btn" type="button" id="modalCopy" data-i18n="copy">Kopieren</button><button class="btn" type="button" id="modalSave" data-i18n="saveFile">Als Datei speichern</button><button class="btn primary" type="button" id="modalApply" data-i18n="apply">Übernehmen</button><button class="btn" type="button" id="modalClose" data-i18n="close">Schließen</button></div>
+  </div>
+</div>
+<div class="run-sheet hide" id="runSheet">
+  <div class="run-in" id="runIn" role="dialog" aria-modal="true" aria-labelledby="runTitle" aria-describedby="runStep" tabindex="-1">
+    <div class="run-head"><h2 id="runTitle" data-i18n="r_title">Optimiere die Festgeld-Leiter …</h2><span class="run-time" id="runTime"></span></div>
+    <div class="run-bar" id="runBar" role="progressbar" aria-labelledby="runTitle" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="runFill"></i></div>
+    <p class="run-now" id="runStep" aria-live="polite"></p>
+    <ol class="run-steps" id="runSteps"></ol>
+    <div class="run-foot"><button class="btn" type="button" id="runAbort" data-i18n="r_abort">Abbrechen</button></div>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>

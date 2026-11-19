@@ -1,0 +1,10 @@
+<section class="card" id="sec-waterfall">
+  <div class="card-head"><h2 data-i18n="wfTitle">Cashflow-Wasserfall</h2>
+    <div class="ctl">
+      <div class="seg" role="group"><button type="button" id="wfYear" aria-pressed="true" data-i18n="perYear">Jahr</button><button type="button" id="wfMonth" aria-pressed="false" data-i18n="perMonth">Monat</button></div>
+      <div class="ctl nowrap"><button class="btn sm" id="wfPrev" type="button" aria-label="zurück">‹</button><select id="wfSel" aria-label="Periode"></select><button class="btn sm" id="wfNext" type="button" aria-label="weiter">›</button></div>
+    </div>
+  </div>
+  <div class="wf-top"><p class="wf-sum" id="wfSum"></p><div class="legend" id="wfLegend"></div></div>
+  <div class="chart" id="chartWf" role="img" aria-label="Wasserfalldiagramm"></div>
+</section>

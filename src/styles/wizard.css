@@ -1,0 +1,71 @@
+/* ---------- setup wizard: chapter menu beside the form (phone: a list you tap into) ---------- */
+.wizard { max-width: 1080px; margin: 0 auto; padding: 24px 20px 40px; display: grid; gap: 18px; }
+.wiz .shell { display: none; }
+/* in the wizard the toolbar keeps only what the wizard needs: the way back, language, appearance */
+.wiz .top .ctl > :not(#btnWizard):not(.seg):not(.theme-switch), .wiz #btnInputs { display: none !important; }
+.wiz-head h2 { font-size: 24px; letter-spacing: -0.02em; }
+.wiz-lead { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+.wiz-grid { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 20px; align-items: start; }
+.wiz-menu { position: sticky; top: 16px; background: var(--surface); border: 1px solid var(--card-line); border-radius: var(--r-lg); padding: 6px; }
+@media (min-width: 1360px) { .wiz-menu { top: calc(var(--top-h) + 20px); } }
+.wiz-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.wiz-steps li.sep { height: 1px; margin: 5px 10px; background: var(--line); }
+.wiz-item { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; column-gap: 10px; border: 0; background: transparent; text-align: left; padding: 7px 10px; min-height: 40px; border-radius: 9px; font-size: 13.5px; color: var(--ink); }
+.wiz-item:hover { background: var(--fill); }
+.wiz-item[aria-current="step"] { background: var(--fill-2); font-weight: 600; }
+.wiz-item .no { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--fill); color: var(--ink-2); }
+.wiz-item[aria-current="step"] .no { background: var(--accent); color: var(--accent-ink); }
+.wiz-item .meta { font-size: 12px; font-weight: 400; color: var(--muted); }
+.wiz-item .meta.ok { width: 16px; height: 16px; border-radius: 50%; background: var(--good); display: grid; place-items: center; }
+.wiz-item .meta.ok::after { content: ""; width: 4px; height: 8px; margin-top: -2px; border: solid var(--surface); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.wiz-item .chev { display: none; }
+.wiz-menu-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; margin-top: 6px; padding: 6px 2px 0; border-top: 1px solid var(--line); }
+.btn.ghost.danger { color: var(--crit); }
+.btn.ghost.danger.armed { background: var(--crit); color: #ffffff; }
+.wiz-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+.wiz-tomenu { display: none; }
+.wiz-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 20px 24px 12px; }
+.wiz-body > h3 { font-size: 19px; letter-spacing: -0.015em; }
+.wiz-kind { font-size: 12.5px; color: var(--muted); margin: 2px 0 12px; }
+.q { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 6px 16px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+.q.sub { margin-left: 24px; }
+.q .ql { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 3px 6px; align-items: baseline; }
+.q .qn { color: var(--muted); font-weight: 600; font-size: 12.5px; }
+.q .qh { grid-column: 2; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.q input, .q select { width: 100%; min-width: 0; color: var(--input); }
+.q .seg { justify-self: start; }
+.q .seg button { min-width: 64px; }
+/* entries: a grouped card; its actions are quiet text buttons beside the title */
+.wrow { border-radius: var(--r); background: var(--surface-2); padding: 2px 14px 4px; margin: 10px 0 0 24px; }
+.wrow .q { border-top-color: var(--line-2); }
+.wrow-head + .q { border-top: 0; }
+.wrow-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 42px; font-size: 13.5px; font-weight: 600; }
+.wrow-head > span { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wrow-acts { display: flex; flex: none; gap: 2px; margin-right: -8px; }
+.wrow-acts .btn { font-weight: 500; }
+.wiz-norows { margin: 8px 0 0 24px; }
+.wiz-add { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 12px 0 8px 24px; }
+.wiz-foot { display: flex; justify-content: space-between; gap: 8px; }
+.wiz-foot .btn { min-width: 112px; }
+.wiz-json textarea { min-height: 260px; }
+@media (max-width: 720px) {
+  .wizard { padding: 16px 16px 32px; gap: 14px; }
+  .wiz-head h2 { font-size: 22px; }
+  .wiz-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .wizard.show-menu .wiz-main, .wizard:not(.show-menu) .wiz-menu, .wizard:not(.show-menu) .wiz-head { display: none; }
+  .wiz-menu { position: static; padding: 4px; }
+  .wiz-item { min-height: 50px; grid-template-columns: 26px minmax(0, 1fr) auto 10px; font-size: 15px; }
+  .wiz-item .chev { display: block; width: 7px; height: 7px; border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted); transform: rotate(-45deg); }
+  .wiz-menu-foot .btn { min-height: 40px; }
+  .wiz-tomenu { display: inline-flex; align-items: center; gap: 6px; justify-self: start; border: 0; background: transparent; color: var(--link); font-size: 15px; padding: 0 2px; min-height: 44px; }
+  .wiz-tomenu::before { content: ""; width: 8px; height: 8px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-left: 3px; }
+  .wiz-body { padding: 16px 16px 8px; }
+  .q { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .q .ql { grid-template-columns: 34px minmax(0, 1fr); }
+  .q.sub { margin-left: 12px; }
+  .wrow { margin-left: 0; padding: 2px 12px 4px; }
+  .wiz-norows, .wiz-add { margin-left: 0; }
+  .wiz-foot .btn { flex: 1; min-width: 0; }
+}
+/* iOS draws date fields with an intrinsic width; let them fit the column */
+@supports (-webkit-touch-callout: none) { .q input[type="date"], .f input[type="date"] { -webkit-appearance: none; appearance: none; min-height: 44px; text-align: left; } }

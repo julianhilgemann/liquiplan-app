@@ -81,8 +81,7 @@ select { -webkit-appearance: none; appearance: none; padding-right: 28px; text-o
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 9px center; background-size: 10px 14px; }
 input[type="date"], input[type="month"] { padding-top: 4px; padding-bottom: 4px; } /* their inner date parts add 1px each way: same height as a text field */
-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
-input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[aria-invalid="true"] { border-color: var(--crit); background-color: var(--crit-bg); } /* a number that could not be read: the last valid value stays in force */
 select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ring); outline-offset: 0; border-color: var(--focus); }
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); flex: none; }
@@ -803,6 +802,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 
   // ---------- problem data ----------
   function num(v, d) { v = +v; return isFinite(v) ? v : (d || 0); }
+  // b^n for a whole n >= 0 by repeated multiplication. Math.pow may differ in the last bit between browsers,
+  // which is enough to send the search down another branch; plain multiplication is the same everywhere.
+  function powi(b, n) { var r = 1; for (var i = 0; i < n; i++) r *= b; return r; }
 
   function prepare(state, over) {
     over = over || {};
@@ -842,7 +844,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       P.months.push({ y: ym.y, m: ym.m, key: ym.y + '-' + pad(ym.m) });
       P.year.push(ym.y); P.isDec.push(ym.m === 12);
       P.recIn.push(0); P.recOut.push(0); P.oneIn.push(0); P.oneOut.push(0);
-      P.need.push(t < P.needStartIdx ? 0 : num(state.need) * Math.pow(1 + num(state.needIdx) / 100, Math.floor((t - P.needStartIdx) / 12)));
+      P.need.push(t < P.needStartIdx ? 0 : num(state.need) * powi(1 + num(state.needIdx) / 100, Math.floor((t - P.needStartIdx) / 12)));
       var ov = (state.overrides || {})[P.months[t].key] || {};
       P.extraNeed.push(Math.max(0, num(ov.extraNeed)));
       P.extraIn.push(Math.max(0, num(ov.extraIn)));
@@ -860,7 +862,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       var base = Math.max(sIdx, 0);
       for (var t2 = Math.max(0, sIdx); t2 < H && t2 <= eIdx; t2++) {
         if (((t2 - sIdx) % per + per) % per !== 0) continue;
-        var v = amt * Math.pow(1 + num(st.idx) / 100, Math.floor((t2 - base) / 12));
+        var v = amt * powi(1 + num(st.idx) / 100, Math.floor((t2 - base) / 12));
         if (v >= 0) P.recIn[t2] += v; else P.recOut[t2] += -v;
       }
     });
@@ -912,7 +914,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     parseISO: parseISO, iso: iso, pad: pad, ymOf: ymOf, ymIdx: ymIdx, dow: dow, daysInMonth: daysInMonth, addDays: addDays, cmpDate: cmpDate,
     easter: easter, holidays: holidays, isBusinessDay: isBusinessDay, nextBusinessDay: nextBusinessDay, prevBusinessDay: prevBusinessDay,
     firstBusinessDay: firstBusinessDay, penultimateBusinessDay: penultimateBusinessDay,
-    SCENARIOS: SCENARIOS, scenariosFor: scenariosFor, prepare: prepare
+    SCENARIOS: SCENARIOS, scenariosFor: scenariosFor, prepare: prepare, powi: powi
   };
 })(typeof self !== 'undefined' ? self : globalThis);
 
@@ -1052,6 +1054,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   'use strict';
   var LP = root.LP = root.LP || {};
 
+  var powi = LP.core.powi;
+
   // cash-flow coefficients of 1 EUR placed in a product with rate r (decimal) and term L months
   function unitFlows(conv, r, L) {
     var ev = [], n = Math.floor((L - 1) / 12), f = L - 12 * n, j;
@@ -1059,8 +1063,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       for (j = 1; 12 * j < L; j++) ev.push({ dt: 12 * j, cash: r, tax: r, fin: false });
       ev.push({ dt: L, cash: 1 + r * f / 12, tax: r * f / 12, fin: true });
     } else if (conv === 'compound') {
-      for (j = 1; 12 * j < L; j++) ev.push({ dt: 12 * j, cash: 0, tax: r * Math.pow(1 + r, j - 1), fin: false });
-      var g = Math.pow(1 + r, n);
+      for (j = 1; 12 * j < L; j++) ev.push({ dt: 12 * j, cash: 0, tax: r * powi(1 + r, j - 1), fin: false });
+      var g = powi(1 + r, n);
       ev.push({ dt: L, cash: g * (1 + r * f / 12), tax: g * r * f / 12, fin: true });
     } else {
       ev.push({ dt: L, cash: 1 + r * L / 12, tax: r * L / 12, fin: true });
@@ -1071,7 +1075,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   function unitAccrued(conv, r, e) {
     var n = Math.floor((e - 1) / 12), f = e - 12 * n;
     if (conv === 'annual') return 1 + r * f / 12;
-    if (conv === 'compound') return Math.pow(1 + r, n) * (1 + r * f / 12);
+    if (conv === 'compound') return powi(1 + r, n) * (1 + r * f / 12);
     return 1 + r * e / 12;
   }
 
@@ -1353,6 +1357,12 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   var LP = root.LP = root.LP || {};
   var FTOL = 1e-7, DTOL = 1e-9, PTOL = 1e-7;
 
+  /* Work clock. Every limit in this solver is measured on it, never on the wall clock: it advances with the
+     arithmetic done (tableau operations), so the same inputs stop at the same step on every machine and a slower
+     machine only takes longer to get there. One unit is about one millisecond on a 2020 laptop. */
+  var WORK = 0, WORK_PER_MS = 700000;
+  function now() { return WORK / WORK_PER_MS; }
+
   function Dense(M) {
     var n = M.cols.length, m = M.rows.length, i, j, k;
     var ns = 0, slackOf = new Int32Array(m);
@@ -1398,12 +1408,14 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     }
     this.scale = 1 + scale;
     this.orig = this.tab.map(function (r) { return new Float64Array(r); });
+    WORK += 2 * m * (N + 1);
     this.sinceRef = 0;
     this.refreshBeta();
   }
   // rebuild the tableau from the original rows for the current basis (removes accumulated rounding error)
   Dense.prototype.refactor = function () {
     var N = this.N, m = this.m, i, j, k, T = this.orig.map(function (r) { return new Float64Array(r); });
+    WORK += 2 * m * (N + 1);
     var used = new Uint8Array(m), newBasis = new Int32Array(m), real = [];
     for (i = 0; i < m; i++) { if (this.basis[i] >= N) { used[i] = 1; newBasis[i] = this.basis[i]; } else real.push(this.basis[i]); }
     // artificial of row i must stay with row i
@@ -1412,15 +1424,16 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       var b = real[k], pr = -1, pa = 1e-11;
       for (i = 0; i < m; i++) if (!used[i] && Math.abs(T[i][b]) > pa) { pa = Math.abs(T[i][b]); pr = i; }
       if (pr < 0) return false;
-      var rowp = T[pr], inv = 1 / rowp[b], nz = [];
+      var rowp = T[pr], inv = 1 / rowp[b], nz = [], hit = 0;
       for (j = 0; j <= N; j++) if (rowp[j] !== 0) { rowp[j] *= inv; nz.push(j); }
       rowp[b] = 1;
       for (i = 0; i < m; i++) {
         if (i === pr) continue;
         var row = T[i], f = row[b]; if (f === 0) continue;
         for (j = 0; j < nz.length; j++) row[nz[j]] -= f * rowp[nz[j]];
-        row[b] = 0;
+        row[b] = 0; hit++;
       }
+      WORK += N + 2 * m + hit * nz.length;
       used[pr] = 1; newBasis[pr] = b;
     }
     for (i = 0; i < m; i++) { this.tab[i].set(T[i]); this.basis[i] = newBasis[i]; }
@@ -1437,6 +1450,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       for (j = 0; j < nb.length; j++) s -= row[nb[j]] * vals[j];
       this.beta[i] = s;
     }
+    WORK += N + m * (nb.length + 1);
   };
   Dense.prototype.computeD = function (phase1) {
     var N = this.N, m = this.m, d = this.d, i, j;
@@ -1447,7 +1461,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       if (cb === 0) continue;
       var row = this.tab[i];
       for (j = 0; j < N; j++) d[j] -= cb * row[j];
+      WORK += N;
     }
+    WORK += N + m;
     for (i = 0; i < m; i++) if (this.basis[i] < N) d[this.basis[i]] = 0;
   };
   Dense.prototype.pivot = function (r, q) {
@@ -1455,14 +1471,15 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     var inv = 1 / piv;
     for (j = 0; j <= N; j++) { var v = rowr[j]; if (v !== 0) { v *= inv; if (Math.abs(v) < 1e-13) v = 0; rowr[j] = v; if (v !== 0) nz.push(j); } }
     rowr[q] = 1;
-    var L = nz.length;
+    var L = nz.length, hit = 0;
     for (i = 0; i < m; i++) {
       if (i === r) continue;
       var row = tab[i], f = row[q];
       if (f === 0) continue;
       for (j = 0; j < L; j++) { var cidx = nz[j]; row[cidx] -= f * rowr[cidx]; }
-      row[q] = 0;
+      row[q] = 0; hit++;
     }
+    WORK += N + m + (hit + 1) * L;
     var d = this.d, fd = d[q];
     if (fd !== 0) { for (j = 0; j < L; j++) { var c2 = nz[j]; if (c2 < N) d[c2] -= fd * rowr[c2]; } d[q] = 0; }
     var old = this.basis[r];
@@ -1480,7 +1497,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     var ftol = FTOL;
     while (true) {
       if (++it > maxIt) return 'limit';
-      if ((it & 63) === 0) { if (this.sinceRef > 400 + 2 * m) { if (this.refactor()) this.computeD(phase1); } else this.refreshBeta(); if (deadline && Date.now() > deadline) return 'limit'; }
+      if ((it & 63) === 0) { if (this.sinceRef > 400 + 2 * m) { if (this.refactor()) this.computeD(phase1); } else this.refreshBeta(); if (deadline && now() > deadline) return 'limit'; }
+      WORK += N + 3 * m;
       var q = -1, best = DTOL;
       for (j = 0; j < N; j++) {
         if (this.inBasis[j] || lb[j] === ub[j]) continue;
@@ -1535,8 +1553,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       if (++it > maxIt) return 'limit';
       if ((it & 15) === 0) {
         if (this.sinceRef > 120 + m) { if (this.refactor()) { this.computeD(false); this.cleanD(); } } else this.refreshBeta();
-        if (deadline && Date.now() > deadline) return 'limit';
+        if (deadline && now() > deadline) return 'limit';
       }
+      WORK += 3 * N + 2 * m;
       var r = -1, worst = ftol, dir = 0, target = 0;
       for (i = 0; i < m; i++) {
         var bi = this.basis[i], lo = this.loB(bi), up = this.upB(bi, false), v = beta[i];
@@ -1656,10 +1675,10 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     return { ok: true, x: out, obj: LP.model.objOf(M, out) };
   }
 
-  /* branch and bound; opts: {timeLimit (s), absGap, relGap, stopAtFirst} */
+  /* branch and bound; opts: {timeLimit (s on the work clock), absGap, relGap, stopAtFirst, start (a solution vector to begin with)} */
   function solveMILP(M, opts) {
     opts = opts || {};
-    var t0 = Date.now(), deadline = t0 + 1000 * (opts.timeLimit || 5);
+    var t0 = now(), deadline = t0 + 1000 * (opts.timeLimit || 5);
     var ints = [], j;
     for (j = 0; j < M.cols.length; j++) if (M.cols[j].int) ints.push(j);
     var S = new Dense(M), st = S.solveLP(deadline);
@@ -1696,7 +1715,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       applyPath(path);
       var s = S.dual(deadline);
       if (s === 'limit') { // numerical trouble: rebuild from scratch with the node's bounds
-        if (Date.now() > deadline) return FAIL;
+        if (now() > deadline) return FAIL;
         var M2 = { sense: M.sense, cols: M.cols.map(function (c) { return { name: c.name, lb: c.lb, ub: c.ub, int: c.int, obj: c.obj, semi: c.semi }; }), rows: M.rows, objConst: M.objConst };
         path.forEach(function (p) { M2.cols[p.v].lb = p.lo; M2.cols[p.v].ub = p.up; });
         var r2 = solveLP(M2, { deadline: deadline });
@@ -1734,6 +1753,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       if (om < incMin - 1e-9) { incMin = om; incumbent = p.x; }
       return true;
     }
+    if (opts.start) tryIncumbent(opts.start, 0); // a plan known from elsewhere: the search can only improve on it
     // root heuristic: round all integer columns down, fix them, re-solve the continuous rest
     (function () {
       var path = [];
@@ -1747,12 +1767,12 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       if (r && r !== FAIL) tryIncumbent(r.x, r.objMin);
       applyPath([]);
     })();
-    var limit = true, total = deadline - Date.now();
+    var limit = true, total = deadline - now();
     var rules = opts.rules || [['chronosemi', 'down', 0.5], ['large', 'down', 0.75], ['mostfrac', 'nearest', 1]];
     function dfs(until) { // depth-first search; returns true when the tree was searched completely
       var stack = [{ path: [], bound: rootMin }];
       while (stack.length) {
-        if (Date.now() > until || (opts.maxNodes && nodes >= opts.maxNodes)) return false;
+        if (now() > until || (opts.maxNodes && nodes >= opts.maxNodes)) return false;
         var node = stack.pop();
         if (incumbent && (node.bound >= incMin - 1e-9 || gapOK(node.bound))) continue;
         nodes++;
@@ -1783,17 +1803,24 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       varRule = rules[ri][0]; childRule = rules[ri][1];
       incomplete = false;
       if (dfs(Math.min(deadline, t0 + (deadline - t0) * rules[ri][2])) && !incomplete) { limit = false; break; }
-      if (Date.now() > deadline) break;
+      if (now() > deadline) break;
     }
     var bound = limit ? Math.min(rootMin, incMin) : incMin;
     if (!incumbent) return { status: limit ? 'unknown' : 'infeasible', x: null, nodes: nodes, bound: sgn * bound + M.objConst };
     return { status: limit ? 'feasible' : 'optimal', x: incumbent, obj: LP.model.objOf(M, incumbent), bound: sgn * bound + M.objConst, nodes: nodes, rejected: rejected };
   }
 
-  LP.simplex = { Dense: Dense, solveLP: solveLP, solveMILP: solveMILP, polish: polish };
+  LP.simplex = { Dense: Dense, solveLP: solveLP, solveMILP: solveMILP, polish: polish, now: now, work: function () { return WORK; } };
 })(typeof self !== 'undefined' ? self : globalThis);
 
-/* ===== solve.js: solver backends (HiGHS, javascript-lp-solver, embedded) and the lexicographic optimisation ===== */
+/* ===== solve.js: solver backends (HiGHS, javascript-lp-solver, embedded) and the lexicographic optimisation =====
+   Nothing here is limited by the wall clock, so the same inputs give the same plan on every machine:
+   - LPs go to the first backend that loaded. They have one exact answer.
+   - Integer problems with an objective go to the embedded branch-and-bound, whose limits run on the work clock of
+     simplex.js. HiGHS is not used for them: it hands over its best plan so far only when it stops on a time limit.
+   - Yes/no questions ("is there any integer plan up to month T?") go to HiGHS when the search finds nothing. Without
+     an objective the first plan it finds is optimal, so it stops there and hands it over. Its limit is a number of
+     clock reads (onTickClock), not seconds. */
 (function (root) {
   'use strict';
   var LP = root.LP = root.LP || {};
@@ -1801,9 +1828,22 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 
   var polish = LP.simplex.polish;
 
+  /* HiGHS reads the time through performance.now() and Date.now(). While `fn` runs, both return a counter that goes
+     up by one per call. A time limit then is a fixed number of clock reads, that is a fixed amount of HiGHS's own
+     work, and where it stops no longer depends on the speed of the machine. */
+  function onTickClock(fn) {
+    var perf = root.performance, own = !!perf && Object.prototype.hasOwnProperty.call(perf, 'now'), pn = perf && perf.now, dn = Date.now, n = 0;
+    var tick = function () { return ++n; };
+    try { if (perf) perf.now = tick; Date.now = tick; return fn(); }
+    finally { Date.now = dn; if (perf) { if (own) perf.now = pn; else delete perf.now; } }
+  }
+  var ASK_TICKS = 1500000; // limit of one yes/no question, in clock reads (the large example scenarios need about half of it)
+
   // ---------- backend: HiGHS (WebAssembly) ----------
   function HighsBackend(factory) { this.name = 'HiGHS'; this.nativeSemi = false; this.factory = factory; this.h = null; this.crashes = 0; this.rejected = 0; }
   HighsBackend.prototype.init = function () { var self = this; return this.factory().then(function (h) { self.h = h; return self.selfTest(); }); };
+  // can the clock be replaced in this environment? (if not, yes/no questions are not asked)
+  HighsBackend.prototype.tickable = function () { try { return onTickClock(function () { return (!root.performance || root.performance.now() === 1) && Date.now() > 0 && Date.now() < 4; }); } catch (e) { return false; } };
   HighsBackend.prototype.selfTest = function () {
     var r = this.h.solve('Maximize\n obj: x + 2 y\nSubject To\n c1: x + y <= 4\n c2: x - y >= -2\nBounds\n x <= 3\nGeneral\n y\nEnd', {});
     if (r.Status !== 'Optimal' || Math.abs(r.ObjectiveValue - 7) > 1e-6) throw new Error('HiGHS self-test failed');
@@ -1824,18 +1864,17 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     }
     return { status: 'unknown' };
   };
-  HighsBackend.prototype.milp = function (M, o) {
-    var opt = { presolve: 'on', time_limit: o.timeLimit || 5, mip_rel_gap: o.relGap != null ? o.relGap : 1e-4, mip_abs_gap: o.absGap != null ? o.absGap : 1e-6 };
-    var r = this.raw(M, opt);
+  // yes/no: does the integer model have any solution? ('unknown': the work limit ran out before an answer)
+  HighsBackend.prototype.feasible = function (M, share) {
+    var self = this, r = onTickClock(function () { return self.raw(M, { presolve: 'on', time_limit: ASK_TICKS * (share || 1) / 1000 }); });
     if (r.st === 'Infeasible') return { status: 'infeasible' };
-    if (!r.x || !isFinite(r.obj)) return { status: 'unknown' };
+    if (r.st !== 'Optimal' || !r.x) return { status: 'unknown' };
     var p = polish(M, r.x);
-    if (!p.ok) return { status: 'unknown' };
-    return { status: r.st === 'Optimal' ? 'optimal' : 'feasible', x: p.x, obj: p.obj };
+    return p.ok ? { status: 'feasible', x: p.x } : { status: 'unknown' };
   };
 
   // ---------- backend: javascript-lp-solver ----------
-  function JsLpBackend(lib) { this.name = 'javascript-lp-solver'; this.nativeSemi = false; this.lib = lib; this.rejected = 0; this.used = 0; this.lpOnly = true; this.lpBudget = 2500; }
+  function JsLpBackend(lib) { this.name = 'javascript-lp-solver'; this.nativeSemi = false; this.lib = lib; this.rejected = 0; this.used = 0; this.lpBudget = 2500; }
   JsLpBackend.prototype.init = function () {
     var r = this.lib.Solve({ optimize: 'o', opType: 'max', constraints: { a: { max: 4 }, b: { min: -2 } }, variables: { x: { o: 1, a: 1, b: 1 }, y: { o: 2, a: 1, b: -1 } }, ints: { y: 1 } });
     if (!r.feasible || Math.abs(r.result - 7) > 1e-6) throw new Error('javascript-lp-solver self-test failed');
@@ -1876,24 +1915,17 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     }
     return { status: 'unknown', claim: 'infeasible' }; // an infeasibility claim is never trusted without a second opinion
   };
-  JsLpBackend.prototype.milp = function (M, o) {
-    var r = this.run(M, Math.round(1000 * (o.timeLimit || 3)));
-    if (r.status !== 'optimal') return { status: 'unknown' };
-    var p = polish(M, r.x);
-    if (!p.ok) { this.rejected++; return { status: 'unknown' }; }
-    return { status: 'feasible', x: p.x, obj: p.obj };
-  };
 
   // ---------- backend: embedded simplex + branch-and-bound ----------
   function EmbeddedBackend() { this.name = 'Eingebettet (Simplex + B&B)'; this.nativeSemi = true; }
   EmbeddedBackend.prototype.init = function () { return Promise.resolve(true); };
   EmbeddedBackend.prototype.lp = function (M) {
-    var r = LP.simplex.solveLP(M, { deadline: Date.now() + 30000 });
+    var r = LP.simplex.solveLP(M, { deadline: LP.simplex.now() + 30000 });
     if (r.status === 'optimal' && !MD.checkSolution(M, r.x, 1e-6).ok) return { status: 'unknown' };
     return { status: r.status, x: r.x, obj: r.obj };
   };
   EmbeddedBackend.prototype.milp = function (M, o) {
-    var r = LP.simplex.solveMILP(M, { timeLimit: o.timeLimit || 5, relGap: o.relGap, absGap: o.absGap });
+    var r = LP.simplex.solveMILP(M, { timeLimit: o.timeLimit || 5, relGap: o.relGap, absGap: o.absGap, start: o.start });
     if (!r.x) return { status: r.status };
     var p = polish(M, r.x);
     if (!p.ok) return { status: 'unknown' };
@@ -1901,9 +1933,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   };
 
   // ---------- engine ----------
-  /* `primary` is the first backend of the chain HiGHS -> javascript-lp-solver that could be loaded (or null).
-     The embedded solver is always present: it is the last resort, the second opinion for untrusted answers,
-     and supplies a quick incumbent for every MILP. */
+  /* `primary` is the first backend of the chain HiGHS -> javascript-lp-solver that could be loaded (or null); it
+     solves the LPs. The embedded solver is always present: it is the last resort for LPs, the second opinion for
+     untrusted answers, and the only solver for the integer problems. */
   function Engine(primary, hooks) {
     this.primary = primary || null; this.embedded = new EmbeddedBackend(); this.hooks = hooks || {};
     this.stats = { lp: 0, milp: 0, fallbacks: 0, by: {} }; this.dead = null;
@@ -1924,7 +1956,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       try { r = b.lp(M); } catch (e) { r = { status: 'unknown' }; await this.fail(b, e); }
       if (r.status === 'optimal' && r.needsOptCheck && M.cols.some(function (c) { return c.obj; })) {
         // untrusted optimum: accept only if the embedded solver agrees on the objective value
-        var Me = build(true); this.beat(this.embedded.name, 60000); var e3 = this.embedded.lp(Me);
+        var Me = build(true); this.beat(this.embedded.name, 240000); var e3 = this.embedded.lp(Me);
         if (e3.status === 'optimal' && Math.abs(e3.obj - r.obj) <= 1e-6 * (1 + Math.abs(e3.obj))) { this.note(b.name); r.M = M; return r; }
         b.rejected++; this.stats.fallbacks++; this.note(this.embedded.name); e3.M = Me; r = e3; M = Me;
       } else if (r.status === 'optimal' || r.status === 'infeasible' || r.status === 'unbounded') { this.note(b.name); r.M = M; }
@@ -1932,30 +1964,32 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       if (b.rejected >= 2 && !this.dead) { this.dead = 'unreliable'; if (this.hooks.demoted) this.hooks.demoted(b.name, 'unreliable', ''); }
       if (r) return r;
     }
-    M = build(true); this.beat(this.embedded.name, 60000);
+    M = build(true); this.beat(this.embedded.name, 240000);
     r = this.embedded.lp(M); r.M = M; this.note(this.embedded.name);
     return r;
   };
+  /* Integer problems: embedded branch-and-bound for `timeLimit` seconds on the work clock (capped by `embTime`).
+     The outcome depends on the model alone, not on the machine. 'unknown' means the budget ran out without a plan.
+     o.start = { M, x }: a plan of another model of the same scenario to begin with (columns are matched by name). */
   Engine.prototype.milp = async function (build, o) {
     this.stats.milp++;
     o = o || {};
-    var tl = o.timeLimit || 4, b = this.active(), e, h = null, Me = build(true), Mh;
-    var te = b === this.embedded ? Math.min(tl, o.embTime || 1.2) : Math.min(tl, o.embTime || 0.6);
-    this.beat(this.embedded.name, te * 2000 + 30000);
-    e = this.embedded.milp(Me, { timeLimit: te, relGap: o.relGap, absGap: o.absGap }); e.M = Me;
-    if (b !== this.embedded && b.milp && !b.lpOnly && e.status !== 'optimal' && !(o.embFirst && e.status === 'feasible')) {
-      Mh = build(b.nativeSemi);
-      this.beat(b.name, tl * 2500 + 20000);
-      try { h = b.milp(Mh, o); h.M = Mh; } catch (err) { h = null; await this.fail(b, err); }
-    }
-    var better = function (a, c) { return Me.sense === 'max' ? a.obj > c.obj : a.obj < c.obj; };
-    var eOK = e.status === 'optimal' || e.status === 'feasible', hOK = h && (h.status === 'optimal' || h.status === 'feasible');
-    if (eOK && hOK) { var w = better(h, e) ? h : e; this.note(w === h ? b.name : this.embedded.name); w.status = (h.status === 'optimal' || e.status === 'optimal') ? 'optimal' : 'feasible'; return w; }
-    if (hOK) { this.note(b.name); return h; }
-    if (eOK) { this.note(this.embedded.name); return e; }
-    if (h && h.status === 'infeasible') return { status: 'infeasible', M: Mh };
-    if (!h && e.status === 'infeasible') return { status: 'infeasible', M: Me };
-    return { status: 'unknown', M: Me };
+    var M = build(true), te = Math.min(o.timeLimit || 4, o.embTime || 1.2), start = null;
+    if (o.start) { start = new Float64Array(M.cols.length); for (var j = 0; j < M.cols.length; j++) { var from = o.start.M.byName[M.cols[j].name]; start[j] = from != null ? o.start.x[from] : 0; } }
+    this.beat(this.embedded.name, te * 30000 + 30000); // real-time watchdog only: generous, so that a slow device is not mistaken for a hang
+    var e = this.embedded.milp(M, { timeLimit: te, relGap: o.relGap, absGap: o.absGap, start: start }); e.M = M;
+    if (e.status === 'optimal' || e.status === 'feasible') { this.note(this.embedded.name); return e; }
+    return { status: e.status === 'infeasible' ? 'infeasible' : 'unknown', M: M };
+  };
+  /* Yes/no question: does this integer model have any solution? Only HiGHS answers it (within a fixed amount of work). */
+  Engine.prototype.canAsk = function () { var b = this.active(); if (b.askable == null) b.askable = !!(b.feasible && b.tickable && b.tickable()); return b.askable; };
+  Engine.prototype.ask = async function (build, share) { // share: fraction of the usual work limit
+    var b = this.active(), M = build(b.nativeSemi), r;
+    this.stats.ask = (this.stats.ask || 0) + 1;
+    this.beat(b.name, 300000);
+    try { r = b.feasible(M, share); } catch (e) { r = { status: 'unknown' }; await this.fail(b, e); }
+    if (r.status !== 'unknown') this.note(b.name);
+    r.M = M; return r;
   };
 
   // ---------- lexicographic optimisation ----------
@@ -1987,7 +2021,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     async function lazy(kind, build, o) { // solve, add violated cap rows, repeat
       var r;
       for (var it = 0; it < 25; it++) {
-        r = kind === 'lp' ? await engine.lp(build) : await engine.milp(build, o);
+        r = kind === 'lp' ? await engine.lp(build) : kind === 'ask' ? await engine.ask(build, o) : await engine.milp(build, o);
         if (!capKeys || !r.x || (r.status !== 'optimal' && r.status !== 'feasible')) return r;
         var viol = MD.capViolations(r.M, r.x);
         if (!viol.length) return r;
@@ -1995,7 +2029,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       }
       return { status: 'unknown', M: r.M };
     }
-    var LPs = function (build) { return lazy('lp', build); }, MILPs = function (build, o) { return lazy('milp', build, o); };
+    var LPs = function (build) { return lazy('lp', build); }, MILPs = function (build, o) { return lazy('milp', build, o); }, ASK = function (build, share) { return lazy('ask', build, share); };
+    var isPlan = function (r) { return r.status === 'optimal' || r.status === 'feasible'; }, anyPlan = function (T, cand) { return B(T, { obj: 'none', integer: true, allowBeyond: true, cand: cand }); };
+    var asking = true, firstMiss = null; // the yes/no questions to HiGHS are rationed, see below
 
     // ----- stage 1: maximise T* by binary search on LP feasibility (monotone in T) -----
     var lo = Math.max(-1, Math.min(H - 1, cfg.loHint != null ? cfg.loHint : -1)), hi = H - 1, nLP = 0;
@@ -2031,27 +2067,52 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       progress({ stage: 'milp', T: T, cands: Object.keys(cand).length });
       var mopt = { timeLimit: 2.5 * ts, relGap: 1e-5, absGap: 0.05 };
       var m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: cand }), mopt);
-      if (m2.status !== 'optimal' && m2.status !== 'feasible') {
-        // knife edge: ask directly whether an integer plan reaches month T (minimise the slack of month T)
+      if (!isPlan(m2)) {
+        /* The search found no plan for month T. Unless it proved that there is none, that is not a "no": its budget
+           may simply have run out.
+           With HiGHS: the first such month is given up without further ado, because it usually is out of reach and
+           proving that can take HiGHS long. If the search then fails again one month lower, it is the search that is
+           failing, not the months: now the yes/no question is put directly, first for the month given up, then for
+           this one. A "yes" comes with a plan, and the month given up is taken back.
+           Without HiGHS: the embedded search minimises the shortfall of month T on a slightly wider candidate set. */
         progress({ stage: 'milp2', T: T });
         out.stages.widened = true;
-        var rs = await LPs(B(T, { obj: 'slack', integer: false }));
-        var cs = addNeighbours(cand, T);
-        if (rs.status === 'optimal') { var ss = supportKeys(rs.M, rs.x); for (var k3 in ss) cs[k3] = 1; }
-        var ms = await MILPs(B(T, { obj: 'slack', integer: true, allowBeyond: true, cand: cs }), { timeLimit: 2.5 * ts, relGap: 1e-6, absGap: 1e-4 });
-        if ((ms.status === 'optimal' || ms.status === 'feasible') && ms.obj <= 0.004) {
-          var sup2 = supportKeys(ms.M, ms.x, 0.5), cu = {}, kk;
+        var found = null, exact = false, ex = null;
+        if (engine.canAsk()) {
+          if (m2.status === 'unknown' && asking) {
+            if (!firstMiss) firstMiss = { T: T, cand: cand, wLP: wLP };
+            else {
+              ex = await ASK(anyPlan(firstMiss.T, firstMiss.cand));
+              if (ex.status === 'feasible') { // the month given up is reachable after all: go back to it
+                T = firstMiss.T; cand = firstMiss.cand; wLP = firstMiss.wLP;
+                out.notes = out.notes.filter(function (n) { return n !== 'milp_timeout_at_' + T; });
+                out.stages.conservative = T < out.TLP;
+              } else ex = await ASK(anyPlan(T, cand));
+              asking = false; // two questions per run at most
+              out.stages.asked = true;
+              if (ex.status === 'feasible') { found = ex; exact = true; } else if (ex.status === 'infeasible') m2 = { status: 'infeasible' };
+            }
+          }
+        } else {
+          var rs = await LPs(B(T, { obj: 'slack', integer: false })), cs = addNeighbours(cand, T);
+          if (rs.status === 'optimal') { var ss = supportKeys(rs.M, rs.x); for (var k3 in ss) cs[k3] = 1; }
+          var ms = await MILPs(B(T, { obj: 'slack', integer: true, allowBeyond: true, cand: cs }), { timeLimit: 2.5 * ts, relGap: 1e-6, absGap: 1e-4 });
+          if (isPlan(ms) && ms.obj <= 0.004) found = ms; else if (ms.status === 'optimal') m2 = { status: 'infeasible' };
+        }
+        if (found) { // a plan that reaches month T exists: now look for a good one, starting from it
+          var sup2 = supportKeys(found.M, found.x, 0.5), cu = {}, kk, seed = { M: found.M, x: found.x };
           for (kk in cand) cu[kk] = 1; for (kk in sup2) cu[kk] = 1;
-          m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: cu }), mopt);
-          if (m2.status !== 'optimal' && m2.status !== 'feasible') m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: sup2 }), { timeLimit: 1.5 * ts, relGap: 1e-5, absGap: 0.05 });
-        } else if (ms.status === 'optimal') m2 = { status: 'infeasible' };
+          m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: cu }), Object.assign({ start: seed }, mopt));
+          if (!isPlan(m2)) m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: sup2 }), { timeLimit: 1.5 * ts, relGap: 1e-5, absGap: 0.05, start: seed });
+          if (!isPlan(m2) && exact) m2 = { status: 'feasible', M: found.M, x: found.x, obj: MD.wealthOf(found.M, found.x) }; // the answer itself is a valid plan
+        }
       }
-      if (m2.status === 'optimal' || m2.status === 'feasible') {
+      if (isPlan(m2)) {
         out.wealth = m2.obj; out.stages.milp2 = m2.status; planM = m2.M; planX = m2.x;
         // ----- stage 3 (MILP): tie-break on the support of the incumbent -----
         progress({ stage: 'tie', T: T });
         var sup = supportKeys(m2.M, m2.x, 0.5), tolM = Math.max(0.05, 1e-6 * Math.abs(m2.obj));
-        var m3 = await MILPs(B(T, { obj: 'term', integer: true, allowBeyond: true, cand: sup, wealthMin: m2.obj - tolM }), { timeLimit: 1.5 * ts, embTime: 0.5, embFirst: true, relGap: 1e-4, absGap: 1e-3 });
+        var m3 = await MILPs(B(T, { obj: 'term', integer: true, allowBeyond: true, cand: sup, wealthMin: m2.obj - tolM }), { timeLimit: 1.5 * ts, embTime: 0.5, relGap: 1e-4, absGap: 1e-3 });
         if ((m3.status === 'optimal' || m3.status === 'feasible') && MD.wealthOf(m3.M, m3.x) >= m2.obj - tolM - 1e-6) { planM = m3.M; planX = m3.x; out.stages.milp3 = m3.status; out.wealth = MD.wealthOf(m3.M, m3.x); }
         plan = MD.placementsOf(planM, planX, true);
         break;
@@ -2076,7 +2137,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
         if (out.integer !== false) {
           var c4 = addEvents(P, T + 1, supportKeys(r4.M, r4.x), eventMonths(P, T + 1));
           if (planM) { var sp = supportKeys(planM, planX, 0.5); for (var key in sp) { var pp = key.split('_'); if (+pp[0] + P.products[+pp[1]].term + P.lead <= T + 1) c4[key] = 1; } }
-          var m4 = await MILPs(B(T + 1, { obj: 'slack', integer: true, cand: c4 }), { timeLimit: 1.2 * ts, embTime: 0.5, embFirst: true, relGap: 1e-3, absGap: 0.5 });
+          var m4 = await MILPs(B(T + 1, { obj: 'slack', integer: true, cand: c4 }), { timeLimit: 1.2 * ts, embTime: 0.5, relGap: 1e-3, absGap: 0.5 });
           if (m4.status === 'optimal' || m4.status === 'feasible') { out.slack = Math.max(out.slackLP, m4.obj); out.stages.milp4 = m4.status; }
         }
       }
@@ -2308,7 +2369,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     k_safe: 'Liquidität gesichert bis', k_safeAll: 'Kein Engpass im Planungshorizont', k_none: 'Sofortiger Engpass', k_firstGap: 'Erster Engpass: {m}', k_runway: 'Reichweite',
     k_months: '{n} Monate', k_years: '≈ {y} Jahre', k_gain: 'Gewonnene Monate', k_gainTG: 'ggü. „Alles im Tagesgeld“', k_gainNaive: 'ggü. naivem Plan',
     k_interest: 'Zinsen bis T*', k_interestSub: 'brutto; Steuer {t}', k_locked: 'Gebundenes Kapital', k_lockedSub: 'Ø bis T*; Spitze {p}', k_next: 'Nächste Aktion', k_noAction: 'Keine Anlage nötig',
-    k_bound: 'LP-Schranke: {m} (ganzzahlig nicht erreicht)', k_grid: 'Großes Modell mit Bankgrenze im eingebetteten Solver: Anlagen nur in jedem {n}. Monat geprüft.', k_slack: 'Fehlbetrag im Folgemonat: mind. {a}', k_slackPlan: 'Fehlbetrag im Folgemonat: {a}',
+    k_bound: 'LP-Schranke: {m} (ganzzahlig nicht erreicht)', k_boundOpen: 'LP-Schranke: {m} (im Suchbudget kein ganzzahliger Plan gefunden)', k_fallback: 'Mit dem Ersatz-Solver gerechnet, weil HiGHS nicht geladen wurde. Der Plan kann leicht von Geräten mit HiGHS abweichen.', n_bad: 'Keine gültige Zahl: „{v}“. Beispiele: 3,12 · 1.500 · -300. Der bisherige Wert bleibt bestehen.', k_grid: 'Großes Modell mit Bankgrenze im eingebetteten Solver: Anlagen nur in jedem {n}. Monat geprüft.', k_slack: 'Fehlbetrag im Folgemonat: mind. {a}', k_slackPlan: 'Fehlbetrag im Folgemonat: {a}',
     s_loading: 'Solver lädt …', s_solving: 'Optimiere …', s_ready: 'Solver', s_failed: 'Fehler', s_stage_search: 'Stufe 1: T* suchen (Monat {T})', s_stage_wealthLP: 'Stufe 2: Vermögen (LP)',
     s_stage_tieLP: 'Stufe 3: kurze Laufzeiten (LP)', s_stage_milp: 'MILP: Stückelung und Mindestbeträge', s_stage_milp2: 'MILP: Grenzmonat prüfen', s_stage_tie: 'Stufe 3: Tie-Break (MILP)', s_stage_slack: 'Stufe 4: Schlupf T*+1',
     s_scen: 'Szenarien …', s_main: 'Hauptthread (kein Worker)', s_chain: 'Solver-Kette', s_demoted: '{n} verworfen ({w})', s_verified: 'geprüft',
@@ -2399,7 +2460,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     k_safe: 'Liquidity secured until', k_safeAll: 'No shortfall inside the planning horizon', k_none: 'Immediate shortfall', k_firstGap: 'First shortfall: {m}', k_runway: 'Runway',
     k_months: '{n} months', k_years: '≈ {y} years', k_gain: 'Months gained', k_gainTG: 'vs. all in overnight money', k_gainNaive: 'vs. naive plan',
     k_interest: 'Interest until T*', k_interestSub: 'gross; tax {t}', k_locked: 'Locked capital', k_lockedSub: 'avg. until T*; peak {p}', k_next: 'Next action', k_noAction: 'No placement needed',
-    k_bound: 'LP bound: {m} (not reached with integers)', k_grid: 'Large model with a bank cap in the embedded solver: placements only checked every {n} months.', k_slack: 'Shortfall in the following month: at least {a}', k_slackPlan: 'Shortfall in the following month: {a}',
+    k_bound: 'LP bound: {m} (not reached with integers)', k_boundOpen: 'LP bound: {m} (no integer plan found within the search budget)', k_fallback: 'Computed with the fallback solver because HiGHS did not load. The plan can differ slightly from devices that use HiGHS.', n_bad: 'Not a valid number: “{v}”. Examples: 3,12 or 3.12 · 1.500 · -300. The previous value is kept.', k_grid: 'Large model with a bank cap in the embedded solver: placements only checked every {n} months.', k_slack: 'Shortfall in the following month: at least {a}', k_slackPlan: 'Shortfall in the following month: {a}',
     s_loading: 'Loading solver …', s_solving: 'Optimising …', s_ready: 'Solver', s_failed: 'Error', s_stage_search: 'Stage 1: searching T* (month {T})', s_stage_wealthLP: 'Stage 2: wealth (LP)',
     s_stage_tieLP: 'Stage 3: short terms (LP)', s_stage_milp: 'MILP: denominations and minimum amounts', s_stage_milp2: 'MILP: checking the edge month', s_stage_tie: 'Stage 3: tie-break (MILP)', s_stage_slack: 'Stage 4: slack T*+1',
     s_scen: 'Scenarios …', s_main: 'main thread (no worker)', s_chain: 'Solver chain', s_demoted: '{n} rejected ({w})', s_verified: 'verified',
@@ -2505,7 +2566,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     '<h3>Modell (Monatsraster t = 0 … T)</h3><pre class="lp">Variablen\n  x[t,k] ≥ 0   Anlage in Produkt k zu Beginn von Monat t (Vielfache der Stückelung; 0 oder ≥ Mindestbetrag)\n  s[t]   ≥ 0   Liquidität (Giro + Tagesgeld) am Monatsende\n  q[y]   ≥ 0   steuerpflichtige Zinsen des Jahres y über dem Pauschbetrag\n\nBilanz\n  s[t] = s[t−1]·(1 + r_TG[t]/12) + Zufluss[t] + Σ_k Auszahlung_k(t) − Σ_k x[t,k] − Bedarf[t] − Steuer[t]\n\nAuszahlungen je 1 € in Produkt k (Zins r, Laufzeit L)\n  einfach:        1 + r·L/12 bei Fälligkeit\n  jährlich:       r nach jedem vollen Jahr aufs Tagesgeld, Rest und Kapital bei Fälligkeit\n  thesaurierend:  (1 + r)^n · (1 + r·f/12) bei Fälligkeit (n volle Jahre, f Restmonate)\n\nEngpass-Bedingung (hart), für alle t ≤ T\n  s[t] − R[t] ≥ Sockel[t]        R[t] = Fälligkeiten der letzten λ Monate (Sicherheitsvorlauf)\n\nSteuer (linear)\n  q[y] ≥ Zinsen[y] − Pauschbetrag,   Steuer[Dezember y] = Satz · q[y]\n\nOptional: Σ offene Festgelder je Bank ≤ Grenze\n\nStufe 1:  max T      so dass das Modell für 0 … T zulässig ist (binäre Suche)\nStufe 2:  max  s[T*] + Σ offene Festgelder inkl. aufgelaufener Zinsen\nStufe 3:  min  Σ x[t,k] · L_k     bei Vermögen ≥ Optimum aus Stufe 2\nStufe 4:  min  z     mit  s[T*+1] − R[T*+1] + z ≥ Sockel[T*+1]</pre>',
     '<h3>Vereinfachungen</h3><ul><li>Eine einzige Liquiditätsvariable: Giro und Tagesgeld werden zusammengefasst und mit dem Tagesgeld-Zins verzinst.</li><li>Die {abg} wird einmal jährlich im Dezember abgerechnet; der {spb} gilt je Kalenderjahr.</li><li>Der {lead} gilt für alle Festgeld-Fälligkeiten, auch für Bestand und Wiederanlagen.</li><li>{idx} in Jahresstufen ab Stichtag bzw. Beginn der Zahlung.</li><li>Die Grenze je Bank bezieht sich auf die Festgeld-Nennbeträge.</li><li>Das MILP rechnet auf einer vom LP vorgeschlagenen Kandidatenmenge; die LP-Lösung liefert dazu die obere Schranke.</li><li>Banktage nach Fälligkeit und der wöchentliche Zugriffstermin aus dem Assistenten werden gespeichert, aber noch nicht taggenau gerechnet: Es gilt der Sicherheitsvorlauf in ganzen Monaten, das Tagesgeld gilt als täglich verfügbar und wird monatlich verzinst.</li><li>Eigene Leitzinsschritte verschieben ab dem Folgemonat alle neuen Festgeld-Zinsen und den Tagesgeld-Zins um denselben Betrag. Die erste Entnahme beginnt am ersten Monatsersten ab dem angegebenen Datum; die Inflation zählt ab dann.</li></ul>',
     '<h3>Prüfung</h3><p>Jeder Plan wird vor der Anzeige von einem unabhängigen Monats-Simulator nachgerechnet, dessen Code vom Solver getrennt ist. Besteht der Plan nicht, wird er verworfen und ein Fehler angezeigt. Die {base}-Pläne werden nur simuliert.</p>',
-    '<h3>Solver</h3><p>Die Optimierung läuft in einem Web Worker. Reihenfolge: HiGHS (WebAssembly), dann javascript-lp-solver, dann ein eingebetteter Simplex mit Branch-and-Bound. Antworten ohne Gewähr (z. B. „unzulässig“ von javascript-lp-solver) werden vom eingebetteten Solver gegengeprüft. Für jedes MILP liefert er außerdem eine schnelle erste Lösung; die bessere gewinnt. Das Statusfeld oben zeigt den aktiven Solver.</p>',
+    '<h3>Solver</h3><p>Die Optimierung läuft in einem Web Worker. Die LPs löst HiGHS (WebAssembly), ersatzweise javascript-lp-solver oder ein eingebetteter Simplex. Antworten ohne Gewähr (z. B. „unzulässig“ von javascript-lp-solver) werden vom eingebetteten Solver gegengeprüft. Alle ganzzahligen Probleme löst das eingebettete Branch-and-Bound. Sein Suchbudget wird in Rechenschritten gemessen, nicht in Sekunden: Dieselben Eingaben ergeben deshalb auf jedem Gerät denselben Plan, ein langsameres Gerät braucht nur länger. Das Statusfeld oben zeigt den aktiven Solver.</p>',
     '<h3>Begriffe</h3><p>{cfm} · {leiter} · {bucket} · {lab} · {frist} · {esi} · {pin}</p><p class="small muted">Keine Anlageberatung. Alle Zinssätze sind Beispielwerte.</p>'
   ];
   var METHOD_EN = [
@@ -2515,7 +2576,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     '<h3>Model (monthly grid t = 0 … T)</h3><pre class="lp">Variables\n  x[t,k] ≥ 0   placement into product k at the start of month t (multiples of the denomination; 0 or ≥ minimum)\n  s[t]   ≥ 0   liquidity (current account + overnight) at month end\n  q[y]   ≥ 0   taxable interest of year y above the allowance\n\nBalance\n  s[t] = s[t−1]·(1 + r_TG[t]/12) + inflow[t] + Σ_k payout_k(t) − Σ_k x[t,k] − need[t] − tax[t]\n\nPayouts per €1 in product k (rate r, term L)\n  simple:       1 + r·L/12 at maturity\n  annual:       r after each full year to overnight money, remainder and principal at maturity\n  compounding:  (1 + r)^n · (1 + r·f/12) at maturity (n full years, f remaining months)\n\nShortfall constraint (hard), for all t ≤ T\n  s[t] − R[t] ≥ buffer[t]        R[t] = maturities of the last λ months (safety lead)\n\nTax (linear)\n  q[y] ≥ interest[y] − allowance,   tax[December y] = rate · q[y]\n\nOptional: Σ open deposits per bank ≤ limit\n\nStage 1:  max T      such that the model is feasible for 0 … T (binary search)\nStage 2:  max  s[T*] + Σ open deposits incl. accrued interest\nStage 3:  min  Σ x[t,k] · L_k     subject to wealth ≥ optimum of stage 2\nStage 4:  min  z     with  s[T*+1] − R[T*+1] + z ≥ buffer[T*+1]</pre>',
     '<h3>Simplifications</h3><ul><li>A single liquidity variable: current account and overnight money are pooled and earn the overnight rate.</li><li>The {abg} is settled once a year in December; the {spb} applies per calendar year.</li><li>The {lead} applies to all deposit maturities, including existing holdings and reinvestments.</li><li>{idx} in yearly steps from the start date or the start of a payment.</li><li>The cap per bank refers to deposit principal.</li><li>The MILP works on a candidate set proposed by the LP; the LP solution provides the upper bound.</li><li>Processing days after maturity and the weekly access date from the wizard are stored but not yet calculated to the day: the safety lead in whole months applies, the weekly-access account counts as available daily and earns interest monthly.</li><li>Own rate events shift all new deposit rates and the weekly-access rate by the same amount from the following month. The first withdrawal starts on the first 1st of a month on or after the given date; inflation counts from then.</li></ul>',
     '<h3>Verification</h3><p>Before a plan is shown it is recomputed by an independent month-by-month simulator whose code is separate from the solver. A plan that fails is discarded and an error is shown. The {base} plans are only simulated.</p>',
-    '<h3>Solver</h3><p>The optimisation runs in a Web Worker. Order: HiGHS (WebAssembly), then javascript-lp-solver, then an embedded simplex with branch-and-bound. Untrusted answers (such as “infeasible” from javascript-lp-solver) are cross-checked by the embedded solver. It also supplies a quick first solution for every MILP; the better one wins. The status badge at the top shows the active solver.</p>',
+    '<h3>Solver</h3><p>The optimisation runs in a Web Worker. The LPs are solved by HiGHS (WebAssembly), with javascript-lp-solver and an embedded simplex as fallbacks. Untrusted answers (such as “infeasible” from javascript-lp-solver) are cross-checked by the embedded solver. All integer problems are solved by the embedded branch-and-bound. Its search budget is measured in arithmetic steps, not in seconds, so the same inputs give the same plan on every device; a slower device only takes longer. The status badge at the top shows the active solver.</p>',
     '<h3>Terms</h3><p>{cfm} · {leiter} · {bucket} · {lab} · {frist} · {esi} · {pin}</p><p class="small muted">Not investment advice. All rates are illustrative.</p>'
   ];
   LP.i18n = { de: DE, en: EN, gloss: GLOSS, method: { de: METHOD_DE, en: METHOD_EN } };
@@ -2603,6 +2664,38 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   A.eur2 = function (v) { return NF2.format(v) + ' €'; };
   A.pct = function (v, d) { return new Intl.NumberFormat('de-DE', { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }).format(v) + ' %'; };
   A.n0 = function (v) { return NF0.format(v); };
+  /* Numbers typed by hand. Number fields are plain text fields read by this parser, because <input type="number">
+     follows the language of the browser: one set to English rejects "3,12", one set to German rejects "3.12", and
+     the rejected text arrives here as an empty field. Both decimal signs are accepted everywhere.
+     `eur` marks amounts: there a single sign followed by exactly three digits is a thousands separator ("10.000" and
+     "10,000" are ten thousand); in rates it is the decimal sign ("3,125" is 3.125).
+     Returns a number, null for an empty field, or NaN for text that is not a number. */
+  A.parseNum = function (str, eur) {
+    var s = String(str == null ? '' : str).replace(/[\s\u00a0\u202f'\u2019\u20ac%]/g, '').replace(/[\u2212\u2013]/g, '-');
+    if (s === '') return null;
+    var m = /^([+-]?)([\d.,]+)$/.exec(s);
+    if (!m || !/\d/.test(m[2])) return NaN;
+    var b = m[2], dots = b.split('.').length - 1, commas = b.split(',').length - 1, dec = '', other = '';
+    if (dots && commas) { dec = b.lastIndexOf('.') > b.lastIndexOf(',') ? '.' : ','; other = dec === '.' ? ',' : '.'; }
+    else if (dots + commas === 1) {
+      var parts = b.split(/[.,]/);
+      if (eur && parts[1].length === 3 && parts[0].length >= 1 && parts[0].length <= 3 && +parts[0] !== 0) other = dots ? '.' : ',';
+      else dec = dots ? '.' : ',';
+    } else if (dots + commas > 1) other = dots ? '.' : ',';
+    var whole = dec ? b.slice(0, b.lastIndexOf(dec)) : b, frac = dec ? b.slice(b.lastIndexOf(dec) + 1) : '';
+    if (dec && (frac.indexOf('.') >= 0 || frac.indexOf(',') >= 0 || whole.indexOf(dec) >= 0)) return NaN;
+    if (other && whole.indexOf(other) >= 0) { // thousands groups must be groups: 1 to 3 digits, then threes
+      var g = whole.split(other), i;
+      if (!/^\d{1,3}$/.test(g[0])) return NaN;
+      for (i = 1; i < g.length; i++) if (!/^\d{3}$/.test(g[i])) return NaN;
+      whole = g.join('');
+    }
+    var v = +((whole || '0') + (frac ? '.' + frac : ''));
+    return isFinite(v) ? (m[1] === '-' ? -v : v) : NaN;
+  };
+  // how a number is shown inside a field: the app's number format, so that the echo matches the tiles and tables
+  var NFI = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 6, useGrouping: false }), NFE = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
+  A.numStr = function (v, eur) { return v == null || v === '' || !isFinite(+v) ? '' : (eur ? NFE : NFI).format(+v); };
   function loc() { return A.lang === 'de' ? 'de-DE' : 'en-GB'; }
   A.monthLabel = function (ym, long) { return new Intl.DateTimeFormat(loc(), { month: long ? 'long' : 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(ym.y, ym.m - 1, 1))); };
   A.dateStr = function (d, wd) {
@@ -2611,6 +2704,21 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     return new Intl.DateTimeFormat(loc(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(d.y, d.m - 1, d.d))).replace('.', '') + ' ' + s;
   };
   A.css = function (name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
+  /* A number field. o: { id, value, min, max, eur, ph, label, blank (show the value as empty), empty (value of an empty field) }.
+     A valid entry is echoed back in the app's format, so the reader sees what was understood. Text that is not a
+     number is flagged and never stored: the last valid value stays in force. */
+  A.numField = function (o, set) {
+    var inp = el('input', { type: 'text', id: o.id, inputmode: o.min != null && o.min >= 0 ? 'decimal' : null, autocomplete: 'off', spellcheck: 'false', placeholder: o.ph, 'aria-label': o.label, value: o.blank ? '' : A.numStr(o.value, o.eur) });
+    inp.addEventListener('change', function () {
+      var v = A.parseNum(inp.value, o.eur);
+      if (v !== v) { inp.setAttribute('aria-invalid', 'true'); A.toast(t('n_bad', { v: inp.value.slice(0, 24) }), true); return; }
+      inp.removeAttribute('aria-invalid');
+      if (v == null) v = o.empty;
+      else { if (o.min != null && v < o.min) v = +o.min; if (o.max != null && v > o.max) v = +o.max; inp.value = A.numStr(v, o.eur); }
+      set(v);
+    });
+    return inp;
+  };
   A.toast = function (msg, isErr) { var n = el('div', { class: 'toast' + (isErr ? ' err' : ''), text: msg }); $('toasts').appendChild(n); setTimeout(function () { n.remove(); }, isErr ? 9000 : 4000); };
 
   // ---------- glossary tooltip ----------
@@ -2705,18 +2813,15 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
 
   // ---------- inputs drawer ----------
   var uid = 0;
-  function field(o) { // {label(html), type, value, set(v), min, max, step, options:[[v,label]], id}
+  function field(o) { // {label(html), type (default: a number), value, set(v), min, max, eur (an amount), options:[[v,label]], id}
     var id = o.id || ('f' + (++uid)), inp;
     if (o.type === 'select') {
       inp = el('select', { id: id });
       o.options.forEach(function (op) { inp.appendChild(el('option', { value: op[0], text: op[1] })); });
       inp.value = String(o.value);
-    } else inp = el('input', { id: id, type: o.type || 'number', value: o.value == null ? '' : o.value, min: o.min, max: o.max, step: o.step || 'any', inputmode: (o.type || 'number') === 'number' ? 'decimal' : null });
-    inp.addEventListener('change', function () {
-      var v = inp.value;
-      if ((o.type || 'number') === 'number') { v = v === '' ? (o.empty != null ? o.empty : 0) : +v; if (!isFinite(v)) v = 0; if (o.min != null && v < o.min) v = +o.min; if (o.max != null && v > o.max) v = +o.max; }
-      o.set(v);
-    });
+    } else if (!o.type || o.type === 'number') inp = A.numField({ id: id, value: o.value, min: o.min, max: o.max, eur: o.eur, empty: o.empty != null ? o.empty : 0 }, o.set);
+    else inp = el('input', { id: id, type: o.type, value: o.value == null ? '' : o.value });
+    if (o.type && o.type !== 'number') inp.addEventListener('change', function () { o.set(inp.value); });
     return el('label', { class: 'f', for: id }, el('span', { html: o.label }), inp);
   }
   function check(label, value, set, id) {
@@ -2746,15 +2851,15 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     body.appendChild(group('base', t('grp_base'), isOpen('base', true), [
       field({ id: 'in-start', label: t('f_start'), type: 'date', value: s.startDate, set: function (v) { if (C.parseISO(v)) touch(function (st) { st.startDate = v; }); } }),
       el('div', { class: 'f' }, hz, slider),
-      el('div', { class: 'f2' }, field({ id: 'in-giro', label: A.term('giro', t('f_giro')), value: s.giro, min: 0, set: function (v) { touch(function (st) { st.giro = v; }); } }),
-        field({ id: 'in-tg', label: A.term('tg', t('f_tg')), value: s.tg, min: 0, set: function (v) { touch(function (st) { st.tg = v; }); } })),
+      el('div', { class: 'f2' }, field({ id: 'in-giro', label: A.term('giro', t('f_giro')), value: s.giro, min: 0, eur: true, set: function (v) { touch(function (st) { st.giro = v; }); } }),
+        field({ id: 'in-tg', label: A.term('tg', t('f_tg')), value: s.tg, min: 0, eur: true, set: function (v) { touch(function (st) { st.tg = v; }); } })),
       el('div', { class: 'f2' }, field({ id: 'in-tgrate', label: t('f_tgRate'), value: s.tgRate, min: 0, step: 0.05, set: function (v) { touch(function (st) { st.tgRate = v; }); } }),
         field({ id: 'in-tgbank', label: t('f_tgBank'), type: 'text', value: s.tgBank || '', set: function (v) { touch(function (st) { st.tgBank = v; }); } }))
     ]));
     body.appendChild(group('need', t('grp_need'), isOpen('need', true), [
-      el('div', { class: 'f2' }, field({ id: 'in-need', label: t('f_need'), value: s.need, min: 0, set: function (v) { touch(function (st) { st.need = v; }); } }),
+      el('div', { class: 'f2' }, field({ id: 'in-need', label: t('f_need'), value: s.need, min: 0, eur: true, set: function (v) { touch(function (st) { st.need = v; }); } }),
         field({ id: 'in-needidx', label: A.term('idx', t('f_needIdx')), value: s.needIdx, step: 0.1, set: function (v) { touch(function (st) { st.needIdx = v; }); } })),
-      el('div', { class: 'f2' }, field({ id: 'in-buffer', label: A.term('sockel', t('f_buffer')), value: s.buffer, min: 0, set: function (v) { touch(function (st) { st.buffer = v; }); } }),
+      el('div', { class: 'f2' }, field({ id: 'in-buffer', label: A.term('sockel', t('f_buffer')), value: s.buffer, min: 0, eur: true, set: function (v) { touch(function (st) { st.buffer = v; }); } }),
         field({ id: 'in-denom', label: A.term('denom', t('f_denom')), type: 'select', value: s.denom, options: [[50, '50'], [100, '100'], [500, '500'], [1000, '1.000']], set: function (v) { touch(function (st) { st.denom = +v; }); } })),
       field({ id: 'in-needstart', label: t('f_needStart'), type: 'date', value: s.needStart || '', set: function (v) { touch(function (st) { st.needStart = v; }); } }),
       field({ id: 'in-lead', label: A.term('lead', t('f_lead')), type: 'select', value: s.lead, options: [[0, t('f_lead0')], [1, t('f_lead1')], [3, t('f_lead3')]], set: function (v) { touch(function (st) { st.lead = +v; }); } })
@@ -2770,8 +2875,8 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
         el('div', { class: 'f3' }, field({ id: pid + 'term', label: t('f_term'), value: p.term, min: 1, max: 240, step: 1, set: function (v) { touch(function () { p.term = Math.round(v); }, true); } }),
           field({ id: pid + 'rate', label: t('f_rate'), value: p.rate, min: 0, step: 0.05, set: function (v) { touch(function () { p.rate = v; }); } }),
           field({ id: pid + 'bank', label: t('f_bank'), type: 'text', value: p.bank || '', set: function (v) { touch(function () { p.bank = v; }, true); } })),
-        el('div', { class: 'f3' }, field({ id: pid + 'min', label: t('f_min'), value: p.min, min: 0, set: function (v) { touch(function () { p.min = v; }); } }),
-          field({ id: pid + 'max', label: t('f_max'), value: p.max, min: 0, set: function (v) { touch(function () { p.max = v; }); } }),
+        el('div', { class: 'f3' }, field({ id: pid + 'min', label: t('f_min'), value: p.min, min: 0, eur: true, set: function (v) { touch(function () { p.min = v; }); } }),
+          field({ id: pid + 'max', label: t('f_max'), value: p.max, min: 0, eur: true, set: function (v) { touch(function () { p.max = v; }); } }),
           field({ id: pid + 'conv', label: A.term('conv', t('f_conv')), type: 'select', value: p.conv || 'simple', options: convOpts, set: function (v) { touch(function () { p.conv = v; }); } })));
     });
     body.appendChild(group('prod', t('grp_prod'), isOpen('prod', false), [
@@ -2785,7 +2890,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
         el('div', { class: 'rowcard-head' }, el('span', { text: x.label || t('newExist') }), el('span', null, dup('existing', i), el('button', { class: 'btn sm ghost', type: 'button', text: t('remove'), onclick: function () { touch(function (st) { st.existing.splice(i, 1); }, true); } }))),
         el('div', { class: 'f2' }, field({ id: xid + 'label', label: t('f_label'), type: 'text', value: x.label || '', set: function (v) { touch(function () { x.label = v; }, true); } }),
           field({ id: xid + 'type', label: t('f_type'), type: 'select', value: x.type || 'festgeld', options: [['festgeld', t('ty_festgeld')], ['spar', t('ty_spar')]], set: function (v) { touch(function () { x.type = v; }); } })),
-        el('div', { class: 'f2' }, field({ id: xid + 'amount', label: t('f_amount'), value: x.amount, min: 0, set: function (v) { touch(function () { x.amount = v; }); } }),
+        el('div', { class: 'f2' }, field({ id: xid + 'amount', label: t('f_amount'), value: x.amount, min: 0, eur: true, set: function (v) { touch(function () { x.amount = v; }); } }),
           field({ id: xid + 'rate', label: t('f_rate'), value: x.rate, min: 0, step: 0.05, set: function (v) { touch(function () { x.rate = v; }); } })),
         el('div', { class: 'f2' }, field({ id: xid + 'mat', label: t('f_maturity'), type: 'date', value: x.maturity, set: function (v) { if (C.parseISO(v)) touch(function () { x.maturity = v; }); } }),
           field({ id: xid + 'bank', label: t('f_bank'), type: 'text', value: x.bank || '', set: function (v) { touch(function () { x.bank = v; }); } })));
@@ -2798,7 +2903,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       return el('div', { class: 'rowcard' },
         el('div', { class: 'rowcard-head' }, el('span', { text: r.name || t('newStream') }), el('span', null, dup('streams', i), el('button', { class: 'btn sm ghost', type: 'button', text: t('remove'), onclick: function () { touch(function (st) { st.streams.splice(i, 1); }, true); } }))),
         el('div', { class: 'f2' }, field({ id: rid + 'name', label: t('f_name'), type: 'text', value: r.name || '', set: function (v) { touch(function () { r.name = v; }, true); } }),
-          field({ id: rid + 'amt', label: t('f_amountPM'), value: r.amount, set: function (v) { touch(function () { r.amount = v; }); } })),
+          field({ id: rid + 'amt', label: t('f_amountPM'), value: r.amount, eur: true, set: function (v) { touch(function () { r.amount = v; }); } })),
         el('div', { class: 'f2' }, field({ id: rid + 'freq', label: t('f_freq'), type: 'select', value: r.freq || 'm', options: [['m', t('fr_m')], ['q', t('fr_q')], ['y', t('fr_y')]], set: function (v) { touch(function () { r.freq = v; }); } }),
           field({ id: rid + 'idx', label: t('f_idx'), value: r.idx || 0, step: 0.1, set: function (v) { touch(function () { r.idx = v; }); } })),
         el('div', { class: 'f2' }, field({ id: rid + 'from', label: t('f_from'), type: 'date', value: r.start || '', set: function (v) { touch(function () { r.start = v; }); } }),
@@ -2813,7 +2918,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
         el('div', { class: 'rowcard-head' }, el('span', { text: o.label || t('newOne') }), el('span', null, dup('oneoffs', i), el('button', { class: 'btn sm ghost', type: 'button', text: t('remove'), onclick: function () { touch(function (st) { st.oneoffs.splice(i, 1); }, true); } }))),
         field({ id: oid + 'label', label: t('f_label'), type: 'text', value: o.label || '', set: function (v) { touch(function () { o.label = v; }, true); } }),
         el('div', { class: 'f2' }, field({ id: oid + 'date', label: t('f_date'), type: 'date', value: o.date, set: function (v) { if (C.parseISO(v)) touch(function () { o.date = v; }); } }),
-          field({ id: oid + 'amt', label: t('f_amountPM'), value: o.amount, set: function (v) { touch(function () { o.amount = v; }); } })));
+          field({ id: oid + 'amt', label: t('f_amountPM'), value: o.amount, eur: true, set: function (v) { touch(function () { o.amount = v; }); } })));
     });
     body.appendChild(group('one', t('grp_one'), isOpen('one', false), [el('div', { class: 'rows' }, ooRows),
       el('button', { class: 'btn sm', type: 'button', text: t('add'), onclick: function () { touch(function (st) { var d = C.parseISO(st.startDate); st.oneoffs.push({ id: 'o' + Date.now().toString(36), date: C.iso(d.y + 2, d.m, 15), amount: -5000, label: t('newOne') }); }, true); } })]));
@@ -2825,7 +2930,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
         el('div', { class: 'rowcard-head' }, el('span', { text: t('newPin') + ' ' + (i + 1) }), el('span', null, dup('pins', i), el('button', { class: 'btn sm ghost', type: 'button', text: t('remove'), onclick: function () { touch(function (st) { st.pins.splice(i, 1); }, true); } }))),
         field({ id: nid + 'prod', label: t('f_prod'), type: 'select', value: pn.productId, options: prodOpts, set: function (v) { touch(function () { pn.productId = v; }); } }),
         field({ id: nid + 'month', label: t('f_month'), type: 'month', value: String(pn.month || '').slice(0, 7), set: function (v) { if (C.parseISO(v)) touch(function () { pn.month = v; }); } }),
-        field({ id: nid + 'amt', label: t('f_amount'), value: pn.amount, min: 0, set: function (v) { touch(function () { pn.amount = v; }); } }));
+        field({ id: nid + 'amt', label: t('f_amount'), value: pn.amount, min: 0, eur: true, set: function (v) { touch(function () { pn.amount = v; }); } }));
     });
     body.appendChild(group('pins', A.term('pin', t('grp_pins')), isOpen('pins', false), [pinRows.length ? el('div', { class: 'rows' }, pinRows) : el('p', { class: 'small muted', text: t('pinNone') }),
       el('button', { class: 'btn sm', type: 'button', text: t('add'), disabled: !s.products.length, onclick: function () { touch(function (st) { var d = C.parseISO(st.startDate), m0 = C.ymOf(C.ymIdx(d.y, d.m) + (d.d === 1 ? 0 : 1)); st.pins.push({ id: 'n' + Date.now().toString(36), month: m0.y + '-' + C.pad(m0.m), productId: st.products[0].id, amount: Math.max(5000, +st.products[0].min || 0) }); }, true); } })]));
@@ -2835,7 +2940,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       el('div', { class: 'f2' }, field({ id: 'in-church', label: t('f_church'), type: 'select', value: s.tax.church, options: [[0, t('ch0')], [8, t('ch8')], [9, t('ch9')]], set: function (v) { touch(function (st) { st.tax.church = +v; }); } }),
         field({ id: 'in-allow', label: A.term('spb', t('f_allow')), type: 'select', value: s.tax.allowance, options: [[1000, '1.000'], [2000, '2.000'], [0, '0']], set: function (v) { touch(function (st) { st.tax.allowance = +v; }); } })),
       check(A.term('esi', t('f_capOn')), s.bankCap.on, function (v) { touch(function (st) { st.bankCap.on = v; }); }, 'in-capon'),
-      field({ id: 'in-cap', label: t('f_cap'), value: s.bankCap.cap, min: 0, set: function (v) { touch(function (st) { st.bankCap.cap = v; }); } })
+      field({ id: 'in-cap', label: t('f_cap'), value: s.bankCap.cap, min: 0, eur: true, set: function (v) { touch(function (st) { st.bankCap.cap = v; }); } })
     ]));
     body.appendChild(group('solver', t('grp_solver'), isOpen('solver', false), [
       field({ id: 'in-naive', label: A.term('base', t('f_naive')), value: s.naiveReserve, min: 0, max: 24, step: 1, set: function (v) { touch(function (st) { st.naiveReserve = v; }); } }),
@@ -3060,6 +3165,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   function compact(v) { return Math.abs(v) >= 10000 ? A.n0(v / 1000) + ' Tsd.' : A.n0(v); }
   function sw(color) { return '<span style="display:inline-block;width:12px;height:0;border-top:2px solid ' + color + ';border-radius:1px;margin-right:7px;vertical-align:middle"></span>'; } // tooltip key: a short stroke, not a box
 
+  function solverNote(res) { return res.solver && res.solver !== 'HiGHS' ? '<br>' + esc(t('k_fallback')) : ''; } // the LP solver decides which plan is found
   function gridNote(res) { var g = 0; (res.notes || []).forEach(function (n) { if (n.indexOf('grid_') === 0) g = +n.slice(5); }); return g > 1 ? '<br>' + esc(t('k_grid', { n: g })) : ''; }
   // ---------- KPI strip ----------
   function renderKpis() {
@@ -3080,12 +3186,13 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     }
     var P = v.P, T = v.sim.Tstar, H = P.H, res = v.res, sub;
     if (T < 0) tile('hero bad', A.term('tstar', t('k_safe')), esc(t('k_none')), '');
-    else if (T >= H - 1) tile('hero', A.term('tstar', t('k_safe')), '≥ ' + esc(mLabel(P, T, true)), esc(t('k_safeAll')) + gridNote(res));
+    else if (T >= H - 1) tile('hero', A.term('tstar', t('k_safe')), '≥ ' + esc(mLabel(P, T, true)), esc(t('k_safeAll')) + gridNote(res) + solverNote(res));
     else {
       var slack = res.slack != null && res.slack > 0.005 ? res.slack : (res.slackLP != null && res.slackLP > 0.005 ? res.slackLP : null);
       sub = esc(t('k_firstGap', { m: mLabel(P, T + 1, true) })) + ' · ' + A.term('slack', slack != null ? t('k_slack', { a: A.eur(slack) }) : t('k_slackPlan', { a: A.eur(v.sim.shortfall) }));
-      if (res.TLP > T) sub += '<br>' + A.term('lprel', t('k_bound', { m: mLabel(P, res.TLP) }));
-      sub += gridNote(res);
+      var open = (res.notes || []).some(function (n) { return n.indexOf('milp_timeout_at_') === 0; }); // the search budget ran out at some month: nothing was proven
+      if (res.TLP > T) sub += '<br>' + A.term('lprel', t(open ? 'k_boundOpen' : 'k_bound', { m: mLabel(P, res.TLP) }));
+      sub += gridNote(res) + solverNote(res);
       tile('hero', A.term('tstar', t('k_safe')), esc(mLabel(P, T, true)), sub);
     }
     tile('', esc(t('k_runway')), esc(t('k_months', { n: T + 1 })), esc(t('k_years', { y: new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format((T + 1) / 12) })));
@@ -3518,8 +3625,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
     var body = el('tbody');
     function cell(key, fieldName, val, ph) {
       var ov = (st.overrides[key] || {})[fieldName], has = ov != null && ov !== '' && isFinite(+ov) && (fieldName === 'minLiq' || +ov !== 0);
-      var inp = el('input', { type: 'number', id: 'ov-' + key + '-' + fieldName, min: 0, step: 'any', inputmode: 'decimal', value: has ? ov : '', placeholder: ph, 'aria-label': t(fieldName === 'extraNeed' ? 'g_xNeed' : fieldName === 'extraIn' ? 'g_xIn' : 'g_min') + ' ' + key,
-        onchange: function () { var val2 = inp.value === '' ? null : Math.max(0, +inp.value); setOv(key, fieldName, val2); } });
+      var inp = A.numField({ id: 'ov-' + key + '-' + fieldName, min: 0, eur: true, value: has ? ov : null, ph: ph, empty: null, label: t(fieldName === 'extraNeed' ? 'g_xNeed' : fieldName === 'extraIn' ? 'g_xIn' : 'g_min') + ' ' + key }, function (v) { setOv(key, fieldName, v); });
       var rs = el('button', { type: 'button', class: 'rs', title: t('reset'), 'aria-label': t('reset'), text: '×', onclick: function () { setOv(key, fieldName, null); } });
       return el('td', { class: 'in' + (has ? ' ov' : '') }, inp, rs);
     }
@@ -4066,11 +4172,9 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   }
 
   // ---------- controls ----------
-  function numIn(val, set, o) {
+  function numIn(val, set, o) { // o: { id, min, max, eur (an amount), ph, keepZero }
     o = o || {};
-    var inp = el('input', { type: 'number', id: o.id || ('w' + (++uid)), step: o.step || 'any', min: o.min, max: o.max, inputmode: 'decimal', placeholder: o.ph, value: (val == null || val === '' || (!o.keepZero && +val === 0)) ? '' : val });
-    inp.addEventListener('change', function () { var v = inp.value === '' ? 0 : +inp.value; if (!isFinite(v)) v = 0; if (o.min != null && v < o.min) v = +o.min; if (o.max != null && v > o.max) v = +o.max; set(v); });
-    return inp;
+    return A.numField({ id: o.id || ('w' + (++uid)), value: val, min: o.min, max: o.max, eur: o.eur, ph: o.ph, empty: 0, blank: val == null || val === '' || (!o.keepZero && +val === 0) }, set);
   }
   function txtIn(val, set, o) { o = o || {}; var inp = el('input', { type: o.type || 'text', id: o.id || ('w' + (++uid)), placeholder: o.ph, value: val || '' }); inp.addEventListener('change', function () { set(inp.value); }); return inp; }
   function selIn(val, opts, set, o) { o = o || {}; var s = el('select', { id: o.id || ('w' + (++uid)) }); opts.forEach(function (op) { s.appendChild(el('option', { value: op[0], text: op[1] })); }); s.value = String(val); s.addEventListener('change', function () { set(s.value); }); return s; }
@@ -4103,16 +4207,16 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
   var CH = [
     function (s, b) { // 1 starting liquidity
       b.appendChild(q('', t('q00'), txtIn(s.startDate, function (v) { if (C.parseISO(v)) change(function (st) { st.startDate = v; }); }, { type: 'date', id: 'wq00' })));
-      b.appendChild(q('01', t('q01'), numIn(s.giro, function (v) { change(function (st) { st.giro = v; }); }, { id: 'wq01', min: 0, ph: '2.500' }), t('q01_tip')));
+      b.appendChild(q('01', t('q01'), numIn(s.giro, function (v) { change(function (st) { st.giro = v; }); }, { id: 'wq01', min: 0, eur: true, ph: '2.500' }), t('q01_tip')));
       var on = !!(s.weekly && s.weekly.on);
       b.appendChild(q('01a', t('q01a'), yesNo(on, setWeekly, 'wq01a')));
       if (on) {
-        b.appendChild(q('01b', t('q01b'), numIn(s.tg, function (v) { change(function (st) { st.tg = v; }); }, { id: 'wq01b', min: 0, ph: '10.000' }), null, true));
+        b.appendChild(q('01b', t('q01b'), numIn(s.tg, function (v) { change(function (st) { st.tg = v; }); }, { id: 'wq01b', min: 0, eur: true, ph: '10.000' }), null, true));
         b.appendChild(q('01c', t('q01c'), numIn(s.tgRate, function (v) { change(function (st) { st.tgRate = v; }); }, { id: 'wq01c', min: 0, step: 0.05, ph: '2,5' }), null, true));
         b.appendChild(q('01d', t('q01d'), txtIn(s.weekly.nextDate, function (v) { change(function (st) { st.weekly.nextDate = v; }); }, { type: 'date', id: 'wq01d' }), t('q01d_tip'), true));
       }
       b.appendChild(q('02', t('q02'), txtIn(s.needStart, function (v) { change(function (st) { st.needStart = v; }); }, { type: 'date', id: 'wq02' }), t('q02_tip')));
-      b.appendChild(q('03', t('q03'), numIn(s.need, function (v) { change(function (st) { st.need = v; }); }, { id: 'wq03', min: 0, ph: '1.500' })));
+      b.appendChild(q('03', t('q03'), numIn(s.need, function (v) { change(function (st) { st.need = v; }); }, { id: 'wq03', min: 0, eur: true, ph: '1.500' })));
     },
     function (s, b) { // 2 economic baseline
       b.appendChild(q('04', t('q04'), numIn(s.needIdx, function (v) { change(function (st) { st.needIdx = v; }); }, { id: 'wq04', step: 0.1, ph: '3,0', keepZero: true }), t('q04_tip')));
@@ -4133,7 +4237,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       if (on) b.appendChild(rows('deposits', function (r, i) {
         return [q('', t('q08n'), txtIn(r.label, function (v) { change(function () { r.label = v; if (!r.bank) r.bank = v; }, true); }, { id: 'wq08n' + i, ph: 'Bank X' })),
           q('08a', t('q08a'), txtIn(r.maturity, function (v) { change(function () { r.maturity = v; }); }, { type: 'date', id: 'wq08a' + i })),
-          q('08b', t('q08b'), numIn(r.amount, function (v) { change(function () { r.amount = v; }); }, { id: 'wq08b' + i, min: 0, ph: '10.000' })),
+          q('08b', t('q08b'), numIn(r.amount, function (v) { change(function () { r.amount = v; }); }, { id: 'wq08b' + i, min: 0, eur: true, ph: '10.000' })),
           q('08c', t('q08c'), numIn(r.procDays, function (v) { change(function () { r.procDays = Math.round(v); }); }, { id: 'wq08c' + i, min: 0, step: 1, ph: '3' }), t('w_procTip'))];
       }, function (r) { return r.label; }, t('w_addDep')));
     },
@@ -4144,7 +4248,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
         return [q('', t('q09n'), txtIn(r.name, function (v) { change(function () { r.name = v; }, true); }, { id: 'wq09n' + i, ph: 'Miete' })),
           q('', t('q09t'), selIn(r.kind || 'other', [['income', t('k_income')], ['rent', t('k_rent')], ['other', t('k_other')]], function (v) { change(function () { r.kind = v; }); }, { id: 'wq09t' + i })),
           q('09a', t('q09a'), txtIn(r.start, function (v) { change(function () { r.start = v; }); }, { type: 'date', id: 'wq09a' + i })),
-          q('09b', t('q09b'), numIn(r.amount, function (v) { change(function () { r.amount = v; }); }, { id: 'wq09b' + i, ph: '200 / -300' })),
+          q('09b', t('q09b'), numIn(r.amount, function (v) { change(function () { r.amount = v; }); }, { id: 'wq09b' + i, eur: true, ph: '200 / -300' })),
           q('09c', t('q09c'), selIn(r.freq || 'm', [['m', t('fr_m')], ['q', t('fr_q')], ['y', t('fr_y')]], function (v) { change(function () { r.freq = v; }); }, { id: 'wq09c' + i })),
           q('09d', t('q09d'), txtIn(r.end, function (v) { change(function () { r.end = v; }); }, { type: 'date', id: 'wq09d' + i }))];
       }, function (r) { return r.name; }, t('w_addFlow')));
@@ -4154,7 +4258,7 @@ pre.lp { background: var(--surface-2); border-radius: var(--r); padding: 12px 14
       b.appendChild(q('10', t('q10'), yesNo(on, function (v) { setSec('offers', v); }, 'wq10')));
       if (on) b.appendChild(rows('offers', function (r, i) {
         return [q('', t('q10n'), txtIn(r.bank, function (v) { change(function () { r.bank = v; }, true); }, { id: 'wq10n' + i, ph: 'Bank Y 12M' })),
-          q('10a', t('q10a'), numIn(r.min, function (v) { change(function () { r.min = v; }); }, { id: 'wq10a' + i, min: 0, ph: '1.000' })),
+          q('10a', t('q10a'), numIn(r.min, function (v) { change(function () { r.min = v; }); }, { id: 'wq10a' + i, min: 0, eur: true, ph: '1.000' })),
           q('10b', t('q10b'), numIn(r.term, function (v) { change(function () { r.term = Math.round(v); }, true); }, { id: 'wq10b' + i, min: 1, max: 240, step: 1, ph: '12' })),
           q('10c', t('q10c'), numIn(r.rate, function (v) { change(function () { r.rate = v; }); }, { id: 'wq10c' + i, min: 0, step: 0.05, ph: '3,35' })),
           q('10d', t('q10d'), numIn(r.procDays, function (v) { change(function () { r.procDays = Math.round(v); }); }, { id: 'wq10d' + i, min: 0, step: 1, ph: '2' }), i === 0 ? t('w_procTip') : null)];

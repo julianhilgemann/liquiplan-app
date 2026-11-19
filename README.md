@@ -87,6 +87,7 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 - **Examples**: *Example G* (the reference case from the original specification), *Retirement with rental income* (20 years, pension from 2028, large one-off repairs, tax on) and *Rate trap* (example G plus a tempting 10-year deposit at 5.9 % that a naive rate chaser falls for).
 - **Rate scenarios**: own central-bank steps, current rates held constant, −1 pp from 2028, rising rates (+0.5 pp a year up to +1.5 pp), inverted curve.
 - **Calculation is manual**: nothing is computed until you press **Optimise**, not even when the page opens or an example is loaded. A card then confirms that the data is loaded and points to the button. After an input change the old results are greyed out until the next run. A progress dialog then ticks off each optimisation stage; *Cancel* stops the run and keeps the previous results on screen.
+- **Numbers**: every number field accepts a decimal comma or a decimal point, whatever language the browser is set to (`3,12` and `3.12` are the same rate). In amounts, `10.000` and `10,000` both mean ten thousand. The field echoes back what it understood, and text that is not a number is flagged and ignored instead of being read as 0.
 - **Export / import**: HTML with your inputs embedded, an Excel workbook with live formulas, the full state as JSON, and the rate table as JSON (for quick updates of offers).
 
 **Where your data lives.** Inputs are stored only in your browser's `localStorage`. Nothing is sent to a server; the only network requests fetch the libraries. The published file itself contains no data and opens on the blank slate. *Download HTML* writes a copy of the app with your current inputs embedded, so treat that file like a private document.
@@ -118,21 +119,21 @@ The code and UI use German finance terms. The English UI translates them; here t
 
 This section follows the data from your inputs to the plan on screen. Each heading names the function that does the work; the links jump to the line in the HTML file.
 
-### 1. Inputs become a monthly timeline: [`prepare()`](Liquiditaetsplaner_20261114.html#L794)
+### 1. Inputs become a monthly timeline: [`prepare()`](Liquiditaetsplaner_20261114.html#L809)
 
 Everything runs on a **monthly grid** `t = 0 … H−1`. Month 0 is the first month that starts on or after the start date. `prepare(state)` turns the input state into a plain problem object `P`:
 
 - `P.need[t]`: the monthly need, starting with the first 1st of a month on or after *first withdrawal*, raised by the inflation rate in yearly steps.
 - `P.inflow[t]` and `P.outflow[t]`: recurring streams (monthly, quarterly, yearly, each with its own indexation), one-off events and the per-month overrides from the monthly grid.
 - `P.floor[t]`: the buffer, or a per-month minimum liquidity from the grid.
-- `P.rTG[t]` and `P.products[k].rate[t]`: the overnight rate and each product's rate **for a placement made in month t**, from [`scenarioRate()`](Liquiditaetsplaner_20261114.html#L782). User-defined central-bank steps shift all rates from the first month that begins on or after the step's date.
+- `P.rTG[t]` and `P.products[k].rate[t]`: the overnight rate and each product's rate **for a placement made in month t**, from [`scenarioRate()`](Liquiditaetsplaner_20261114.html#L794). User-defined central-bank steps shift all rates from the first month that begins on or after the step's date.
 - `P.tax.rate`: the effective flat-rate tax, `kest = 0.25 / (1 + 0.25·k)` and `rate = kest · (1 + 0.055 + k)` for a church-tax rate `k`.
 - `P.products[k].minU / maxU`: minimum and maximum amount in denomination units.
 - `P.existing` (holdings with their maturity month) and `P.pins` (fixed placements).
 
 `prepare` is the only code shared between the solver and the simulator. It contains **no** payout, tax or balance logic, so the two sides can check each other.
 
-### 2. The model: [`buildModel(P, T, opt)`](Liquiditaetsplaner_20261114.html#L1075)
+### 2. The model: [`buildModel(P, T, opt)`](Liquiditaetsplaner_20261114.html#L1092)
 
 For a candidate horizon `T` the app builds a mixed-integer linear programme (MILP) with these columns:
 
@@ -144,7 +145,7 @@ q[y]   ≥ 0            taxable interest of calendar year y above the allowance
 z      ≥ 0            slack of month T (only for stage 4)
 ```
 
-**Balance row for every month** (`b<t>`, see [the balance rows](Liquiditaetsplaner_20261114.html#L1112)):
+**Balance row for every month** (`b<t>`, see [the balance rows](Liquiditaetsplaner_20261114.html#L1129)):
 
 ```text
 s[t] = s[t−1]·(1 + rTG[t]/12) + net[t] + payouts[t] − placements[t] − tax[t]
@@ -152,7 +153,7 @@ s[t] = s[t−1]·(1 + rTG[t]/12) + net[t] + payouts[t] − placements[t] − tax
 
 Liquidity `s` is not a column. The model works with `u[t] = s[t] − R[t]`, where `R[t]` is the cash from maturities of the last λ months (λ = safety lead). The "never below the buffer, and don't count on money that is only just maturing" constraint then becomes a plain **lower bound** `u[t] ≥ floor[t]` instead of an extra row. The coefficients that `R` adds to later months are folded into each placement's column.
 
-**Payouts per €1** come from [`unitFlows(conv, r, L)`](Liquiditaetsplaner_20261114.html#L1043) for a rate `r` and term `L` months (with `n` full years and `f` remaining months):
+**Payouts per €1** come from [`unitFlows(conv, r, L)`](Liquiditaetsplaner_20261114.html#L1060) for a rate `r` and term `L` months (with `n` full years and `f` remaining months):
 
 ```text
 simple    1 + r·L/12 at maturity
@@ -160,13 +161,13 @@ annual    r to overnight money after each full year, then 1 + r·f/12 at maturit
 compound  (1 + r)^n · (1 + r·f/12) at maturity, taxed yearly on the accrued interest
 ```
 
-[`unitAccrued()`](Liquiditaetsplaner_20261114.html#L1058) values a deposit that is still open at `T` (principal plus accrued interest), which matters for the wealth objective.
+[`unitAccrued()`](Liquiditaetsplaner_20261114.html#L1075) values a deposit that is still open at `T` (principal plus accrued interest), which matters for the wealth objective.
 
 **Tax is linear.** For every December inside the horizon there is a row `q[y] ≥ interest[y] − allowance` and the balance row of that December pays `rate · q[y]`. `q` only has a lower bound. Paying more tax never helps any constraint or objective, so the optimum always settles at `q = max(0, interest − allowance)`. That is an exact linearisation of the kink.
 
 **Minimum amounts are semi-integer**: a placement is either 0 or between `minU` and `maxU` units. External solvers get the classic binary formulation (`n ≥ minU·y`, `n ≤ maxU·y`). The embedded branch-and-bound handles it natively (`nativeSemi`) by branching on `n = 0` vs. `n ≥ minU`.
 
-**The deposit-guarantee cap** (optional) limits the open principal per bank. These rows are added **lazily**: solve, check with [`capViolations()`](Liquiditaetsplaner_20261114.html#L1268), add only the violated `bank|month` rows and solve again (up to 25 rounds). Exposure can only rise in a month where a tranche starts, so only those months are ever checked.
+**The deposit-guarantee cap** (optional) limits the open principal per bank. These rows are added **lazily**: solve, check with [`capViolations()`](Liquiditaetsplaner_20261114.html#L1285), add only the violated `bank|month` rows and solve again (up to 25 rounds). Exposure can only rise in a month where a tranche starts, so only those months are ever checked.
 
 **Options** of `buildModel` decide which candidate placements become columns:
 
@@ -175,15 +176,16 @@ compound  (1 + r)^n · (1 + r·f/12) at maturity, taxed yearly on the accrued in
 - `grid` thins out placement months for very large models in the embedded solver.
 - `obj` selects the objective: `none` (feasibility), `wealth`, `term` or `slack`. `wealthMin` adds a lower bound on wealth (for stage 3).
 
-### 3. Four stages: [`optimize()`](Liquiditaetsplaner_20261114.html#L1965)
+### 3. Four stages: [`optimize()`](Liquiditaetsplaner_20261114.html#L2012)
 
 ```mermaid
 flowchart TD
     A["Stage 1: largest feasible T<br/>LP relaxation, gallop + bisection"] --> B["Stage 2: max wealth at T*<br/>LP bound, then MILP on LP candidates"]
     B -->|integer plan found| C["Stage 3: min Σ amount·term<br/>subject to wealth ≥ optimum − tolerance"]
-    B -->|no integer plan reaches T| K["Knife edge: min slack of month T<br/>MILP on widened candidate set"]
-    K -->|slack ≈ 0| B
-    K -->|integer infeasible| D["T := T − 1"] --> B
+    B -->|search finds no integer plan| D["T := T − 1"] --> B
+    B -->|no plan two months in a row| K["Yes/no question to HiGHS:<br/>does any integer plan reach the month given up?"]
+    K -->|yes: continue from that plan| B
+    K -->|no| D
     C --> E["Stage 4: min shortfall in month T*+1"]
     E --> F["Plan + T* + wealth + slack"]
 ```
@@ -192,40 +194,49 @@ The progress dialog shows these stages live while the app optimises, followed by
 
 <img src="docs/screenshots/progress.png" alt="Progress dialog listing the optimisation stages" width="720">
 
-**Stage 1: maximise T\*** ([code](Liquiditaetsplaner_20261114.html#L1987)). Feasibility is **monotone** in `T`: if months 0…T can all be covered, so can 0…T−1. The app therefore searches for the largest feasible `T` with LP relaxations (no integrality, fast). It starts from a known-feasible month (the simulator's horizon without any new placements, `loHint`), **gallops** upwards with doubling steps until the first infeasible month, then **bisects**. That is `O(log H)` LPs.
+**Stage 1: maximise T\*** ([code](Liquiditaetsplaner_20261114.html#L2036)). Feasibility is **monotone** in `T`: if months 0…T can all be covered, so can 0…T−1. The app therefore searches for the largest feasible `T` with LP relaxations (no integrality, fast). It starts from a known-feasible month (the simulator's horizon without any new placements, `loHint`), **gallops** upwards with doubling steps until the first infeasible month, then **bisects**. That is `O(log H)` LPs.
 
-**Stage 2: maximise wealth at T\*** ([LP bound](Liquiditaetsplaner_20261114.html#L2001), [MILP](Liquiditaetsplaner_20261114.html#L2015)). With `T` fixed, an LP maximises `s[T] + Σ open deposits incl. accrued interest`. Its value is an upper bound. The integer problem (denominations, minimum amounts) is then solved only on a **candidate set**: every (month, product) pair that the LP solutions used, plus all products in "event months" (month 0, existing maturities and the safety-lead months after them, and months with one-off income). This keeps the MILP small enough for a browser.
+**Stage 2: maximise wealth at T\*** ([LP bound](Liquiditaetsplaner_20261114.html#L2050), [MILP](Liquiditaetsplaner_20261114.html#L2064)). With `T` fixed, an LP maximises `s[T] + Σ open deposits incl. accrued interest`. Its value is an upper bound. The integer problem (denominations, minimum amounts) is then solved only on a **candidate set**: every (month, product) pair that the LP solutions used, plus all products in "event months" (month 0, existing maturities and the safety-lead months after them, and months with one-off income). This keeps the MILP small enough for a browser.
 
-**Knife edge** ([code](Liquiditaetsplaner_20261114.html#L2022)). Sometimes the LP reaches `T` but no integer plan does, for example because €100 steps or a €1,000 minimum don't fit. The app then asks directly: what is the smallest slack of month `T` with integers? It solves this on a widened candidate set (±1 month around every candidate). If the slack is essentially zero it re-solves stage 2 with the new candidates. Otherwise it accepts that `T` is out of reach, sets `T := T − 1` and tries again. This is the only way T\* can end up below the LP value, and the KPI then shows the LP bound.
+**When the search finds no integer plan** ([code](Liquiditaetsplaner_20261114.html#L2071)). Sometimes the LP reaches `T` but no integer plan does, for example because €100 steps or a €1,000 minimum don't fit. And sometimes a plan exists but the search does not find it within its budget. The first month without a plan is given up (`T := T − 1`): it usually is out of reach, and proving that can take long. If the search then fails again one month lower, it is the search that is failing, not the months. HiGHS is then asked a plain yes/no question, first for the month that was given up and then for the current one: is there *any* integer plan up to this month? Without an objective the first plan HiGHS finds is optimal, so it stops there and returns it. A "yes" takes the month back, and stage 2 continues from that plan. At most two questions are asked per run. Without HiGHS the embedded search instead minimises the slack of month `T` on a widened candidate set (±1 month around every candidate). This is the only way T\* can end up below the LP value. The KPI then shows the LP bound and says whether the month was not reached or a plan was merely not found within the search budget.
 
-**Stage 3: prefer short terms** ([LP](Liquiditaetsplaner_20261114.html#L2009), [MILP](Liquiditaetsplaner_20261114.html#L2038)). Among plans whose wealth is within a tolerance of the stage-2 optimum (€0.05 or 10⁻⁶ relative, whichever is larger), minimise `Σ amount × term`. Ties are common (several ladders reach the same wealth) and the shorter ones keep more options open.
+**Stage 3: prefer short terms** ([LP](Liquiditaetsplaner_20261114.html#L2058), [MILP](Liquiditaetsplaner_20261114.html#L2111)). Among plans whose wealth is within a tolerance of the stage-2 optimum (€0.05 or 10⁻⁶ relative, whichever is larger), minimise `Σ amount × term`. Ties are common (several ladders reach the same wealth) and the shorter ones keep more options open.
 
-**Stage 4: report the shortfall** ([code](Liquiditaetsplaner_20261114.html#L2056)). For month `T+1` minimise the slack `z` in `u[T+1] + z ≥ floor[T+1]`. LP and MILP give the amount that is at least missing to survive one more month.
+**Stage 4: report the shortfall** ([code](Liquiditaetsplaner_20261114.html#L2129)). For month `T+1` minimise the slack `z` in `u[T+1] + z ≥ floor[T+1]`. LP and MILP give the amount that is at least missing to survive one more month.
 
 Why lexicographic and not a weighted objective? A weighted sum needs a penalty weight that trades months of safety against euros of interest, and any finite weight can be "bought off" by a high enough rate. Solving goals strictly in order makes "interest never shortens T\*" a guarantee, not a tuning result.
 
-### 4. Solvers and how far each answer is trusted: [`Engine`](Liquiditaetsplaner_20261114.html#L1894)
+### 4. Solvers and how far each answer is trusted: [`Engine`](Liquiditaetsplaner_20261114.html#L1939)
 
-The optimisation runs in a **Web Worker**, built at runtime from the page's own `src-core` and `src-solver` script text via a Blob URL ([`S.start`](Liquiditaetsplaner_20261114.html#L2630)). No separate worker file is needed, so the single HTML file works anywhere. On start the worker tries a chain of backends ([worker glue](Liquiditaetsplaner_20261114.html#L2078)):
+The optimisation runs in a **Web Worker**, built at runtime from the page's own `src-core` and `src-solver` script text via a Blob URL ([`S.start`](Liquiditaetsplaner_20261114.html#L2750)). No separate worker file is needed, so the single HTML file works anywhere. On start the worker tries a chain of backends ([worker glue](Liquiditaetsplaner_20261114.html#L2151)):
 
-1. **[HiGHS](https://highs.dev)** compiled to WebAssembly ([`HighsBackend`](Liquiditaetsplaner_20261114.html#L1792)). It receives the model as CPLEX LP text from [`toLPString()`](Liquiditaetsplaner_20261114.html#L1292). LPs are retried with presolve off and then with the interior-point method if the first attempt fails.
-2. **javascript-lp-solver** ([`JsLpBackend`](Liquiditaetsplaner_20261114.html#L1825)), used for LPs only.
-3. **The embedded solver** ([`EmbeddedBackend`](Liquiditaetsplaner_20261114.html#L1875)): a dense bounded-variable simplex plus branch-and-bound, written for this app. It is always present.
+1. **[HiGHS](https://highs.dev)** compiled to WebAssembly ([`HighsBackend`](Liquiditaetsplaner_20261114.html#L1843)). It receives the model as CPLEX LP text from [`toLPString()`](Liquiditaetsplaner_20261114.html#L1309). LPs are retried with presolve off and then with the interior-point method if the first attempt fails.
+2. **javascript-lp-solver** ([`JsLpBackend`](Liquiditaetsplaner_20261114.html#L1877)), used for LPs only.
+3. **The embedded solver** ([`EmbeddedBackend`](Liquiditaetsplaner_20261114.html#L1920)): a dense bounded-variable simplex plus branch-and-bound, written for this app. It is always present.
+
+**Same inputs, same plan, on every machine.** No limit in the optimisation is measured in real time, so a slower machine does exactly the same work and only takes longer:
+
+- **LPs** have one exact answer. They go to the first backend of the chain.
+- **Integer problems with an objective** go to the embedded branch-and-bound only. Its budget runs on a **work clock** ([`now()`](Liquiditaetsplaner_20261114.html#L1364)) that advances with the arithmetic done (tableau operations), not with seconds. HiGHS is not used for these: it returns its best plan so far only when it stops on a time limit, never on a node limit.
+- **Yes/no questions** to HiGHS run on a **tick clock** ([`onTickClock`](Liquiditaetsplaner_20261114.html#L1834)): while HiGHS answers, `performance.now()` and `Date.now()` return a counter that goes up by one per call, so its time limit is a fixed number of clock reads.
+- **Powers** such as `(1 + r)^n` are computed by repeated multiplication ([`powi`](Liquiditaetsplaner_20261114.html#L807)), because `Math.pow` may differ in the last bit between browsers, which is enough to send the search down another branch.
+
+The plan still depends on *which* LP solver loaded: HiGHS and the embedded simplex can return different optimal corners, and those decide the candidate set. When the fallback did the work, the result tile says so.
 
 HiGHS and javascript-lp-solver must each solve a tiny test MILP correctly on load (optimum 7) before they are used. Answers are trusted only as far as they were checked:
 
-- **Every MILP answer is "polished"** ([`polish()`](Liquiditaetsplaner_20261114.html#L1622)): the integer columns are rounded and fixed, and the continuous rest (liquidity, tax) is re-solved exactly. Results that don't survive this are discarded.
-- **[`Engine.milp`](Liquiditaetsplaner_20261114.html#L1926)** always runs the embedded B&B first for a quick incumbent, then HiGHS if the embedded one did not prove optimality. The better plan wins.
-- **[`Engine.lp`](Liquiditaetsplaner_20261114.html#L1905)**: an optimum from javascript-lp-solver is accepted only if the embedded simplex reaches the same objective value, and an "infeasible" from it is never trusted. After two rejected answers the backend is dropped for the session. HiGHS is restarted after a crash, at most twice, before it is dropped.
-- **Watchdog**: before each call the worker posts a heartbeat with a time budget ([`S.arm`](Liquiditaetsplaner_20261114.html#L2649)). If the budget runs out, the main thread kills the worker, marks that backend as skipped (javascript-lp-solver for a week, via `localStorage`), restarts and re-sends the job. If even the embedded solver hangs, or Workers are unavailable, the embedded solver runs on the main thread ([`S.toMain`](Liquiditaetsplaner_20261114.html#L2643)).
+- **Every MILP answer is "polished"** ([`polish()`](Liquiditaetsplaner_20261114.html#L1654)): the integer columns are rounded and fixed, and the continuous rest (liquidity, tax) is re-solved exactly. Results that don't survive this are discarded.
+- **[`Engine.milp`](Liquiditaetsplaner_20261114.html#L1974)** runs the embedded branch-and-bound on the work clock. A plan known from elsewhere (the answer to a yes/no question) can be passed in as a starting point; the search can then only improve on it.
+- **[`Engine.lp`](Liquiditaetsplaner_20261114.html#L1950)**: an optimum from javascript-lp-solver is accepted only if the embedded simplex reaches the same objective value, and an "infeasible" from it is never trusted. After two rejected answers the backend is dropped for the session. HiGHS is restarted after a crash, at most twice, before it is dropped.
+- **Watchdog**: before each call the worker posts a heartbeat with a time budget ([`S.arm`](Liquiditaetsplaner_20261114.html#L2769)). If the budget runs out, the main thread kills the worker, marks that backend as skipped (javascript-lp-solver for a week, via `localStorage`), restarts and re-sends the job. This watchdog is the only real-time limit left, and its budgets are generous so that a slow device is not mistaken for a hang. If even the embedded solver hangs, or Workers are unavailable, the embedded solver runs on the main thread ([`S.toMain`](Liquiditaetsplaner_20261114.html#L2763)).
 
-**Inside the embedded solver** ([`Dense`](Liquiditaetsplaner_20261114.html#L1343), [`solveMILP`](Liquiditaetsplaner_20261114.html#L1647)):
+**Inside the embedded solver** ([`Dense`](Liquiditaetsplaner_20261114.html#L1366), [`solveMILP`](Liquiditaetsplaner_20261114.html#L1679)):
 
-- A **bounded-variable tableau simplex**: two-phase [primal](Liquiditaetsplaner_20261114.html#L1464) with artificial variables, and [dual simplex](Liquiditaetsplaner_20261114.html#L1518) re-optimisation after bound changes, so every B&B node is warm-started from its parent's basis. A periodic [`refactor()`](Liquiditaetsplaner_20261114.html#L1392) rebuilds the tableau from the original rows to remove floating-point drift.
-- **Branch-and-bound** as a [depth-first search](Liquiditaetsplaner_20261114.html#L1739) with bound pruning and absolute/relative gap tolerances. A root heuristic (round everything down, fix it, re-solve) provides an early incumbent. The search cycles through three branching rules in time slices: chronological with semi-integer violations first and the down branch first (50 % of the time budget), largest value (to 75 %), most fractional with the nearest branch first (to 100 %). It stops as soon as one rule has searched the tree completely.
+- A **bounded-variable tableau simplex**: two-phase [primal](Liquiditaetsplaner_20261114.html#L1494) with artificial variables, and [dual simplex](Liquiditaetsplaner_20261114.html#L1549) re-optimisation after bound changes, so every B&B node is warm-started from its parent's basis. A periodic [`refactor()`](Liquiditaetsplaner_20261114.html#L1416) rebuilds the tableau from the original rows to remove floating-point drift.
+- **Branch-and-bound** as a [depth-first search](Liquiditaetsplaner_20261114.html#L1772) with bound pruning and absolute/relative gap tolerances. A root heuristic (round everything down, fix it, re-solve) provides an early incumbent. The search cycles through three branching rules in slices of its work budget: chronological with semi-integer violations first and the down branch first (50 % of the budget), largest value (to 75 %), most fractional with the nearest branch first (to 100 %). It stops as soon as one rule has searched the tree completely.
 - **Semi-integer branching**: a column with `0 < n < min` branches into `n = 0` and `n ≥ min`, with no binary helper variable.
 
-### 5. Independent verification: [`LP.sim.run()`](Liquiditaetsplaner_20261114.html#L2144) and [`verify()`](Liquiditaetsplaner_20261114.html#L2247)
+### 5. Independent verification: [`LP.sim.run()`](Liquiditaetsplaner_20261114.html#L2217) and [`verify()`](Liquiditaetsplaner_20261114.html#L2320)
 
 The simulator deliberately **shares no code with the model**. It walks through the calendar, keeps the state of every tranche (principal, age, interest paid), and judges each month in this order:
 
@@ -239,23 +250,23 @@ The simulator deliberately **shares no code with the model**. It walks through t
 
 `verify()` checks every placement (denomination, minimum, maximum, rate > 0, inside the horizon), checks the bank cap, and checks that the simulated T\* is at least the solver's T\*. **A plan that fails is not shown**; an error explains why.
 
-The two **baselines** are only simulated: [`allTagesgeld()`](Liquiditaetsplaner_20261114.html#L2228) keeps everything liquid, and [`naive()`](Liquiditaetsplaner_20261114.html#L2230) buys the highest-rate product each month (if it beats overnight money) with all cash above `floor + 3 × next month's need` (the reserve multiple is adjustable).
+The two **baselines** are only simulated: [`allTagesgeld()`](Liquiditaetsplaner_20261114.html#L2301) keeps everything liquid, and [`naive()`](Liquiditaetsplaner_20261114.html#L2303) buys the highest-rate product each month (if it beats overnight money) with all cash above `floor + 3 × next month's need` (the reserve multiple is adjustable).
 
-### 6. From months to calendar dates: [`trancheDates()`](Liquiditaetsplaner_20261114.html#L3163)
+### 6. From months to calendar dates: [`trancheDates()`](Liquiditaetsplaner_20261114.html#L3282)
 
-The model thinks in months; the action list needs real dates. A placement for month *t* has to be **ordered by the penultimate business day of the previous month** ([`penultimateBusinessDay()`](Liquiditaetsplaner_20261114.html#L774)), is **valued on the first business day** of month *t*, and matures on the next business day after `term` months. Business days exclude weekends, German nationwide holidays ([`holidays()`](Liquiditaetsplaner_20261114.html#L757), with Easter from the anonymous Gregorian algorithm) and 24/31 December. The standing transfer of next month's need from overnight money to the current account follows the same T+1 rule. [`buildActions()`](Liquiditaetsplaner_20261114.html#L3348) turns all of this into the grouped to-do table.
+The model thinks in months; the action list needs real dates. A placement for month *t* has to be **ordered by the penultimate business day of the previous month** ([`penultimateBusinessDay()`](Liquiditaetsplaner_20261114.html#L786)), is **valued on the first business day** of month *t*, and matures on the next business day after `term` months. Business days exclude weekends, German nationwide holidays ([`holidays()`](Liquiditaetsplaner_20261114.html#L769), with Easter from the anonymous Gregorian algorithm) and 24/31 December. The standing transfer of next month's need from overnight money to the current account follows the same T+1 rule. [`buildActions()`](Liquiditaetsplaner_20261114.html#L3467) turns all of this into the grouped to-do table.
 
-### 7. Excel export: [`LP.xlsx.build()`](Liquiditaetsplaner_20261114.html#L3645)
+### 7. Excel export: [`LP.xlsx.build()`](Liquiditaetsplaner_20261114.html#L3763)
 
 The workbook is written with ExcelJS and post-processed with JSZip. It has nine sheets: `Cover`, `Inputs`, `CashFlows`, `Ladder`, `Liquidity`, `Gap`, `Scenarios`, `Charts`, `Solver`.
 
 - Derived cells are **real formulas** on named input cells (the blue cells, mostly on `Inputs`), so you can change an amount or a rate in Excel and the sheets follow.
-- [`mirror()`](Liquiditaetsplaner_20261114.html#L3599) recomputes every formula column in plain JS, row by row, the way Excel will. Those values are stored as cached results, so the file shows correct numbers even before Excel recalculates. A third independent implementation of the bookkeeping, compared in the self-test.
+- [`mirror()`](Liquiditaetsplaner_20261114.html#L3717) recomputes every formula column in plain JS, row by row, the way Excel will. Those values are stored as cached results, so the file shows correct numbers even before Excel recalculates. A third independent implementation of the bookkeeping, compared in the self-test.
 - Native **DrawingML charts** are injected into the zip.
 - The `Solver` sheet comes with **pre-filled Excel Solver settings** (`solver_*` defined names) to re-run stage 2 (maximise wealth at a fixed T\*) inside Excel, with step-by-step instructions.
-- [`sensitivity()`](Liquiditaetsplaner_20261114.html#L3636) re-simulates the plan under parallel rate shifts.
+- [`sensitivity()`](Liquiditaetsplaner_20261114.html#L3754) re-simulates the plan under parallel rate shifts.
 
-### 8. Self-test: [`A.selftest()`](Liquiditaetsplaner_20261114.html#L4319)
+### 8. Self-test: [`A.selftest()`](Liquiditaetsplaner_20261114.html#L4440)
 
 The **Self-test** button runs, for every example: the plan is verified and the simulated T\* ≥ the solver's T\*; the optimised T\* ≥ the all-overnight baseline. Then three property tests: the rate trap never ends worse than the plain case; **adding a product never shortens T\***; **adding an inflow never shortens T\***. Finally the Excel export is built, re-opened with ExcelJS, and its formula values are compared with the web simulation (≤ 1 cent per month, same first shortfall).
 
@@ -281,13 +292,13 @@ Everything lives in [`Liquiditaetsplaner_20261114.html`](Liquiditaetsplaner_2026
 |---|---|---|
 | [`<script id="src-theme">`](Liquiditaetsplaner_20261114.html#L7) | main thread, before paint | applies the saved light/dark choice without a flash |
 | [`<style id="css">`](Liquiditaetsplaner_20261114.html#L8) | – | all styling; colours are CSS custom properties per theme |
-| [`<div id="app">`](Liquiditaetsplaner_20261114.html#L569) | – | the static page skeleton (header, wizard, input drawer, result sections, modal) |
-| [`<script id="embedded-state">`](Liquiditaetsplaner_20261114.html#L723) | – | JSON: the state the file was saved with |
-| [`<script id="src-core">`](Liquiditaetsplaner_20261114.html#L724) | main thread **and** worker | `core.js` (dates, calendar, timeline), `presets.js` |
-| [`<script id="src-solver">`](Liquiditaetsplaner_20261114.html#L1030) | worker | `model.js`, `simplex.js`, `solve.js`, `workerglue.js` |
-| [`<script id="src-app">`](Liquiditaetsplaner_20261114.html#L2135) | main thread | `sim.js`, `i18n.js`, `ui.js`, `views.js`, `xlsx.js`, `wizard.js`, `io.js` |
+| [`<div id="app">`](Liquiditaetsplaner_20261114.html#L581) | – | the static page skeleton (header, wizard, input drawer, result sections, modal) |
+| [`<script id="embedded-state">`](Liquiditaetsplaner_20261114.html#L735) | – | JSON: the state the file was saved with |
+| [`<script id="src-core">`](Liquiditaetsplaner_20261114.html#L736) | main thread **and** worker | `core.js` (dates, calendar, timeline), `presets.js` |
+| [`<script id="src-solver">`](Liquiditaetsplaner_20261114.html#L1045) | worker | `model.js`, `simplex.js`, `solve.js`, `workerglue.js` |
+| [`<script id="src-app">`](Liquiditaetsplaner_20261114.html#L2208) | main thread | `sim.js`, `i18n.js`, `ui.js`, `views.js`, `xlsx.js`, `wizard.js`, `io.js` |
 
-The split is functional: the worker is assembled from the text of `src-core` + `src-solver`, and *Download HTML* ([`A.buildHtml()`](Liquiditaetsplaner_20261114.html#L4263)) re-assembles the whole page from these blocks plus the current state.
+The split is functional: the worker is assembled from the text of `src-core` + `src-solver`, and *Download HTML* ([`A.buildHtml()`](Liquiditaetsplaner_20261114.html#L4379)) re-assembles the whole page from these blocks plus the current state.
 
 ```mermaid
 flowchart LR
@@ -311,12 +322,12 @@ flowchart LR
 
 If you want to read the code end to end, this is the order in which it executes when you press **Optimise**:
 
-1. [`A.run()`](Liquiditaetsplaner_20261114.html#L2977): cancels older runs, shows progress, calls `solveState` for the chosen scenario, then for every other scenario in the background.
-2. [`A.solveState()`](Liquiditaetsplaner_20261114.html#L2859): `prepare` on the main thread, simulates the baselines and the no-placement horizon (`loHint`), sends the job to the worker and verifies the result.
-3. [`S.solve()`](Liquiditaetsplaner_20261114.html#L2680) → worker message `solve` → [`prepare()`](Liquiditaetsplaner_20261114.html#L794) → [`optimize()`](Liquiditaetsplaner_20261114.html#L1965).
-4. `optimize()` calls [`buildModel()`](Liquiditaetsplaner_20261114.html#L1075) for each stage and hands it to [`Engine.lp`](Liquiditaetsplaner_20261114.html#L1905) / [`Engine.milp`](Liquiditaetsplaner_20261114.html#L1926).
-5. The result returns to `solveState`, goes through [`verify()`](Liquiditaetsplaner_20261114.html#L2247), and lands in `A.view`.
-6. [`renderAll()`](Liquiditaetsplaner_20261114.html#L3560) draws KPIs, charts, ladder, waterfall, actions, scenarios and grid from `A.view`.
+1. [`A.run()`](Liquiditaetsplaner_20261114.html#L3094): cancels older runs, shows progress, calls `solveState` for the chosen scenario, then for every other scenario in the background.
+2. [`A.solveState()`](Liquiditaetsplaner_20261114.html#L2976): `prepare` on the main thread, simulates the baselines and the no-placement horizon (`loHint`), sends the job to the worker and verifies the result.
+3. [`S.solve()`](Liquiditaetsplaner_20261114.html#L2800) → worker message `solve` → [`prepare()`](Liquiditaetsplaner_20261114.html#L809) → [`optimize()`](Liquiditaetsplaner_20261114.html#L2012).
+4. `optimize()` calls [`buildModel()`](Liquiditaetsplaner_20261114.html#L1092) for each stage and hands it to [`Engine.lp`](Liquiditaetsplaner_20261114.html#L1950) / [`Engine.milp`](Liquiditaetsplaner_20261114.html#L1974).
+5. The result returns to `solveState`, goes through [`verify()`](Liquiditaetsplaner_20261114.html#L2320), and lands in `A.view`.
+6. [`renderAll()`](Liquiditaetsplaner_20261114.html#L3678) draws KPIs, charts, ladder, waterfall, actions, scenarios and grid from `A.view`.
 
 ## Function reference
 
@@ -324,129 +335,131 @@ If you want to read the code end to end, this is the order in which it executes 
 
 | Function | Purpose |
 |---|---|
-| [`parseISO`, `iso`, `ymIdx`, `ymOf`, `addDays`, …](Liquiditaetsplaner_20261114.html#L732) | Calendar arithmetic on plain `{y, m, d}` objects, no time zones |
-| [`easter`](Liquiditaetsplaner_20261114.html#L748) / [`holidays`](Liquiditaetsplaner_20261114.html#L757) | Easter date (anonymous Gregorian algorithm) and German nationwide bank holidays incl. 24/31 Dec |
-| [`isBusinessDay`, `nextBusinessDay`, `prevBusinessDay`](Liquiditaetsplaner_20261114.html#L766) | Business-day logic for order, value and maturity dates |
-| [`penultimateBusinessDay`](Liquiditaetsplaner_20261114.html#L774) | Order deadline for placements and the monthly transfer |
-| [`scenariosFor`](Liquiditaetsplaner_20261114.html#L781) / [`scenarioRate`](Liquiditaetsplaner_20261114.html#L782) | Available rate scenarios and the rate of a product in month *t* under a scenario |
-| [`prepare`](Liquiditaetsplaner_20261114.html#L794) | Input state → problem object `P` (timeline, rates, products, holdings, pins). `over` overrides horizon, scenario or a parallel rate shift |
+| [`parseISO`, `iso`, `ymIdx`, `ymOf`, `addDays`, …](Liquiditaetsplaner_20261114.html#L744) | Calendar arithmetic on plain `{y, m, d}` objects, no time zones |
+| [`easter`](Liquiditaetsplaner_20261114.html#L760) / [`holidays`](Liquiditaetsplaner_20261114.html#L769) | Easter date (anonymous Gregorian algorithm) and German nationwide bank holidays incl. 24/31 Dec |
+| [`isBusinessDay`, `nextBusinessDay`, `prevBusinessDay`](Liquiditaetsplaner_20261114.html#L778) | Business-day logic for order, value and maturity dates |
+| [`penultimateBusinessDay`](Liquiditaetsplaner_20261114.html#L786) | Order deadline for placements and the monthly transfer |
+| [`scenariosFor`](Liquiditaetsplaner_20261114.html#L793) / [`scenarioRate`](Liquiditaetsplaner_20261114.html#L794) | Available rate scenarios and the rate of a product in month *t* under a scenario |
+| [`prepare`](Liquiditaetsplaner_20261114.html#L809) | Input state → problem object `P` (timeline, rates, products, holdings, pins). `over` overrides horizon, scenario or a parallel rate shift |
 
 ### `presets.js` – examples and the spec JSON reader (`LP.presets`, `LP.wizardJson`)
 
 | Function | Purpose |
 |---|---|
-| [`products`](Liquiditaetsplaner_20261114.html#L911) / [`base`](Liquiditaetsplaner_20261114.html#L926) | Generic product list and default state |
-| [`isWizardJson`](Liquiditaetsplaner_20261114.html#L943) / [`fromWizardJson`](Liquiditaetsplaner_20261114.html#L944) | Detect and convert the `deposit-savings-planner` wizard JSON of the original specification into app state |
-| [`presets`](Liquiditaetsplaner_20261114.html#L993) | The three examples: `g`, `ruhestand`, `zinsfalle` |
+| [`products`](Liquiditaetsplaner_20261114.html#L926) / [`base`](Liquiditaetsplaner_20261114.html#L941) | Generic product list and default state |
+| [`isWizardJson`](Liquiditaetsplaner_20261114.html#L958) / [`fromWizardJson`](Liquiditaetsplaner_20261114.html#L959) | Detect and convert the `deposit-savings-planner` wizard JSON of the original specification into app state |
+| [`presets`](Liquiditaetsplaner_20261114.html#L1008) | The three examples: `g`, `ruhestand`, `zinsfalle` |
 
 ### `model.js` – the MILP (`LP.model`)
 
 | Function | Purpose |
 |---|---|
-| [`unitFlows`](Liquiditaetsplaner_20261114.html#L1043) | Cash and taxable-interest events of €1 in a product (simple, annual, compound) |
-| [`unitAccrued`](Liquiditaetsplaner_20261114.html#L1058) | Value of €1 after *e* months, for deposits still open at T |
-| [`Model`](Liquiditaetsplaner_20261114.html#L1065) | Minimal sparse model container: `col()`, `row()`, `add()` |
-| [`buildModel`](Liquiditaetsplaner_20261114.html#L1075) | Builds the model for horizon T: [fixed tranches](Liquiditaetsplaner_20261114.html#L1082), [balance rows](Liquiditaetsplaner_20261114.html#L1112), tax rows, [candidate placements](Liquiditaetsplaner_20261114.html#L1138), wealth objective, [bank-cap rows](Liquiditaetsplaner_20261114.html#L1212) |
-| [`wealthOf`](Liquiditaetsplaner_20261114.html#L1236) / [`objOf`](Liquiditaetsplaner_20261114.html#L1241) | Evaluate wealth at T and the objective for a solution vector |
-| [`checkSolution`](Liquiditaetsplaner_20261114.html#L1244) | Generic feasibility check of a vector (bounds, rows, integrality, semi-integer) |
-| [`capViolations`](Liquiditaetsplaner_20261114.html#L1268) | Bank/month pairs where the cap is exceeded (for lazy rows) |
-| [`placementsOf`](Liquiditaetsplaner_20261114.html#L1281) | Solution vector → list of `{t, k, amount}` |
-| [`toLPString`](Liquiditaetsplaner_20261114.html#L1292) | Model → CPLEX LP format for HiGHS |
+| [`unitFlows`](Liquiditaetsplaner_20261114.html#L1060) | Cash and taxable-interest events of €1 in a product (simple, annual, compound) |
+| [`unitAccrued`](Liquiditaetsplaner_20261114.html#L1075) | Value of €1 after *e* months, for deposits still open at T |
+| [`Model`](Liquiditaetsplaner_20261114.html#L1082) | Minimal sparse model container: `col()`, `row()`, `add()` |
+| [`buildModel`](Liquiditaetsplaner_20261114.html#L1092) | Builds the model for horizon T: [fixed tranches](Liquiditaetsplaner_20261114.html#L1099), [balance rows](Liquiditaetsplaner_20261114.html#L1129), tax rows, [candidate placements](Liquiditaetsplaner_20261114.html#L1155), wealth objective, [bank-cap rows](Liquiditaetsplaner_20261114.html#L1229) |
+| [`wealthOf`](Liquiditaetsplaner_20261114.html#L1253) / [`objOf`](Liquiditaetsplaner_20261114.html#L1258) | Evaluate wealth at T and the objective for a solution vector |
+| [`checkSolution`](Liquiditaetsplaner_20261114.html#L1261) | Generic feasibility check of a vector (bounds, rows, integrality, semi-integer) |
+| [`capViolations`](Liquiditaetsplaner_20261114.html#L1285) | Bank/month pairs where the cap is exceeded (for lazy rows) |
+| [`placementsOf`](Liquiditaetsplaner_20261114.html#L1298) | Solution vector → list of `{t, k, amount}` |
+| [`toLPString`](Liquiditaetsplaner_20261114.html#L1309) | Model → CPLEX LP format for HiGHS |
 
 ### `simplex.js` – the embedded solver (`LP.simplex`)
 
 | Function | Purpose |
 |---|---|
-| [`Dense`](Liquiditaetsplaner_20261114.html#L1343) | Dense tableau with bounded variables, slacks and artificials |
-| [`Dense.prototype.primal`](Liquiditaetsplaner_20261114.html#L1464) | Primal simplex (phase 1 and 2) |
-| [`Dense.prototype.dual`](Liquiditaetsplaner_20261114.html#L1518) | Dual simplex for re-optimisation after bound changes |
-| [`Dense.prototype.refactor`](Liquiditaetsplaner_20261114.html#L1392) | Rebuild the tableau from the original rows (removes drift) |
-| [`solveLP`](Liquiditaetsplaner_20261114.html#L1613) | One LP solve |
-| [`polish`](Liquiditaetsplaner_20261114.html#L1622) | Fix rounded integers, re-solve the continuous rest exactly |
-| [`solveMILP`](Liquiditaetsplaner_20261114.html#L1647) | Branch-and-bound: root heuristic, [DFS](Liquiditaetsplaner_20261114.html#L1739), branching rules, gap control |
+| [`Dense`](Liquiditaetsplaner_20261114.html#L1366) | Dense tableau with bounded variables, slacks and artificials |
+| [`Dense.prototype.primal`](Liquiditaetsplaner_20261114.html#L1494) | Primal simplex (phase 1 and 2) |
+| [`Dense.prototype.dual`](Liquiditaetsplaner_20261114.html#L1549) | Dual simplex for re-optimisation after bound changes |
+| [`Dense.prototype.refactor`](Liquiditaetsplaner_20261114.html#L1416) | Rebuild the tableau from the original rows (removes drift) |
+| [`solveLP`](Liquiditaetsplaner_20261114.html#L1645) | One LP solve |
+| [`now`](Liquiditaetsplaner_20261114.html#L1364) | The work clock: every limit of the embedded solver is measured on it |
+| [`polish`](Liquiditaetsplaner_20261114.html#L1654) | Fix rounded integers, re-solve the continuous rest exactly |
+| [`solveMILP`](Liquiditaetsplaner_20261114.html#L1679) | Branch-and-bound: root heuristic, [DFS](Liquiditaetsplaner_20261114.html#L1772), branching rules, gap control |
 
 ### `solve.js` – backends and the lexicographic optimisation (`LP.solve`)
 
 | Function | Purpose |
 |---|---|
-| [`HighsBackend`](Liquiditaetsplaner_20261114.html#L1792) | HiGHS (WASM): self-test, LP retries, MILP with time limit and gaps |
-| [`JsLpBackend`](Liquiditaetsplaner_20261114.html#L1825) | javascript-lp-solver: model conversion, LP with cross-check |
-| [`EmbeddedBackend`](Liquiditaetsplaner_20261114.html#L1875) | Wraps `LP.simplex` with the same interface |
-| [`Engine`](Liquiditaetsplaner_20261114.html#L1894) | Picks the backend, cross-checks, falls back, demotes unreliable backends, keeps statistics |
-| [`supportKeys`](Liquiditaetsplaner_20261114.html#L1949) / [`eventMonths`](Liquiditaetsplaner_20261114.html#L1952) / [`addNeighbours`](Liquiditaetsplaner_20261114.html#L1959) | Build the MILP candidate sets from LP solutions |
-| [`optimize`](Liquiditaetsplaner_20261114.html#L1965) | The four stages, knife-edge handling and lazy cap rows |
+| [`HighsBackend`](Liquiditaetsplaner_20261114.html#L1843) | HiGHS (WASM): self-test, LP retries, yes/no questions on the tick clock |
+| [`JsLpBackend`](Liquiditaetsplaner_20261114.html#L1877) | javascript-lp-solver: model conversion, LP with cross-check |
+| [`EmbeddedBackend`](Liquiditaetsplaner_20261114.html#L1920) | Wraps `LP.simplex` with the same interface |
+| [`Engine`](Liquiditaetsplaner_20261114.html#L1939) | Picks the backend, cross-checks, falls back, demotes unreliable backends, keeps statistics |
+| [`supportKeys`](Liquiditaetsplaner_20261114.html#L1996) / [`eventMonths`](Liquiditaetsplaner_20261114.html#L1999) / [`addNeighbours`](Liquiditaetsplaner_20261114.html#L2006) | Build the MILP candidate sets from LP solutions |
+| [`optimize`](Liquiditaetsplaner_20261114.html#L2012) | The four stages, knife-edge handling and lazy cap rows |
 
 ### `workerglue.js` – worker protocol
 
 | Function | Purpose |
 |---|---|
-| [`init`](Liquiditaetsplaner_20261114.html#L2089) | Loads HiGHS / javascript-lp-solver from the CDN (with timeouts), builds the `Engine`, posts `ready` |
-| [`solve`](Liquiditaetsplaner_20261114.html#L2119) | `prepare` → `optimize`, posts `progress`, `beat`, `result` or `error` |
+| [`init`](Liquiditaetsplaner_20261114.html#L2162) | Loads HiGHS / javascript-lp-solver from the CDN (with timeouts), builds the `Engine`, posts `ready` |
+| [`solve`](Liquiditaetsplaner_20261114.html#L2192) | `prepare` → `optimize`, posts `progress`, `beat`, `result` or `error` |
 
 ### `sim.js` – independent simulator (`LP.sim`)
 
 | Function | Purpose |
 |---|---|
-| [`run`](Liquiditaetsplaner_20261114.html#L2144) | Month-by-month simulation of a plan or a policy; returns balances, tranches, T\*, interest, tax, locked share |
-| [`withPins`](Liquiditaetsplaner_20261114.html#L2221) | Adds pinned tranches to a plan |
-| [`allTagesgeld`](Liquiditaetsplaner_20261114.html#L2228) / [`naive`](Liquiditaetsplaner_20261114.html#L2230) | The two baselines |
-| [`verify`](Liquiditaetsplaner_20261114.html#L2247) | Validates a solver result against the simulation |
+| [`run`](Liquiditaetsplaner_20261114.html#L2217) | Month-by-month simulation of a plan or a policy; returns balances, tranches, T\*, interest, tax, locked share |
+| [`withPins`](Liquiditaetsplaner_20261114.html#L2294) | Adds pinned tranches to a plan |
+| [`allTagesgeld`](Liquiditaetsplaner_20261114.html#L2301) / [`naive`](Liquiditaetsplaner_20261114.html#L2303) | The two baselines |
+| [`verify`](Liquiditaetsplaner_20261114.html#L2320) | Validates a solver result against the simulation |
 
 ### `i18n.js` – texts (`LP.i18n`)
 
-German and English UI strings, the [glossary](Liquiditaetsplaner_20261114.html#L2462) behind the dotted terms, and the [methodology text](Liquiditaetsplaner_20261114.html#L2498) shown in the app.
+German and English UI strings, the [glossary](Liquiditaetsplaner_20261114.html#L2535) behind the dotted terms, and the [methodology text](Liquiditaetsplaner_20261114.html#L2571) shown in the app.
 
 ### `ui.js` – state, solver client, input drawer (`LP.app`, alias `A`)
 
 | Function | Purpose |
 |---|---|
-| [`normalize`](Liquiditaetsplaner_20261114.html#L2550) / [`loadState`](Liquiditaetsplaner_20261114.html#L2570) | Fill defaults; load from `localStorage`, else the embedded state, else a blank state ([`A.blankState`](Liquiditaetsplaner_20261114.html#L2566)) |
-| [`A.save`](Liquiditaetsplaner_20261114.html#L2577) | Debounced save to `localStorage` |
-| [`t`](Liquiditaetsplaner_20261114.html#L2581), [`A.eur`](Liquiditaetsplaner_20261114.html#L2589), [`A.monthLabel`](Liquiditaetsplaner_20261114.html#L2594), … | Translation and number/date formatting |
-| [`S.start`](Liquiditaetsplaner_20261114.html#L2630), [`S.solve`](Liquiditaetsplaner_20261114.html#L2680), [`S.arm`](Liquiditaetsplaner_20261114.html#L2649), [`S.onMsg`](Liquiditaetsplaner_20261114.html#L2660) | Solver client: worker from Blob, job queue, watchdog, main-thread fallback |
-| [`A.renderSide`](Liquiditaetsplaner_20261114.html#L2724) | The input drawer (basics, need and buffer, products, holdings, payments, one-offs, pins, tax and cap) |
+| [`normalize`](Liquiditaetsplaner_20261114.html#L2623) / [`loadState`](Liquiditaetsplaner_20261114.html#L2643) | Fill defaults; load from `localStorage`, else the embedded state, else a blank state ([`A.blankState`](Liquiditaetsplaner_20261114.html#L2639)) |
+| [`A.save`](Liquiditaetsplaner_20261114.html#L2650) | Debounced save to `localStorage` |
+| [`t`](Liquiditaetsplaner_20261114.html#L2654), [`A.eur`](Liquiditaetsplaner_20261114.html#L2662), [`A.monthLabel`](Liquiditaetsplaner_20261114.html#L2699), … | Translation and number/date formatting |
+| [`S.start`](Liquiditaetsplaner_20261114.html#L2750), [`S.solve`](Liquiditaetsplaner_20261114.html#L2800), [`S.arm`](Liquiditaetsplaner_20261114.html#L2769), [`S.onMsg`](Liquiditaetsplaner_20261114.html#L2780) | Solver client: worker from Blob, job queue, watchdog, main-thread fallback |
+| [`A.parseNum`](Liquiditaetsplaner_20261114.html#L2672) / [`A.numField`](Liquiditaetsplaner_20261114.html#L2709) | Read a typed number with either decimal sign; the one number field used by the drawer, the wizard and the monthly grid |
+| [`A.renderSide`](Liquiditaetsplaner_20261114.html#L2841) | The input drawer (basics, need and buffer, products, holdings, payments, one-offs, pins, tax and cap) |
 
 ### `views.js` – pipeline and result views
 
 | Function | Purpose |
 |---|---|
-| [`A.solveState`](Liquiditaetsplaner_20261114.html#L2859) | Optimise + verify one state (used by the main run, scenarios and the self-test) |
-| [`A.run`](Liquiditaetsplaner_20261114.html#L2977) / [`A.markStale`](Liquiditaetsplaner_20261114.html#L2883) | Run the pipeline; mark results as out of date after an input change |
-| [`renderKpis`](Liquiditaetsplaner_20261114.html#L3052) | KPI tiles |
-| [`renderMain`](Liquiditaetsplaner_20261114.html#L3114) | Liquidity and locked-capital area chart (ECharts) |
-| [`renderStrat`](Liquiditaetsplaner_20261114.html#L3404) | Strategy comparison |
-| [`renderLadder`](Liquiditaetsplaner_20261114.html#L3185), [`trancheDates`](Liquiditaetsplaner_20261114.html#L3163), [`trancheTotals`](Liquiditaetsplaner_20261114.html#L3174) | Ladder (Gantt) and tranche details |
-| [`renderWf`](Liquiditaetsplaner_20261114.html#L3299) | Cash-flow waterfall |
-| [`buildActions`](Liquiditaetsplaner_20261114.html#L3348) / [`renderActions`](Liquiditaetsplaner_20261114.html#L3365) | Dated action list |
-| [`renderScen`](Liquiditaetsplaner_20261114.html#L3465) | Scenario chart and table |
-| [`renderGrid`](Liquiditaetsplaner_20261114.html#L3499) / [`setOv`](Liquiditaetsplaner_20261114.html#L3526) | Monthly grid with editable overrides |
+| [`A.solveState`](Liquiditaetsplaner_20261114.html#L2976) | Optimise + verify one state (used by the main run, scenarios and the self-test) |
+| [`A.run`](Liquiditaetsplaner_20261114.html#L3094) / [`A.markStale`](Liquiditaetsplaner_20261114.html#L3000) | Run the pipeline; mark results as out of date after an input change |
+| [`renderKpis`](Liquiditaetsplaner_20261114.html#L3170) | KPI tiles |
+| [`renderMain`](Liquiditaetsplaner_20261114.html#L3233) | Liquidity and locked-capital area chart (ECharts) |
+| [`renderStrat`](Liquiditaetsplaner_20261114.html#L3523) | Strategy comparison |
+| [`renderLadder`](Liquiditaetsplaner_20261114.html#L3304), [`trancheDates`](Liquiditaetsplaner_20261114.html#L3282), [`trancheTotals`](Liquiditaetsplaner_20261114.html#L3293) | Ladder (Gantt) and tranche details |
+| [`renderWf`](Liquiditaetsplaner_20261114.html#L3418) | Cash-flow waterfall |
+| [`buildActions`](Liquiditaetsplaner_20261114.html#L3467) / [`renderActions`](Liquiditaetsplaner_20261114.html#L3484) | Dated action list |
+| [`renderScen`](Liquiditaetsplaner_20261114.html#L3584) | Scenario chart and table |
+| [`renderGrid`](Liquiditaetsplaner_20261114.html#L3618) / [`setOv`](Liquiditaetsplaner_20261114.html#L3644) | Monthly grid with editable overrides |
 
 ### `xlsx.js` – Excel export (`LP.xlsx`)
 
 | Function | Purpose |
 |---|---|
-| [`ladderRows`](Liquiditaetsplaner_20261114.html#L3589) | Tranches → rows of the `Ladder` sheet |
-| [`mirror`](Liquiditaetsplaner_20261114.html#L3599) | JS re-computation of every sheet formula (cached values + self-test) |
-| [`sensitivity`](Liquiditaetsplaner_20261114.html#L3636) | Plan re-simulated under parallel rate shifts |
-| [`build`](Liquiditaetsplaner_20261114.html#L3645) | Writes the nine sheets, charts and Solver names |
+| [`ladderRows`](Liquiditaetsplaner_20261114.html#L3707) | Tranches → rows of the `Ladder` sheet |
+| [`mirror`](Liquiditaetsplaner_20261114.html#L3717) | JS re-computation of every sheet formula (cached values + self-test) |
+| [`sensitivity`](Liquiditaetsplaner_20261114.html#L3754) | Plan re-simulated under parallel rate shifts |
+| [`build`](Liquiditaetsplaner_20261114.html#L3763) | Writes the nine sheets, charts and Solver names |
 
 ### `wizard.js` – six-chapter setup (`A.wizard`)
 
 | Function | Purpose |
 |---|---|
-| [`W.render`](Liquiditaetsplaner_20261114.html#L4179), [`W.go`](Liquiditaetsplaner_20261114.html#L4199), [`W.show`](Liquiditaetsplaner_20261114.html#L4201), [`W.finish`](Liquiditaetsplaner_20261114.html#L4212) | Chapter navigation; edits only mark results stale, they never start a calculation |
-| [`rows`](Liquiditaetsplaner_20261114.html#L4073), [`q`](Liquiditaetsplaner_20261114.html#L4069), [`yesNo`](Liquiditaetsplaner_20261114.html#L4064) | Repeating row editors, numbered questions and yes/no switches. "No" parks rows in `state.stash` instead of deleting them |
+| [`W.render`](Liquiditaetsplaner_20261114.html#L4295), [`W.go`](Liquiditaetsplaner_20261114.html#L4315), [`W.show`](Liquiditaetsplaner_20261114.html#L4317), [`W.finish`](Liquiditaetsplaner_20261114.html#L4328) | Chapter navigation; edits only mark results stale, they never start a calculation |
+| [`rows`](Liquiditaetsplaner_20261114.html#L4189), [`q`](Liquiditaetsplaner_20261114.html#L4185), [`yesNo`](Liquiditaetsplaner_20261114.html#L4180) | Repeating row editors, numbered questions and yes/no switches. "No" parks rows in `state.stash` instead of deleting them |
 
 ### `io.js` – files, self-test, start-up
 
 | Function | Purpose |
 |---|---|
-| [`A.saveFile`](Liquiditaetsplaner_20261114.html#L4244) | Download helper |
-| [`A.buildHtml`](Liquiditaetsplaner_20261114.html#L4263) | Re-assembles this HTML file with the current state embedded |
-| [`A.exportXlsx`](Liquiditaetsplaner_20261114.html#L4282) | Loads ExcelJS + JSZip on demand and builds the workbook |
-| [`applyState`](Liquiditaetsplaner_20261114.html#L4300) / [`applyRates`](Liquiditaetsplaner_20261114.html#L4309) | JSON import of the full state (own format or the spec format) or of the rate table |
-| [`A.selftest`](Liquiditaetsplaner_20261114.html#L4319) | The self-test described above |
-| [`wire`](Liquiditaetsplaner_20261114.html#L4369) / [start-up](Liquiditaetsplaner_20261114.html#L4431) | Event wiring, first render (blank slate, or the ready card for saved inputs) and a warm-up of the solver worker; the first optimisation waits for **Optimise** |
+| [`A.saveFile`](Liquiditaetsplaner_20261114.html#L4360) | Download helper |
+| [`A.buildHtml`](Liquiditaetsplaner_20261114.html#L4379) | Re-assembles this HTML file with the current state embedded |
+| [`A.exportXlsx`](Liquiditaetsplaner_20261114.html#L4398) | Loads ExcelJS + JSZip on demand and builds the workbook |
+| [`applyState`](Liquiditaetsplaner_20261114.html#L4421) / [`applyRates`](Liquiditaetsplaner_20261114.html#L4430) | JSON import of the full state (own format or the spec format) or of the rate table |
+| [`A.selftest`](Liquiditaetsplaner_20261114.html#L4440) | The self-test described above |
+| [`wire`](Liquiditaetsplaner_20261114.html#L4490) / [start-up](Liquiditaetsplaner_20261114.html#L4553) | Event wiring, first render (blank slate, or the ready card for saved inputs) and a warm-up of the solver worker; the first optimisation waits for **Optimise** |
 
 ## State format
 
@@ -476,7 +489,7 @@ All loaded from jsDelivr with pinned versions, no build step:
 | Library | Version | Used for |
 |---|---|---|
 | [ECharts](https://echarts.apache.org) | 5.5.1 | all charts |
-| [HiGHS](https://github.com/lovasoa/highs-js) | 1.15.4 | primary LP/MILP solver (WebAssembly) |
+| [HiGHS](https://github.com/lovasoa/highs-js) | 1.15.4 | LP solver and yes/no questions (WebAssembly) |
 | [javascript-lp-solver](https://github.com/JWally/jsLPSolver) | 0.4.24 | secondary LP solver |
 | [ExcelJS](https://github.com/exceljs/exceljs) | 4.4.0 | Excel export (loaded on demand) |
 | [JSZip](https://stuk.github.io/jszip/) | 3.10.1 | chart and Solver-name injection into the xlsx |

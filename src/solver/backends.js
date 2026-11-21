@@ -93,19 +93,20 @@
   };
 
   // ---------- backend: embedded simplex + branch-and-bound ----------
+  // `pivots`, `nodes` and `trail` are reported for the trace of a run (optimize.js) only
   function EmbeddedBackend() { this.name = 'Eingebettet (Simplex + B&B)'; this.nativeSemi = true; }
   EmbeddedBackend.prototype.init = function () { return Promise.resolve(true); };
   EmbeddedBackend.prototype.lp = function (M) {
-    var r = LP.simplex.solveLP(M, { deadline: LP.simplex.now() + 30000 });
-    if (r.status === 'optimal' && !MD.checkSolution(M, r.x, 1e-6).ok) return { status: 'unknown' };
-    return { status: r.status, x: r.x, obj: r.obj };
+    var p0 = LP.simplex.pivots(), r = LP.simplex.solveLP(M, { deadline: LP.simplex.now() + 30000 }), pv = LP.simplex.pivots() - p0;
+    if (r.status === 'optimal' && !MD.checkSolution(M, r.x, 1e-6).ok) return { status: 'unknown', pivots: pv };
+    return { status: r.status, x: r.x, obj: r.obj, pivots: pv };
   };
   EmbeddedBackend.prototype.milp = function (M, o) {
-    var r = LP.simplex.solveMILP(M, { timeLimit: o.timeLimit || 5, relGap: o.relGap, absGap: o.absGap, start: o.start });
-    if (!r.x) return { status: r.status };
+    var p0 = LP.simplex.pivots(), r = LP.simplex.solveMILP(M, { timeLimit: o.timeLimit || 5, relGap: o.relGap, absGap: o.absGap, start: o.start });
+    if (!r.x) return { status: r.status, nodes: r.nodes, trail: r.trail, pivots: LP.simplex.pivots() - p0 };
     var p = polish(M, r.x);
-    if (!p.ok) return { status: 'unknown' };
-    return { status: r.status, x: p.x, obj: p.obj, bound: r.bound, nodes: r.nodes };
+    if (!p.ok) return { status: 'unknown', nodes: r.nodes, trail: r.trail, pivots: LP.simplex.pivots() - p0 };
+    return { status: r.status, x: p.x, obj: p.obj, bound: r.bound, nodes: r.nodes, trail: r.trail, pivots: LP.simplex.pivots() - p0 };
   };
 
   LP.solve = { polish: polish, HighsBackend: HighsBackend, JsLpBackend: JsLpBackend, EmbeddedBackend: EmbeddedBackend };

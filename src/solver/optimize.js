@@ -23,6 +23,21 @@
     cfg = cfg || {}; progress = progress || function () { };
     var ts = cfg.timeScale || 1, H = P.H, t0 = Date.now();
     var out = { T: -1, TLP: -1, placements: [], integer: cfg.integer !== false, wealth: null, wealthLP: null, slack: null, slackLP: null, notes: [], stages: {}, solver: engine.active().name };
+    /* Trace for the step-by-step view: one entry per decision, in order, with the solver calls made for it (the
+       engine logs them). Pure bookkeeping: nothing in it is read back by the search. Plain data, it goes through
+       postMessage. */
+    out.trace = { v: 1, hint: cfg.loHint != null ? cfg.loHint : -1, steps: [] };
+    engine.log = [];
+    function mark(kind, T, o) {
+      var s = { kind: kind, T: T, ok: null, status: null, obj: null, bound: null, trail: null, nodes: null, plan: null, solves: engine.log };
+      engine.log = [];
+      for (var f in o) if (o[f] !== undefined) s[f] = o[f];
+      out.trace.steps.push(s);
+    }
+    var num = function (v) { return typeof v === 'number' && isFinite(v) ? v : null; };
+    var planOf = function (r, integer) { return MD.placementsOf(r.M, r.x, integer); };
+    var milpStep = function (T, r, o) { mark('milp', T, Object.assign({ ok: isPlan(r), status: r.status, obj: num(r.obj), bound: wLP, trail: r.trail, nodes: r.nodes, plan: isPlan(r) ? planOf(r, true) : null }, o)); };
+    var askStep = function (T, r) { var y = r.status === 'feasible'; mark('ask', T, { ok: y ? true : r.status === 'infeasible' ? false : null, status: r.status, plan: y ? planOf(r, true) : null }); };
     var capKeys = P.bankCap.on && P.bankCap.cap > 0 ? {} : null; // cap rows found violated so far (lazy constraints)
     // the dense embedded solver cannot carry many cap rows on a monthly grid: thin out the placement months for large models
     var K0 = P.products.length, grid = (capKeys && engine.active() === engine.embedded && H * K0 > 700) ? Math.ceil(H * K0 / 500) : 0, gridEv = eventMonths(P, H - 1);
@@ -45,7 +60,7 @@
 
     // ----- stage 1: maximise T* by binary search on LP feasibility (monotone in T) -----
     var lo = Math.max(-1, Math.min(H - 1, cfg.loHint != null ? cfg.loHint : -1)), hi = H - 1, nLP = 0;
-    async function feas(T) { nLP++; progress({ stage: 'search', T: T, lo: lo, hi: hi }); var r = await LPs(B(T, { obj: 'none', integer: false })); return r.status === 'optimal'; }
+    async function feas(T) { nLP++; progress({ stage: 'search', T: T, lo: lo, hi: hi }); var r = await LPs(B(T, { obj: 'none', integer: false })); mark('probe', T, { ok: r.status === 'optimal', status: r.status }); return r.status === 'optimal'; }
     if (lo < hi) { // gallop upwards from the known-feasible month, then bisect
       var step = 1, top = H; // `top` = smallest month known to be infeasible (H = none inside the horizon)
       while (lo < H - 1) { var tt = Math.min(H - 1, lo + step); if (await feas(tt)) { lo = tt; step *= 2; } else { top = tt; break; } }
@@ -60,6 +75,7 @@
       // ----- stage 2 (LP bound): maximise wealth at T -----
       progress({ stage: 'wealthLP', T: T });
       var r2 = await LPs(B(T, { obj: 'wealth', integer: false, allowBeyond: true }));
+      mark('wealthLP', T, { status: r2.status, obj: r2.status === 'optimal' ? num(r2.obj) : null, plan: r2.status === 'optimal' ? planOf(r2, false) : null });
       if (r2.status !== 'optimal') {
         if (engine.active() === engine.embedded && grid < 12) { grid = grid > 1 ? grid * 2 : 3; out.notes.push('grid_' + grid); continue; } // too large: retry on a coarser placement grid
         out.notes.push('lp_stage2_failed'); break;
@@ -69,6 +85,7 @@
       progress({ stage: 'tieLP', T: T });
       var tolLP = Math.max(0.01, 1e-7 * Math.abs(r2.obj));
       var r3 = await LPs(B(T, { obj: 'term', integer: false, allowBeyond: true, wealthMin: r2.obj - tolLP }));
+      mark('tieLP', T, { status: r3.status, plan: r3.status === 'optimal' ? planOf(r3, false) : null });
       var lpM = r3.status === 'optimal' ? r3.M : r2.M, lpX = r3.status === 'optimal' ? r3.x : r2.x;
       if (out.integer === false) { plan = MD.placementsOf(lpM, lpX, false); out.wealth = r2.obj; break; }
       // ----- MILP near T*: denominations and minimum amounts on the LP-guided candidate set -----
@@ -77,6 +94,7 @@
       progress({ stage: 'milp', T: T, cands: Object.keys(cand).length });
       var mopt = { timeLimit: 2.5 * ts, relGap: 1e-5, absGap: 0.05 };
       var m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: cand }), mopt);
+      milpStep(T, m2);
       if (!isPlan(m2)) {
         /* The search found no plan for month T. Unless it proved that there is none, that is not a "no": its budget
            may simply have run out.
@@ -93,11 +111,12 @@
             if (!firstMiss) firstMiss = { T: T, cand: cand, wLP: wLP };
             else {
               ex = await ASK(anyPlan(firstMiss.T, firstMiss.cand));
+              askStep(firstMiss.T, ex);
               if (ex.status === 'feasible') { // the month given up is reachable after all: go back to it
                 T = firstMiss.T; cand = firstMiss.cand; wLP = firstMiss.wLP;
                 out.notes = out.notes.filter(function (n) { return n !== 'milp_timeout_at_' + T; });
                 out.stages.conservative = T < out.TLP;
-              } else ex = await ASK(anyPlan(T, cand));
+              } else { ex = await ASK(anyPlan(T, cand)); askStep(T, ex); }
               asking = false; // two questions per run at most
               out.stages.asked = true;
               if (ex.status === 'feasible') { found = ex; exact = true; } else if (ex.status === 'infeasible') m2 = { status: 'infeasible' };
@@ -108,6 +127,7 @@
           if (rs.status === 'optimal') { var ss = supportKeys(rs.M, rs.x); for (var k3 in ss) cs[k3] = 1; }
           var ms = await MILPs(B(T, { obj: 'slack', integer: true, allowBeyond: true, cand: cs }), { timeLimit: 2.5 * ts, relGap: 1e-6, absGap: 1e-4 });
           if (isPlan(ms) && ms.obj <= 0.004) found = ms; else if (ms.status === 'optimal') m2 = { status: 'infeasible' };
+          mark('widen', T, { ok: !!found, status: ms.status, obj: num(ms.obj), nodes: ms.nodes, plan: found ? planOf(ms, true) : null });
         }
         if (found) { // a plan that reaches month T exists: now look for a good one, starting from it
           var sup2 = supportKeys(found.M, found.x, 0.5), cu = {}, kk, seed = { M: found.M, x: found.x };
@@ -115,6 +135,7 @@
           m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: cu }), Object.assign({ start: seed }, mopt));
           if (!isPlan(m2)) m2 = await MILPs(B(T, { obj: 'wealth', integer: true, allowBeyond: true, cand: sup2 }), { timeLimit: 1.5 * ts, relGap: 1e-5, absGap: 0.05, start: seed });
           if (!isPlan(m2) && exact) m2 = { status: 'feasible', M: found.M, x: found.x, obj: MD.wealthOf(found.M, found.x) }; // the answer itself is a valid plan
+          milpStep(T, m2, { seeded: true }); // both searches in one step; it carries the plan kept (no trail if that is the answer itself)
         }
       }
       if (isPlan(m2)) {
@@ -123,34 +144,39 @@
         progress({ stage: 'tie', T: T });
         var sup = supportKeys(m2.M, m2.x, 0.5), tolM = Math.max(0.05, 1e-6 * Math.abs(m2.obj));
         var m3 = await MILPs(B(T, { obj: 'term', integer: true, allowBeyond: true, cand: sup, wealthMin: m2.obj - tolM }), { timeLimit: 1.5 * ts, embTime: 0.5, relGap: 1e-4, absGap: 1e-3 });
-        if ((m3.status === 'optimal' || m3.status === 'feasible') && MD.wealthOf(m3.M, m3.x) >= m2.obj - tolM - 1e-6) { planM = m3.M; planX = m3.x; out.stages.milp3 = m3.status; out.wealth = MD.wealthOf(m3.M, m3.x); }
+        var acc = (m3.status === 'optimal' || m3.status === 'feasible') && MD.wealthOf(m3.M, m3.x) >= m2.obj - tolM - 1e-6;
+        if (acc) { planM = m3.M; planX = m3.x; out.stages.milp3 = m3.status; out.wealth = MD.wealthOf(m3.M, m3.x); }
+        mark('tie', T, { ok: acc, status: m3.status, trail: m3.trail, nodes: m3.nodes, plan: acc ? planOf(m3, true) : null });
         plan = MD.placementsOf(planM, planX, true);
         break;
       }
       out.notes.push(m2.status === 'infeasible' ? 'milp_infeasible_at_' + T : 'milp_timeout_at_' + T);
       out.stages.conservative = true;
       T--;
+      mark('back', T, { from: T + 1 });
       if (T <= Math.max(-1, cfg.loHint != null ? cfg.loHint : -1)) { plan = []; out.wealth = null; break; }
     }
     if (plan == null) { // LP stage failed unexpectedly: fall back to the hint (no new placements)
-      T = Math.max(-1, cfg.loHint != null ? cfg.loHint : -1); plan = [];
+      var Tf = T; T = Math.max(-1, cfg.loHint != null ? cfg.loHint : -1); plan = [];
+      if (T !== Tf) mark('back', T, { from: Tf });
     }
     out.T = T; out.placements = plan; out.wealthLP = wLP;
 
     // ----- stage 4: minimal slack (shortfall) of the first month after T* -----
     if (T + 1 <= H - 1) {
       progress({ stage: 'slack', T: T + 1 });
-      var r4 = await LPs(B(T + 1, { obj: 'slack', integer: false }));
+      var r4 = await LPs(B(T + 1, { obj: 'slack', integer: false })), m4 = null;
       if (r4.status === 'optimal') {
         out.slackLP = Math.max(0, r4.obj);
         out.slack = out.slackLP;
         if (out.integer !== false) {
           var c4 = addEvents(P, T + 1, supportKeys(r4.M, r4.x), eventMonths(P, T + 1));
           if (planM) { var sp = supportKeys(planM, planX, 0.5); for (var key in sp) { var pp = key.split('_'); if (+pp[0] + P.products[+pp[1]].term + P.lead <= T + 1) c4[key] = 1; } }
-          var m4 = await MILPs(B(T + 1, { obj: 'slack', integer: true, cand: c4 }), { timeLimit: 1.2 * ts, embTime: 0.5, relGap: 1e-3, absGap: 0.5 });
+          m4 = await MILPs(B(T + 1, { obj: 'slack', integer: true, cand: c4 }), { timeLimit: 1.2 * ts, embTime: 0.5, relGap: 1e-3, absGap: 0.5 });
           if (m4.status === 'optimal' || m4.status === 'feasible') { out.slack = Math.max(out.slackLP, m4.obj); out.stages.milp4 = m4.status; }
         }
       }
+      mark('slack', T + 1, { slackLP: out.slackLP, obj: out.slack, status: m4 ? m4.status : r4.status });
     }
     out.ms = Date.now() - t0; out.solver = engine.active().name; out.engine = engine.stats;
     return out;

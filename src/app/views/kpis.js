@@ -7,7 +7,7 @@
   function renderKpis() {
     var box = $('kpis'); box.innerHTML = '';
     var v = A.view;
-    function tile(cls, lab, val, sub, valCls) { box.appendChild(el('div', { class: 'kpi ' + (cls || '') }, el('div', { class: 'lab', html: lab }), el('div', { class: 'val ' + (valCls || ''), html: val }), sub ? el('div', { class: 'sub', html: sub }) : null)); }
+    function tile(cls, lab, val, sub, valCls) { return box.appendChild(el('div', { class: 'kpi ' + (cls || '') }, el('div', { class: 'lab', html: lab }), el('div', { class: 'val ' + (valCls || ''), html: val }), sub ? el('div', { class: 'sub', html: sub }) : null)); }
     if (!hasData(A.state) || (!v && !A.lastError)) { // skeleton: the tiles that will appear, without numbers
       var sk = function (w) { return '<span class="sk" style="width:' + w + '"></span>'; };
       tile('hero', esc(t('k_safe')), sk('11rem'), sk('16rem')); tile('', esc(t('k_runway')), sk('6rem'), sk('4rem')); tile('', esc(t('k_interest')), sk('5rem'), sk('6rem'));
@@ -21,15 +21,16 @@
       tile('wide', A.term('base', t('k_gain')), '–', '&nbsp;'); tile('k-lock', esc(t('k_locked')), '–', '&nbsp;'); tile('full', esc(t('k_next')), '–', '', 'sm'); return;
     }
     var P = v.P, T = v.sim.Tstar, H = P.H, res = v.res, sub;
-    if (T < 0) tile('hero bad', A.term('tstar', t('k_safe')), esc(t('k_none')), '');
-    else if (T >= H - 1) tile('hero', A.term('tstar', t('k_safe')), '≥ ' + esc(mLabel(P, T, true)), esc(t('k_safeAll')) + gridNote(res) + solverNote(res));
+    var seeHow = function (n) { n.appendChild(el('button', { type: 'button', class: 'rp-link', 'aria-controls': 'replay', text: t('rp_see'), onclick: function () { A.replay.open(); } })); }; // the step-by-step view of this result
+    if (T < 0) seeHow(tile('hero bad', A.term('tstar', t('k_safe')), esc(t('k_none')), ''));
+    else if (T >= H - 1) seeHow(tile('hero', A.term('tstar', t('k_safe')), '≥ ' + esc(mLabel(P, T, true)), esc(t('k_safeAll')) + gridNote(res) + solverNote(res)));
     else {
       var slack = res.slack != null && res.slack > 0.005 ? res.slack : (res.slackLP != null && res.slackLP > 0.005 ? res.slackLP : null);
       sub = esc(t('k_firstGap', { m: mLabel(P, T + 1, true) })) + ' · ' + A.term('slack', slack != null ? t('k_slack', { a: A.eur(slack) }) : t('k_slackPlan', { a: A.eur(v.sim.shortfall) }));
       var open = (res.notes || []).some(function (n) { return n.indexOf('milp_timeout_at_') === 0; }); // the search budget ran out at some month: nothing was proven
       if (res.TLP > T) sub += '<br>' + A.term('lprel', t(open ? 'k_boundOpen' : 'k_bound', { m: mLabel(P, res.TLP) }));
       sub += gridNote(res) + solverNote(res);
-      tile('hero', A.term('tstar', t('k_safe')), esc(mLabel(P, T, true)), sub);
+      seeHow(tile('hero', A.term('tstar', t('k_safe')), esc(mLabel(P, T, true)), sub));
     }
     tile('', esc(t('k_runway')), esc(t('k_months', { n: T + 1 })), esc(t('k_years', { y: new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format((T + 1) / 12) })));
     var g1 = T - v.base.tg.Tstar, g2 = T - v.base.naive.Tstar, sg = function (n) { return (n > 0 ? '+' : '') + n; };

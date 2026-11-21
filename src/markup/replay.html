@@ -1,0 +1,26 @@
+<!--# "Rechenweg": the steps the optimiser took for the plan on screen, one at a time. A page mode like the wizard; -->
+<!--# src/app/views/replay.js fills it from A.view.res.trace. The chart container stays in place: its ECharts instance is bound to it. -->
+<section class="replay hide" id="replay" aria-labelledby="rpTitle">
+  <div class="rp-head"><h2 id="rpTitle" tabindex="-1" data-i18n="rp_title">Rechenweg: So entstand der Plan</h2><p class="rp-lead" id="rpLead"></p></div>
+  <div class="rp-grid">
+    <nav class="rp-menu" id="rpMenu" aria-label="Schritte">
+      <ol class="wiz-steps rp-steps" id="rpSteps"></ol>
+    </nav>
+    <div class="rp-main" id="rpMain">
+      <button class="rp-tomenu" id="rpToMenu" type="button" data-i18n="rp_all">Alle Schritte</button>
+      <div class="note hide" id="rpNone" role="status" data-i18n="rp_none">Für diese Berechnung ist kein Rechenweg verfügbar.</div>
+      <div class="card rp-q" id="rpQ" tabindex="-1" aria-live="polite"></div>
+      <div class="card rp-hz" id="rpHz"></div>
+      <div class="card rp-vis" id="rpVis">
+        <div class="card-head"><h3 id="rpVisTitle"></h3>
+          <div class="seg hide" role="group" id="rpSeg"><button type="button" id="rpSegSearch" aria-pressed="true" data-i18n="rp_m_search">Suchverlauf</button><button type="button" id="rpSegPlan" aria-pressed="false" data-i18n="rp_m_plan">Monatsstände</button></div></div>
+        <p class="rp-cap" id="rpCap"></p>
+        <div class="legend rp-legend" id="rpLegend" role="group"></div>
+        <div class="chart rp-chart" id="chartReplay" role="img"></div>
+        <div class="rp-figs" id="rpFigs"></div>
+      </div>
+      <div class="rp-hood" id="rpHood"></div>
+      <div class="rp-foot" id="rpFoot"><button class="btn" id="rpBack" type="button" data-i18n="w_back">Zurück</button><button class="btn primary" id="rpNext" type="button">Weiter</button></div>
+    </div>
+  </div>
+</section>

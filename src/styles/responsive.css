@@ -4,7 +4,7 @@
   .top { position: relative; }
   .brand { width: 100%; min-height: 44px; padding-right: 156px; }
   .top .ctl #btnInputs { position: absolute; top: 16px; right: 92px; width: 32px; }
-  .top .ctl #btnWizard { grid-column: 1 / -1; }
+  .top .ctl #btnWizard, .top .ctl #btnReplay { order: -1; } /* Assistent and Rechenweg share the first row */
   .wiz .top .ctl #btnWizard { grid-column: auto; }
   .top .ctl .theme-switch { position: absolute; top: 16px; right: 16px; } /* beside the title */
   .top .ctl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; align-items: end; }

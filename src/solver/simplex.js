@@ -11,6 +11,7 @@
      machine only takes longer to get there. One unit is about one millisecond on a 2020 laptop. */
   var WORK = 0, WORK_PER_MS = 700000;
   function now() { return WORK / WORK_PER_MS; }
+  var PIVOTS = 0; // for the trace of a run only (backends.js): counts, never limits, so it cannot change a result
 
   function Dense(M) {
     var n = M.cols.length, m = M.rows.length, i, j, k;
@@ -134,7 +135,7 @@
     var old = this.basis[r];
     if (old < N) this.inBasis[old] = 0;
     this.basis[r] = q; this.inBasis[q] = 1;
-    this.iters++; this.sinceRef++;
+    this.iters++; this.sinceRef++; PIVOTS++;
   };
   Dense.prototype.loB = function (bi) { return bi >= this.N ? 0 : this.lb[bi]; };
   Dense.prototype.upB = function (bi, phase1) { return bi >= this.N ? (phase1 ? Infinity : 0) : this.ub[bi]; };
@@ -333,7 +334,7 @@
     var S = new Dense(M), st = S.solveLP(deadline);
     if (st !== 'optimal') return { status: st === 'limit' ? 'unknown' : st, x: null, nodes: 0 };
     var x = S.x();
-    if (!ints.length) return { status: 'optimal', x: x, obj: LP.model.objOf(M, x), bound: LP.model.objOf(M, x), nodes: 0 };
+    if (!ints.length) { var o0 = LP.model.objOf(M, x); return { status: 'optimal', x: x, obj: o0, bound: o0, nodes: 0, trail: [{ n: 0, v: o0 }] }; }
     var sgn = M.sense === 'max' ? -1 : 1;
     var rootMin = S.objMin(x) ;
     var lb0 = new Float64Array(M.cols.length), ub0 = new Float64Array(M.cols.length);
@@ -394,12 +395,12 @@
       }
       return bestJ;
     }
-    var rejected = 0;
+    var rejected = 0, trail = []; // trail: each better plan as { n: nodes so far, v: its objective }, for the trace of a run
     function tryIncumbent(xs, objMin) {
       var p = polish(M, xs);
       if (!p.ok) { rejected++; return false; }
       var om = sgn * (p.obj - M.objConst);
-      if (om < incMin - 1e-9) { incMin = om; incumbent = p.x; }
+      if (om < incMin - 1e-9) { incMin = om; incumbent = p.x; if (trail.length >= 300) trail.pop(); trail.push({ n: nodes, v: p.obj }); } // full: the newest replaces the last, so the trail always ends at the plan returned
       return true;
     }
     if (opts.start) tryIncumbent(opts.start, 0); // a plan known from elsewhere: the search can only improve on it
@@ -455,9 +456,9 @@
       if (now() > deadline) break;
     }
     var bound = limit ? Math.min(rootMin, incMin) : incMin;
-    if (!incumbent) return { status: limit ? 'unknown' : 'infeasible', x: null, nodes: nodes, bound: sgn * bound + M.objConst };
-    return { status: limit ? 'feasible' : 'optimal', x: incumbent, obj: LP.model.objOf(M, incumbent), bound: sgn * bound + M.objConst, nodes: nodes, rejected: rejected };
+    if (!incumbent) return { status: limit ? 'unknown' : 'infeasible', x: null, nodes: nodes, bound: sgn * bound + M.objConst, trail: trail };
+    return { status: limit ? 'feasible' : 'optimal', x: incumbent, obj: LP.model.objOf(M, incumbent), bound: sgn * bound + M.objConst, nodes: nodes, rejected: rejected, trail: trail };
   }
 
-  LP.simplex = { Dense: Dense, solveLP: solveLP, solveMILP: solveMILP, polish: polish, now: now, work: function () { return WORK; } };
+  LP.simplex = { Dense: Dense, solveLP: solveLP, solveMILP: solveMILP, polish: polish, now: now, work: function () { return WORK; }, pivots: function () { return PIVOTS; } };
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -45,7 +45,7 @@
     syncInputsBtn();
     A.resizeCharts();
   }
-  function setLang(l) { A.lang = l; A.state.lang = l; A.save(); A.renderStatic(); A.renderSide(); A.renderAll(); A.onSolverInfo(); A.wizard.render(); }
+  function setLang(l) { A.lang = l; A.state.lang = l; A.save(); A.renderStatic(); A.renderSide(); A.renderAll(); A.onSolverInfo(); A.wizard.render(); A.replay.render(); }
   function wire() {
     $('btnInputs').onclick = function () { toggleSide(); };
     $('btnCloseSide').onclick = function () { toggleSide(false); }; $('scrim').onclick = function () { toggleSide(false); };
@@ -104,7 +104,7 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeMenu(); if (isNarrow()) toggleSide(false); } });
     var rz = null; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(A.resizeCharts, 150); });
     // re-colour the charts when the viewer switches between light and dark
-    var th = null, recolor = function () { clearTimeout(th); th = setTimeout(function () { A.renderAll(); }, 60); };
+    var th = null, recolor = function () { clearTimeout(th); th = setTimeout(function () { A.renderAll(); A.replay.render(); }, 60); };
     try { new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) { /* ignore */ }
     try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor); } catch (e2) { /* ignore */ }
   }

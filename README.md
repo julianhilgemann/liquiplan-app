@@ -54,6 +54,7 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 | **Actions** | A dated to-do list: order deadlines, value dates, maturities, and the monthly transfer to the current account |
 | **Scenarios** | The whole optimisation re-run and re-verified under each interest-rate scenario |
 | **Monthly grid** | Month-by-month table. Extra need, extra income and a minimum liquidity can be overridden for single months |
+| **Step by step** | The decisions the optimiser took for the plan on screen, one at a time: each question and its answer, the months asked about so far, the plan at that step as month-end balances (or the progress of the integer search), and the linear system behind it |
 | **Methodology / Self-test** | The model explained inside the app, and a button that tests solver, simulator and Excel export against each other |
 
 <table>
@@ -74,6 +75,9 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 <td><img src="docs/screenshots/scen.png" alt="Scenario comparison"><br><sub>Every rate scenario optimised separately</sub></td>
 </tr>
 <tr>
+<td colspan="2"><img src="docs/screenshots/steps.png" alt="Step-by-step view: the list of steps, the question of step 7 and its answer, the horizon strip and the progress of the integer search"><br><sub>Step by step: how the plan was found, here the integer search against the best case</sub></td>
+</tr>
+<tr>
 <td><img src="docs/screenshots/overview-dark.png" alt="Dark theme"><br><sub>Dark theme</sub></td>
 <td align="center"><img src="docs/screenshots/mobile.png" alt="Phone layout" width="45%"><br><sub>Phone layout</sub></td>
 </tr>
@@ -87,6 +91,7 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 - **Examples**: *Example G* (the reference case from the original specification), *Retirement with rental income* (20 years, pension from 2028, large one-off repairs, tax on) and *Rate trap* (example G plus a tempting 10-year deposit at 5.9 % that a naive rate chaser falls for).
 - **Rate scenarios**: own central-bank steps, current rates held constant, −1 pp from 2028, rising rates (+0.5 pp a year up to +1.5 pp), inverted curve.
 - **Calculation is manual**: nothing is computed until you press **Optimise**, not even when the page opens or an example is loaded. A card then confirms that the data is loaded and points to the button. After an input change the old results are greyed out until the next run. A progress dialog then ticks off each optimisation stage; *Cancel* stops the run and keeps the previous results on screen.
+- **Step by step**: a page of its own, like the wizard, that replays the decisions the optimiser took for the plan on screen, one at a time, with the list of steps beside it and *Back* / *Next* below. Three ways in: the *Step by step* button in the toolbar (an icon only in windows from 721 to 1519 px wide), *See how this was found* in the *Liquidity secured until* tile, and the button in the Methodology section. Without a current result (none yet, or the inputs have changed since), each of them runs **Optimise** first and opens the page when the run is over. On phones the list and the step take turns: *All steps* leads to the list, a tap on a step opens it. ← and → move one step, Home and End jump to the first and the last, and Escape, *Analysis* in the toolbar or *Back to the analysis* on the last step lead back.
 - **Numbers**: every number field accepts a decimal comma or a decimal point, whatever language the browser is set to (`3,12` and `3.12` are the same rate). In amounts, `10.000` and `10,000` both mean ten thousand. The field echoes back what it understood, and text that is not a number is flagged and ignored instead of being read as 0.
 - **Export / import**: HTML with your inputs embedded, an Excel workbook with live formulas, the full state as JSON, and the rate table as JSON (for quick updates of offers).
 
@@ -117,7 +122,7 @@ The code and UI use German finance terms. The English UI translates them; here t
 
 ## How the optimisation works
 
-This section follows the data from your inputs to the plan on screen. Each heading names the function that does the work; the links jump to the line in the HTML file.
+This section follows the data from your inputs to the plan on screen. Each heading names the function that does the work; the links jump to the line in the source file.
 
 ### 1. Inputs become a monthly timeline: [`prepare()`](src/core/core.js#L74)
 
@@ -194,15 +199,15 @@ The progress dialog shows these stages live while the app optimises, followed by
 
 <img src="docs/screenshots/progress.png" alt="Progress dialog listing the optimisation stages" width="720">
 
-**Stage 1: maximise T\*** ([code](src/solver/optimize.js#L46)). Feasibility is **monotone** in `T`: if months 0…T can all be covered, so can 0…T−1. The app therefore searches for the largest feasible `T` with LP relaxations (no integrality, fast). It starts from a known-feasible month (the simulator's horizon without any new placements, `loHint`), **gallops** upwards with doubling steps until the first infeasible month, then **bisects**. That is `O(log H)` LPs.
+**Stage 1: maximise T\*** ([code](src/solver/optimize.js#L61)). Feasibility is **monotone** in `T`: if months 0…T can all be covered, so can 0…T−1. The app therefore searches for the largest feasible `T` with LP relaxations (no integrality, fast). It starts from a known-feasible month (the simulator's horizon without any new placements, `loHint`), **gallops** upwards with doubling steps until the first infeasible month, then **bisects**. That is `O(log H)` LPs.
 
-**Stage 2: maximise wealth at T\*** ([LP bound](src/solver/optimize.js#L60), [MILP](src/solver/optimize.js#L74)). With `T` fixed, an LP maximises `s[T] + Σ open deposits incl. accrued interest`. Its value is an upper bound. The integer problem (denominations, minimum amounts) is then solved only on a **candidate set**: every (month, product) pair that the LP solutions used, plus all products in "event months" (month 0, existing maturities and the safety-lead months after them, and months with one-off income). This keeps the MILP small enough for a browser.
+**Stage 2: maximise wealth at T\*** ([LP bound](src/solver/optimize.js#L75), [MILP](src/solver/optimize.js#L91)). With `T` fixed, an LP maximises `s[T] + Σ open deposits incl. accrued interest`. Its value is an upper bound. The integer problem (denominations, minimum amounts) is then solved only on a **candidate set**: every (month, product) pair that the LP solutions used, plus all products in "event months" (month 0, existing maturities and the safety-lead months after them, and months with one-off income). This keeps the MILP small enough for a browser.
 
-**When the search finds no integer plan** ([code](src/solver/optimize.js#L81)). Sometimes the LP reaches `T` but no integer plan does, for example because €100 steps or a €1,000 minimum don't fit. And sometimes a plan exists but the search does not find it within its budget. The first month without a plan is given up (`T := T − 1`): it usually is out of reach, and proving that can take long. If the search then fails again one month lower, it is the search that is failing, not the months. HiGHS is then asked a plain yes/no question, first for the month that was given up and then for the current one: is there *any* integer plan up to this month? Without an objective the first plan HiGHS finds is optimal, so it stops there and returns it. A "yes" takes the month back, and stage 2 continues from that plan. At most two questions are asked per run. Without HiGHS the embedded search instead minimises the slack of month `T` on a widened candidate set (±1 month around every candidate). This is the only way T\* can end up below the LP value. The KPI then shows the LP bound and says whether the month was not reached or a plan was merely not found within the search budget.
+**When the search finds no integer plan** ([code](src/solver/optimize.js#L99)). Sometimes the LP reaches `T` but no integer plan does, for example because €100 steps or a €1,000 minimum don't fit. And sometimes a plan exists but the search does not find it within its budget. The first month without a plan is given up (`T := T − 1`): it usually is out of reach, and proving that can take long. If the search then fails again one month lower, it is the search that is failing, not the months. HiGHS is then asked a plain yes/no question, first for the month that was given up and then for the current one: is there *any* integer plan up to this month? Without an objective the first plan HiGHS finds is optimal, so it stops there and returns it. A "yes" takes the month back, and stage 2 continues from that plan. At most two questions are asked per run. Without HiGHS the embedded search instead minimises the slack of month `T` on a widened candidate set (±1 month around every candidate). This is the only way T\* can end up below the LP value. The KPI then shows the LP bound and says whether the month was not reached or a plan was merely not found within the search budget.
 
-**Stage 3: prefer short terms** ([LP](src/solver/optimize.js#L68), [MILP](src/solver/optimize.js#L122)). Among plans whose wealth is within a tolerance of the stage-2 optimum (€0.05 or 10⁻⁶ relative, whichever is larger), minimise `Σ amount × term`. Ties are common (several ladders reach the same wealth) and the shorter ones keep more options open.
+**Stage 3: prefer short terms** ([LP](src/solver/optimize.js#L84), [MILP](src/solver/optimize.js#L143)). Among plans whose wealth is within a tolerance of the stage-2 optimum (€0.05 or 10⁻⁶ relative, whichever is larger), minimise `Σ amount × term`. Ties are common (several ladders reach the same wealth) and the shorter ones keep more options open.
 
-**Stage 4: report the shortfall** ([code](src/solver/optimize.js#L140)). For month `T+1` minimise the slack `z` in `u[T+1] + z ≥ floor[T+1]`. LP and MILP give the amount that is at least missing to survive one more month.
+**Stage 4: report the shortfall** ([code](src/solver/optimize.js#L165)). For month `T+1` minimise the slack `z` in `u[T+1] + z ≥ floor[T+1]`. LP and MILP give the amount that is at least missing to survive one more month.
 
 Why lexicographic and not a weighted objective? A weighted sum needs a penalty weight that trades months of safety against euros of interest, and any finite weight can be "bought off" by a high enough rate. Solving goals strictly in order makes "interest never shortens T\*" a guarantee, not a tuning result.
 
@@ -212,7 +217,7 @@ The optimisation runs in a **Web Worker**, built at runtime from the page's own 
 
 1. **[HiGHS](https://highs.dev)** compiled to WebAssembly ([`HighsBackend`](src/solver/backends.js#L19)). It receives the model as CPLEX LP text from [`toLPString()`](src/solver/model.js#L265). LPs are retried with presolve off and then with the interior-point method if the first attempt fails.
 2. **javascript-lp-solver** ([`JsLpBackend`](src/solver/backends.js#L53)), used for LPs only.
-3. **The embedded solver** ([`EmbeddedBackend`](src/solver/backends.js#L96)): a dense bounded-variable simplex plus branch-and-bound, written for this app. It is always present.
+3. **The embedded solver** ([`EmbeddedBackend`](src/solver/backends.js#L97)): a dense bounded-variable simplex plus branch-and-bound, written for this app. It is always present.
 
 **Same inputs, same plan, on every machine.** No limit in the optimisation is measured in real time, so a slower machine does exactly the same work and only takes longer:
 
@@ -225,16 +230,18 @@ The plan still depends on *which* LP solver loaded: HiGHS and the embedded simpl
 
 HiGHS and javascript-lp-solver must each solve a tiny test MILP correctly on load (optimum 7) before they are used. Answers are trusted only as far as they were checked:
 
-- **Every MILP answer is "polished"** ([`polish()`](src/solver/simplex.js#L303)): the integer columns are rounded and fixed, and the continuous rest (liquidity, tax) is re-solved exactly. Results that don't survive this are discarded.
-- **[`Engine.milp`](src/solver/engine.js#L51)** runs the embedded branch-and-bound on the work clock. A plan known from elsewhere (the answer to a yes/no question) can be passed in as a starting point; the search can then only improve on it.
-- **[`Engine.lp`](src/solver/engine.js#L27)**: an optimum from javascript-lp-solver is accepted only if the embedded simplex reaches the same objective value, and an "infeasible" from it is never trusted. After two rejected answers the backend is dropped for the session. HiGHS is restarted after a crash, at most twice, before it is dropped.
+- **Every MILP answer is "polished"** ([`polish()`](src/solver/simplex.js#L304)): the integer columns are rounded and fixed, and the continuous rest (liquidity, tax) is re-solved exactly. Results that don't survive this are discarded.
+- **[`Engine.milp`](src/solver/engine.js#L59)** runs the embedded branch-and-bound on the work clock. A plan known from elsewhere (the answer to a yes/no question) can be passed in as a starting point; the search can then only improve on it.
+- **[`Engine.lp`](src/solver/engine.js#L34)**: an optimum from javascript-lp-solver is accepted only if the embedded simplex reaches the same objective value, and an "infeasible" from it is never trusted. After two rejected answers the backend is dropped for the session. HiGHS is restarted after a crash, at most twice, before it is dropped.
 - **Watchdog**: before each call the worker posts a heartbeat with a time budget ([`S.arm`](src/app/ui/solver-client.js#L30)). If the budget runs out, the main thread kills the worker, marks that backend as skipped (javascript-lp-solver for a week, via `localStorage`), restarts and re-sends the job. This watchdog is the only real-time limit left, and its budgets are generous so that a slow device is not mistaken for a hang. If even the embedded solver hangs, or Workers are unavailable, the embedded solver runs on the main thread ([`S.toMain`](src/app/ui/solver-client.js#L24)).
 
-**Inside the embedded solver** ([`Dense`](src/solver/simplex.js#L15), [`solveMILP`](src/solver/simplex.js#L328)):
+**Inside the embedded solver** ([`Dense`](src/solver/simplex.js#L16), [`solveMILP`](src/solver/simplex.js#L329)):
 
-- A **bounded-variable tableau simplex**: two-phase [primal](src/solver/simplex.js#L143) with artificial variables, and [dual simplex](src/solver/simplex.js#L198) re-optimisation after bound changes, so every B&B node is warm-started from its parent's basis. A periodic [`refactor()`](src/solver/simplex.js#L65) rebuilds the tableau from the original rows to remove floating-point drift.
-- **Branch-and-bound** as a [depth-first search](src/solver/simplex.js#L421) with bound pruning and absolute/relative gap tolerances. A root heuristic (round everything down, fix it, re-solve) provides an early incumbent. The search cycles through three branching rules in slices of its work budget: chronological with semi-integer violations first and the down branch first (50 % of the budget), largest value (to 75 %), most fractional with the nearest branch first (to 100 %). It stops as soon as one rule has searched the tree completely.
+- A **bounded-variable tableau simplex**: two-phase [primal](src/solver/simplex.js#L144) with artificial variables, and [dual simplex](src/solver/simplex.js#L199) re-optimisation after bound changes, so every B&B node is warm-started from its parent's basis. A periodic [`refactor()`](src/solver/simplex.js#L66) rebuilds the tableau from the original rows to remove floating-point drift.
+- **Branch-and-bound** as a [depth-first search](src/solver/simplex.js#L422) with bound pruning and absolute/relative gap tolerances. A root heuristic (round everything down, fix it, re-solve) provides an early incumbent. The search cycles through three branching rules in slices of its work budget: chronological with semi-integer violations first and the down branch first (50 % of the budget), largest value (to 75 %), most fractional with the nearest branch first (to 100 %). It stops as soon as one rule has searched the tree completely.
 - **Semi-integer branching**: a column with `0 < n < min` branches into `n = 0` and `n ≥ min`, with no binary helper variable.
+
+**What the engine records.** Every answer the engine uses is also written to a log ([`Engine.log`](src/solver/engine.js#L19), one entry per call from [`rec()`](src/solver/engine.js#L23)): the kind of call (LP, integer search or yes/no question), the backend that answered, the size of the model, its rows and columns counted by kind (by the first letter of their name in `model.js`: `b` balance rows, `x` tax rows, `n` placements, …) and the status. When the answer came from the embedded solver, the entry also has its simplex pivots ([`pivots()`](src/solver/simplex.js#L14)) and, for an integer search, the search nodes. Pivots are known only then: HiGHS (like javascript-lp-solver) hands back only the final answer, not how it got there. The log is what the step-by-step view shows under the hood (section 6).
 
 ### 5. Independent verification: [`LP.sim.run()`](src/app/sim.js#L10) and [`verify()`](src/app/sim.js#L113)
 
@@ -252,11 +259,24 @@ The simulator deliberately **shares no code with the model**. It walks through t
 
 The two **baselines** are only simulated: [`allTagesgeld()`](src/app/sim.js#L94) keeps everything liquid, and [`naive()`](src/app/sim.js#L96) buys the highest-rate product each month (if it beats overnight money) with all cash above `floor + 3 × next month's need` (the reserve multiple is adjustable).
 
-### 6. From months to calendar dates: [`trancheDates()`](src/app/views/ladder.js#L8)
+### 6. Step by step: [`res.trace`](src/solver/optimize.js#L29) and [`A.replay`](src/app/views/replay.js#L17)
+
+`optimize()` keeps a record of its decisions and returns it with the plan as `res.trace = { v, hint, steps }` (`hint` is the no-placement horizon it started from). A **step** is one decision of the pipeline; [`mark()`](src/solver/optimize.js#L31) appends it and takes over the engine's log of the solver calls made since the previous step (`solves`), so every call belongs to exactly one step. The kinds follow the stages: `probe` (one per LP of the horizon search in stage 1), `wealthLP` and `tieLP` (the LPs of stages 2 and 3), `milp` (the integer search, with its `trail`: every better plan it found, and after how many search nodes), `ask` (a yes/no question to HiGHS) or `widen` (the widened search without HiGHS), `back` (a month given up), `tie` (the integer tie-break) and `slack` (stage 4). A step that produced a plan carries its placements (`plan`).
+
+The trace is bookkeeping only. Nothing in it is read back by the search, and counting pivots does not advance the work clock, so it cannot change the plan. It is plain data and travels to the main thread with the result.
+
+The step-by-step view ([`A.replay`](src/app/views/replay.js#L17)) builds its list of steps from the trace ([`build()`](src/app/views/replay.js#L33)) and adds two of its own: the **starting point** first (the path without new deposits, simulated) and the **cross-check** last (the plan as the independent simulator of section 5 recomputed it). Each step shows:
+
+- the question and its answer in plain language ([`qa()`](src/app/views/replay.js#L109)),
+- a horizon strip with every month asked about so far, marked reachable, not reachable or still open ([`renderStrip()`](src/app/views/replay.js#L221)),
+- the plan at that step as month-end balances: simulated with `LP.sim.run()` and drawn with the main chart's own functions ([`drawPlan()`](src/app/views/replay.js#L267)). A horizon probe shows the path without new deposits, with the months from there to the one asked about tinted, and a step without a plan of its own shows the latest one, faded. When the integer search found at least three better plans, the chart opens instead on the search progress: the wealth of the best plan so far over the search nodes, against the best case of the LP ([`drawSearch()`](src/app/views/replay.js#L296)); a switch shows the balances,
+- a few key figures, and *Under the hood*: for each kind of solver call the backend, the size of the linear system, its rows and columns by kind, pivots, nodes and the status ([`renderHood()`](src/app/views/replay.js#L400)).
+
+### 7. From months to calendar dates: [`trancheDates()`](src/app/views/ladder.js#L8)
 
 The model thinks in months; the action list needs real dates. A placement for month *t* has to be **ordered by the penultimate business day of the previous month** ([`penultimateBusinessDay()`](src/core/core.js#L51)), is **valued on the first business day** of month *t*, and matures on the next business day after `term` months. Business days exclude weekends, German nationwide holidays ([`holidays()`](src/core/core.js#L34), with Easter from the anonymous Gregorian algorithm) and 24/31 December. The standing transfer of next month's need from overnight money to the current account follows the same T+1 rule. [`buildActions()`](src/app/views/actions.js#L7) turns all of this into the grouped to-do table.
 
-### 7. Excel export: [`LP.xlsx.build()`](src/app/xlsx.js#L70)
+### 8. Excel export: [`LP.xlsx.build()`](src/app/xlsx.js#L70)
 
 The workbook is written with ExcelJS and post-processed with JSZip. It has nine sheets: `Cover`, `Inputs`, `CashFlows`, `Ladder`, `Liquidity`, `Gap`, `Scenarios`, `Charts`, `Solver`.
 
@@ -266,7 +286,7 @@ The workbook is written with ExcelJS and post-processed with JSZip. It has nine 
 - The `Solver` sheet comes with **pre-filled Excel Solver settings** (`solver_*` defined names) to re-run stage 2 (maximise wealth at a fixed T\*) inside Excel, with step-by-step instructions.
 - [`sensitivity()`](src/app/xlsx.js#L61) re-simulates the plan under parallel rate shifts.
 
-### 8. Self-test: [`A.selftest()`](src/app/selftest.js#L7)
+### 9. Self-test: [`A.selftest()`](src/app/selftest.js#L7)
 
 The **Self-test** button runs, for every example: the plan is verified and the simulated T\* ≥ the solver's T\*; the optimised T\* ≥ the all-overnight baseline. Then three property tests: the rate trap never ends worse than the plain case; **adding a product never shortens T\***; **adding an inflow never shortens T\***. Finally the Excel export is built, re-opened with ExcelJS, and its formula values are compared with the web simulation (≤ 1 cent per month, same first shortfall).
 
@@ -299,12 +319,12 @@ The build needs Node.js and nothing else. It does not bundle, transpile or minif
 |---|---|---|---|
 | [`src/index.html`](src/index.html) | the page | – | the template: the head, the order of all includes, and [`<script id="src-theme">`](src/index.html#L10), which applies the saved light/dark choice before the first paint |
 | [`src/styles/`](src/styles/) | [`<style id="css">`](src/styles/tokens.css#L1) | – | the design system and the styles of each part of the page (see [Styles](#styles)) |
-| [`src/markup/`](src/markup/) | [`<div id="app">`](src/markup/toolbar.html#L1) | – | the static page skeleton: toolbar, wizard, the workspace with one file per result section, overlays |
+| [`src/markup/`](src/markup/) | [`<div id="app">`](src/markup/toolbar.html#L1) | – | the static page skeleton: toolbar, wizard, the step-by-step view, the workspace with one file per result section, overlays |
 | [`src/core/`](src/core/) | [`<script id="src-core">`](src/core/core.js#L1) | main thread **and** worker | `core.js` (dates, calendar, timeline), `presets.js` |
 | [`src/solver/`](src/solver/) | [`<script id="src-solver">`](src/solver/model.js#L1) | worker | `model.js`, `simplex.js`, `backends.js`, `engine.js`, `optimize.js`, `workerglue.js` |
 | [`src/app/`](src/app/) | [`<script id="src-app">`](src/app/sim.js#L1) | main thread | `sim.js`, `i18n/`, `ui/`, `views/`, `xlsx.js`, `wizard.js`, `export.js`, `selftest.js`, `main.js` |
 
-The page also carries [`<script id="embedded-state">`](src/index.html#L66): the inputs a downloaded copy was saved with, empty in the published app.
+The page also carries [`<script id="embedded-state">`](src/index.html#L69): the inputs a downloaded copy was saved with, empty in the published app.
 
 The three script blocks are a functional split: the worker is assembled from the text of `src-core` + `src-solver`, so a file's folder decides where it runs.
 
@@ -322,7 +342,7 @@ There are no ES modules. Every `.js` file is an IIFE that hangs its API on one g
 | `toolbar.css`, `shell.css`, `inputs.css` | Top bar with solver status and export menu, the two-column layout with the inputs drawer, input groups and entry cards |
 | `cards.css`, `kpis.css`, `notes.css`, `charts.css`, `tables.css` | Building blocks of the results: cards, KPI tiles, pills and notes and the section navigation, chart sizes and legends, tables |
 | `ladder.css`, `ladder-years.css`, `actions.css`, `waterfall.css`, `strategies.css` | One result section each |
-| `methodology.css`, `dialogs.css`, `empty-state.css`, `progress.css`, `wizard.css`, `stale.css` | Methodology text and glossary tooltip, toasts and the JSON dialog, the blank slate, the progress dialog, the setup wizard, the "inputs changed" bar |
+| `methodology.css`, `dialogs.css`, `empty-state.css`, `progress.css`, `wizard.css`, `replay.css`, `stale.css` | Methodology text and glossary tooltip, toasts and the JSON dialog, the blank slate, the progress dialog, the setup wizard, the step-by-step view, the "inputs changed" bar |
 | [`responsive.css`](src/styles/responsive.css) | Phones, touch targets, *Reduce Motion*. Last, so that it overrides the rest |
 
 ### How the parts work together
@@ -335,6 +355,7 @@ flowchart LR
         SS --> V["LP.sim.verify()"]
         V --> RA["renderAll()"]
         V --> X["LP.xlsx.build()"]
+        V --> RP["A.replay<br/>(step by step)"]
     end
     subgraph worker["Web Worker (src-core + src-solver)"]
         PR["LP.core.prepare()"] --> OPT["LP.solve.optimize()"]
@@ -342,19 +363,22 @@ flowchart LR
         BM --> EN["Engine: HiGHS → javascript-lp-solver → embedded"]
     end
     SS -- "postMessage(state)" --> PR
-    OPT -- "placements, T*" --> SS
+    OPT -- "placements, T*, trace" --> SS
 ```
+
+Besides the plan, the result carries the trace of the run (`res.trace`). The step-by-step view reads it from `A.view` only when it is opened; the result views do not use it.
 
 ### Follow one run
 
 If you want to read the code end to end, this is the order in which it executes when you press **Optimise**:
 
-1. [`A.run()`](src/app/views/pipeline.js#L62): cancels older runs, shows progress, calls `solveState` for the chosen scenario, then for every other scenario in the background.
+1. [`A.run()`](src/app/views/pipeline.js#L63): cancels older runs, shows progress, calls `solveState` for the chosen scenario, then for every other scenario in the background.
 2. [`A.solveState()`](src/app/views/pipeline.js#L16): `prepare` on the main thread, simulates the baselines and the no-placement horizon (`loHint`), sends the job to the worker and verifies the result.
 3. [`S.solve()`](src/app/ui/solver-client.js#L61) → worker message `solve` → [`prepare()`](src/core/core.js#L74) → [`optimize()`](src/solver/optimize.js#L22).
-4. `optimize()` calls [`buildModel()`](src/solver/model.js#L48) for each stage and hands it to [`Engine.lp`](src/solver/engine.js#L27) / [`Engine.milp`](src/solver/engine.js#L51).
+4. `optimize()` calls [`buildModel()`](src/solver/model.js#L48) for each stage and hands it to [`Engine.lp`](src/solver/engine.js#L34) / [`Engine.milp`](src/solver/engine.js#L59). After each decision it adds a step to the trace.
 5. The result returns to `solveState`, goes through [`verify()`](src/app/sim.js#L113), and lands in `A.view`.
 6. [`renderAll()`](src/app/views/render.js#L38) draws KPIs, charts, ladder, waterfall, actions, scenarios and grid from `A.view`.
+7. When the scenarios are done, `A.run` calls [`A.replay.runDone()`](src/app/views/replay.js#L494) with its run id ([`A.runId`](src/app/views/pipeline.js#L71)). If the step-by-step view was asked for before this run, it opens now.
 
 ## Function reference
 
@@ -395,14 +419,15 @@ If you want to read the code end to end, this is the order in which it executes 
 
 | Function | Purpose |
 |---|---|
-| [`Dense`](src/solver/simplex.js#L15) | Dense tableau with bounded variables, slacks and artificials |
-| [`Dense.prototype.primal`](src/solver/simplex.js#L143) | Primal simplex (phase 1 and 2) |
-| [`Dense.prototype.dual`](src/solver/simplex.js#L198) | Dual simplex for re-optimisation after bound changes |
-| [`Dense.prototype.refactor`](src/solver/simplex.js#L65) | Rebuild the tableau from the original rows (removes drift) |
-| [`solveLP`](src/solver/simplex.js#L294) | One LP solve |
+| [`Dense`](src/solver/simplex.js#L16) | Dense tableau with bounded variables, slacks and artificials |
+| [`Dense.prototype.primal`](src/solver/simplex.js#L144) | Primal simplex (phase 1 and 2) |
+| [`Dense.prototype.dual`](src/solver/simplex.js#L199) | Dual simplex for re-optimisation after bound changes |
+| [`Dense.prototype.refactor`](src/solver/simplex.js#L66) | Rebuild the tableau from the original rows (removes drift) |
+| [`solveLP`](src/solver/simplex.js#L295) | One LP solve |
 | [`now`](src/solver/simplex.js#L13) | The work clock: every limit of the embedded solver is measured on it |
-| [`polish`](src/solver/simplex.js#L303) | Fix rounded integers, re-solve the continuous rest exactly |
-| [`solveMILP`](src/solver/simplex.js#L328) | Branch-and-bound: root heuristic, [DFS](src/solver/simplex.js#L421), branching rules, gap control |
+| [`pivots`](src/solver/simplex.js#L14) | Number of simplex pivots so far, for the trace of a run. It only counts and never limits, so it cannot change a result |
+| [`polish`](src/solver/simplex.js#L304) | Fix rounded integers, re-solve the continuous rest exactly |
+| [`solveMILP`](src/solver/simplex.js#L329) | Branch-and-bound: root heuristic, [DFS](src/solver/simplex.js#L422), branching rules, gap control. Also returns the [`trail`](src/solver/simplex.js#L398): each better plan as the node count at which it was found and its objective (at most 300, always ending at the plan returned) |
 
 ### `solver/backends.js`, `engine.js`, `optimize.js` – backends and the lexicographic optimisation (`LP.solve`)
 
@@ -412,10 +437,12 @@ The backends behind one interface, the engine that decides which backend answers
 |---|---|
 | [`HighsBackend`](src/solver/backends.js#L19) | HiGHS (WASM): self-test, LP retries, yes/no questions on the tick clock |
 | [`JsLpBackend`](src/solver/backends.js#L53) | javascript-lp-solver: model conversion, LP with cross-check |
-| [`EmbeddedBackend`](src/solver/backends.js#L96) | Wraps `LP.simplex` with the same interface |
-| [`Engine`](src/solver/engine.js#L16) | Picks the backend, cross-checks, falls back, demotes unreliable backends, keeps statistics |
+| [`EmbeddedBackend`](src/solver/backends.js#L97) | Wraps `LP.simplex` with the same interface; also reports pivots, search nodes and the trail of the search |
+| [`Engine`](src/solver/engine.js#L16) | Picks the backend, cross-checks, falls back, demotes unreliable backends, keeps statistics and a log of every answer used (`Engine.log`) |
+| [`rec`](src/solver/engine.js#L23) / [`mix`](src/solver/engine.js#L22) | One log entry per answer: kind of call, backend, model size, rows and columns counted by kind, pivots, nodes, status |
 | [`supportKeys`](src/solver/optimize.js#L6) / [`eventMonths`](src/solver/optimize.js#L9) / [`addNeighbours`](src/solver/optimize.js#L16) | Build the MILP candidate sets from LP solutions |
-| [`optimize`](src/solver/optimize.js#L22) | The four stages, knife-edge handling and lazy cap rows |
+| [`optimize`](src/solver/optimize.js#L22) | The four stages, knife-edge handling and lazy cap rows; returns the trace of its decisions as `res.trace` |
+| [`mark`](src/solver/optimize.js#L31) | Adds one step to the trace, with the engine's log of the calls made for it |
 
 ### `solver/workerglue.js` – worker protocol
 
@@ -435,7 +462,7 @@ The backends behind one interface, the engine that decides which backend answers
 
 ### `app/i18n/` – texts (`LP.i18n`)
 
-The UI strings in [German](src/app/i18n/de.js) and [English](src/app/i18n/en.js) under the same keys, the [glossary](src/app/i18n/glossary.js#L6) behind the dotted terms, and the [methodology text](src/app/i18n/methodology.js#L6) shown in the app.
+The UI strings in [German](src/app/i18n/de.js) and [English](src/app/i18n/en.js) under the same keys (those of the step-by-step view start with `rp_`), the [glossary](src/app/i18n/glossary.js#L6) behind the dotted terms, and the [methodology text](src/app/i18n/methodology.js#L6) shown in the app.
 
 ### `app/ui/` – state, formatting, solver client, input drawer (`LP.app`, alias `A`)
 
@@ -453,14 +480,15 @@ In load order: `dom.js`, `state.js`, `format.js`, `tooltip.js`, `solver-client.j
 
 ### `app/views/` – pipeline and result views
 
-One file per result view, plus `shared.js` (what the views have in common), `render.js` (draws all of them), `progress.js` (the dialog during a run) and `pipeline.js` (the run itself).
+One file per result view, plus `shared.js` (what the views have in common), `render.js` (draws all of them), `replay.js` (the step-by-step view), `progress.js` (the dialog during a run) and `pipeline.js` (the run itself).
 
 | Function | Purpose |
 |---|---|
 | [`A.solveState`](src/app/views/pipeline.js#L16) | Optimise + verify one state (used by the main run, scenarios and the self-test) |
-| [`A.run`](src/app/views/pipeline.js#L62) / [`A.markStale`](src/app/views/pipeline.js#L40) | Run the pipeline; mark results as out of date after an input change |
+| [`A.run`](src/app/views/pipeline.js#L63) / [`A.markStale`](src/app/views/pipeline.js#L41) | Run the pipeline; mark results as out of date after an input change. A run sets [`A.runId`](src/app/views/pipeline.js#L71) and, once complete, [calls `A.replay.runDone`](src/app/views/pipeline.js#L103) |
 | [`renderKpis`](src/app/views/kpis.js#L7) | KPI tiles |
-| [`renderMain`](src/app/views/timeline.js#L8) | Liquidity and locked-capital area chart (ECharts) |
+| [`renderMain`](src/app/views/timeline.js#L61) | Liquidity and locked-capital area chart (ECharts) |
+| [`balances`](src/app/views/timeline.js#L16), [`balanceItems`](src/app/views/timeline.js#L8), [`balanceOption`](src/app/views/timeline.js#L48) | The parts of that chart for one simulated plan: series and tooltip, legend entries, chart options. Shared by the main chart and the step-by-step view |
 | [`renderStrat`](src/app/views/strategies.js#L9) | Strategy comparison |
 | [`renderLadder`](src/app/views/ladder.js#L30), [`trancheDates`](src/app/views/ladder.js#L8), [`trancheTotals`](src/app/views/ladder.js#L19) | Ladder (Gantt) and tranche details |
 | [`renderWf`](src/app/views/waterfall.js#L18) | Cash-flow waterfall |
@@ -470,7 +498,11 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`renderAll`](src/app/views/render.js#L38) | Draws every view from `A.view`, or the blank slate and the ready card when there is no result yet |
 | [`chart`](src/app/views/shared.js#L19) / [`toggleLegend`](src/app/views/shared.js#L36) | One ECharts instance per chart element; legends whose entries switch a series on and off |
 | [`runOpen`](src/app/views/progress.js#L64) / [`runStep`](src/app/views/progress.js#L29) | The progress dialog: opens for a run and ticks off the solver's stages |
-| [`A.abortRun`](src/app/views/pipeline.js#L50) | Cancels a run; what is on screen stays |
+| [`A.abortRun`](src/app/views/pipeline.js#L51) | Cancels a run; what is on screen stays |
+| [`A.replay.open`](src/app/views/replay.js#L488) / [`close`](src/app/views/replay.js#L481) / [`runDone`](src/app/views/replay.js#L494) | Enter and leave the step-by-step view. Without a current result `open` runs the optimisation first, and `runDone` opens the view once that run is complete |
+| [`A.replay.sync`](src/app/views/replay.js#L462) / [`render`](src/app/views/replay.js#L431) | Label and state of the entry points; draws the current step |
+| [`build`](src/app/views/replay.js#L33) | Trace → list of steps, with the starting point and the cross-check added, and what is known about each month after each step |
+| [`qa`](src/app/views/replay.js#L109), [`renderStrip`](src/app/views/replay.js#L221), [`drawPlan`](src/app/views/replay.js#L267), [`drawSearch`](src/app/views/replay.js#L296), [`renderFigs`](src/app/views/replay.js#L324), [`renderHood`](src/app/views/replay.js#L400) | One step: question and answer, horizon strip, month-end balances, search progress, key figures, *Under the hood* |
 
 ### `app/xlsx.js` – Excel export (`LP.xlsx`)
 

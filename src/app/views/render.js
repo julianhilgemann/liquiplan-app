@@ -39,6 +39,7 @@
     var empty = !hasData(A.state), ready = !empty && !A.view && !A.lastError, gate = empty || ready;
     $('main').classList.toggle('is-empty', gate); $('emptyState').classList.toggle('hide', !gate); $('emptyState').classList.toggle('ready', ready);
     $('app').classList.toggle('blank', empty); $('btnOptimize').disabled = empty; // blank slate: only the (inactive) Optimise, language and theme stay up top
+    if (A.replay) A.replay.sync();
     if (ready) { var pid = A.state.presetId; $('readyText').textContent = (LP.presetIds.indexOf(pid) >= 0 ? t('e_readyEx', { p: t('p_' + pid) }) : t('e_readyOwn')) + ' ' + t('e_readyRun'); }
     $('btnOptimize').classList.toggle('due', !A.busy && !empty && (ready || !!A.stale)); // dot = a calculation is waiting: no result yet, or one older than the inputs
     renderKpis(); if (gate) { if (!A.busy) V.badgeDone(); return; } // the result views stay hidden until there is a result

@@ -16,6 +16,10 @@
 .top .btn.cta { padding: 0 14px 0 11px; }
 .top .seg button { padding: 0 9px; }
 
+#btnReplay svg { width: 15px; height: 15px; flex: none; }
+/* "Rechenweg" keeps its label only where the one-row toolbar has room for it (measured: German needs 1471px); below, an icon */
+@media (min-width: 721px) and (max-width: 1519px) { #app:not(.rp) #btnReplay { width: 32px; padding: 0; } #app:not(.rp) #btnReplay span { display: none; } }
+@media (pointer: coarse) and (min-width: 721px) and (max-width: 1519px) { #app:not(.rp) #btnReplay { width: 44px; } }
 #selPreset { width: 8.75rem; }
 #selScenario { width: 13rem; } /* fits „Eigene Leitzinsschritte“ */
 /* solver status: a fixed slot so changing text never moves the toolbar */

@@ -26,6 +26,7 @@
     $('solverText').textContent = text; $('solverBadge').title = text;
     $('progressBar').style.width = on ? (pct || 8) + '%' : '0';
     $('btnOptimize').disabled = !hasData(A.state); // greyed out until there is something to optimise
+    A.replay.sync();
   }
   function badgeDone(ms) {
     if (!hasData(A.state)) { setBusy(false, t('e_status')); $('solverBadge').title = t('e_status'); return; } // nothing to plan with (an older result may still be in memory)
@@ -42,7 +43,7 @@
     clearTimeout(debounce); A.stale = true; $('main').classList.add('stale'); $('staleNote').classList.toggle('hide', !(any && A.view)); $('btnOptimize').classList.toggle('due', any); $('btnOptimize').disabled = !any; $('app').classList.toggle('blank', !any);
     runSeq++; A.solver.cancelAll(); // a run for the previous inputs is of no use any more
     A.busy = false; $('progressBar').style.width = '0'; $('solverBadge').className = 'badge'; $('solverText').textContent = t('s_stale'); $('solverBadge').title = t('s_stale');
-    runClose();
+    runClose(); A.replay.sync();
     if (!A.view || !any) renderAll(); // placeholders switch to "not calculated yet", or to the empty state
   };
   function fresh() { $('main').classList.remove('stale'); } // results on screen match the inputs again
@@ -67,6 +68,7 @@
       renderAll(); setBusy(false, t('e_status')); return;
     }
     var my = ++runSeq, st = A.state, t0 = Date.now();
+    A.runId = my; // lets "Rechenweg" open once this run is done
     A.solver.cancelAll();
     RS.wasStale = A.stale || !A.view;
     A.lastError = null; A.stale = false; $('wizStale').classList.add('hide'); $('staleNote').classList.add('hide'); $('btnOptimize').classList.remove('due');
@@ -98,7 +100,7 @@
         A.view.scen[sc] = r2.ver.ok ? summarize(r2.P, r2.sim, r2.base) : { fail: true };
         renderScen();
       }
-      badgeDone(A.view.ms); runFinish(my);
+      badgeDone(A.view.ms); runFinish(my); A.replay.runDone(my);
     } catch (e) {
       if (my !== runSeq || (e && e.message === 'cancelled')) return;
       A.lastError = 'solve'; A.view = null;

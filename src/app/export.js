@@ -56,5 +56,19 @@
     } catch (e2) { A.toast(t('saveFail', { e: String(e2 && e2.message || e2) }), true); }
   };
 
-  A.stamp = stamp; A.xlsxCtx = xlsxCtx;
+  // ---------- the ladder as a small spreadsheet (the Download button of the ladder card) ----------
+  function ladderCtx(v) { return { P: v.P, sim: v.sim, t: t, lang: A.lang, scenName: t('sc_' + v.P.scenario), created: new Date() }; }
+  A.exportLadderXlsx = async function () {
+    var why = A.ladXlsxBlock(); if (why) { A.toast(t(why)); return; } // ladder.js: no result, a run in progress, or results out of date
+    var v = A.view; A.toast(t('lx_building'));
+    try { await A.xlsxLibs(); } catch (e) { A.toast(t('libFail', { l: e.message }), true); return; }
+    await new Promise(function (res) { setTimeout(res, 30); }); // let the toast appear before the main thread is busy
+    why = A.ladXlsxBlock(); if (why || v !== A.view) { A.toast(t(why || 'lx_stale')); return; } // the result changed meanwhile
+    try {
+      var r = await LP.ladderXlsx.build(ladderCtx(v), window.ExcelJS);
+      await A.saveFile(t('lx_file') + '_' + stamp() + '.xlsx', new Blob([r.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    } catch (e2) { A.toast(t('saveFail', { e: String(e2 && e2.message || e2) }), true); }
+  };
+
+  A.stamp = stamp; A.xlsxCtx = xlsxCtx; A.ladderCtx = ladderCtx;
 })();

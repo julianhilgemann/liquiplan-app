@@ -99,6 +99,7 @@
     $('wfPrev').onclick = function () { A.wf.idx = Math.max(0, A.wf.idx - 1); A.renderWf(); }; $('wfNext').onclick = function () { A.wf.idx++; A.renderWf(); };
     $('actShowMat').onchange = function () { A.renderActions(); };
     $('ladYear').onclick = function () { A.lad.mode = 'year'; A.lad.open = null; A.renderLadder(); }; $('ladAll').onclick = function () { A.lad.mode = 'all'; A.lad.open = null; A.renderLadder(); };
+    $('ladXlsx').onclick = function () { A.exportLadderXlsx(); };
     $('btnResetOv').onclick = function () { A.resetOverrides(); };
     $('btnSelftest').onclick = function () { A.selftest(); };
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeMenu(); if (isNarrow()) toggleSide(false); } });

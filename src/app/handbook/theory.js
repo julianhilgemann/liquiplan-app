@@ -109,7 +109,10 @@
   }
   function start(id, box, lang) {
     var T = TX[lang], ch = T.chapters[id], live = { T: T, dead: false, chart: null, ro: null, ready: null, box: A.el('div', { class: 'th-body th-wait' }) };
-    live.box.innerHTML = ch.sections.map(function (s) { return '<section class="th-sec" id="' + s[0] + '"><h3>' + A.esc(s[1]) + '</h3>' + toHtml(s[2], lang) + '</section>'; }).join('');
+    // sections and headings as in the handbook's other chapters: a heading is a link to its own address
+    live.box.innerHTML = ch.sections.map(function (s) {
+      return '<section class="hb-sec th-sec" id="' + s[0] + '" aria-labelledby="' + s[0] + '-h"><h3 id="' + s[0] + '-h" tabindex="-1"><a class="hb-self" href="#handbuch/' + id + '/' + s[0] + '"><span>' + A.esc(s[1]) + '</span><span class="hb-hash" aria-hidden="true">#</span></a></h3>' + toHtml(s[2], lang) + '</section>';
+    }).join('');
     box.appendChild(live.box);
     var host = live.box.querySelector('.th-chart');
     if (host && LP.simplex && LP.hb.lpChart) live.chart = LP.hb.lpChart.mount(host, T.chart);

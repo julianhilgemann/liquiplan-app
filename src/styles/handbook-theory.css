@@ -1,6 +1,5 @@
 /* ---------- handbook, theory chapters: formulas and the simplex chart (theory.js, simplex-chart.js) ---------- */
-.th-sec { scroll-margin-top: 16px; }
-.th-sec + .th-sec { margin-top: 22px; }
+/* sections, headings and their spacing come from handbook.css (.hb-sec), as in every other chapter */
 /* display formulas: a wide one scrolls inside its own box, never the page */
 .th-eq { max-width: 100%; margin: 8px 0 12px; padding: 2px 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }
 .th-eq > mjx-container[jax="SVG"][display="true"] { margin: 0 !important; }

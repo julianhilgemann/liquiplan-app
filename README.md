@@ -402,7 +402,7 @@ If you want to read the code end to end, this is the order in which it executes 
 4. `optimize()` calls [`buildModel()`](src/solver/model.js#L48) for each stage and hands it to [`Engine.lp`](src/solver/engine.js#L34) / [`Engine.milp`](src/solver/engine.js#L59). After each decision it adds a step to the trace.
 5. The result returns to `solveState`, goes through [`verify()`](src/app/sim.js#L113), and lands in `A.view`.
 6. [`renderAll()`](src/app/views/render.js#L38) draws KPIs, charts, ladder, waterfall, actions, scenarios and grid from `A.view`.
-7. When the scenarios are done, `A.run` calls [`A.replay.runDone()`](src/app/views/replay.js#L494) with its run id ([`A.runId`](src/app/views/pipeline.js#L71)). If the step-by-step view was asked for before this run, it opens now.
+7. When the scenarios are done, `A.run` calls [`A.replay.runDone()`](src/app/views/replay.js#L496) with its run id ([`A.runId`](src/app/views/pipeline.js#L71)). If the step-by-step view was asked for before this run, it opens now.
 
 ### The handbook and the changelog
 
@@ -556,7 +556,7 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`chart`](src/app/views/shared.js#L19) / [`toggleLegend`](src/app/views/shared.js#L36) | One ECharts instance per chart element; legends whose entries switch a series on and off |
 | [`runOpen`](src/app/views/progress.js#L64) / [`runStep`](src/app/views/progress.js#L29) | The progress dialog: opens for a run and ticks off the solver's stages |
 | [`A.abortRun`](src/app/views/pipeline.js#L51) | Cancels a run; what is on screen stays |
-| [`A.replay.open`](src/app/views/replay.js#L488) / [`close`](src/app/views/replay.js#L481) / [`runDone`](src/app/views/replay.js#L494) | Enter and leave the step-by-step view. Without a current result `open` runs the optimisation first, and `runDone` opens the view once that run is complete |
+| [`A.replay.open`](src/app/views/replay.js#L490) / [`close`](src/app/views/replay.js#L481) / [`runDone`](src/app/views/replay.js#L496) | Enter and leave the step-by-step view. Without a current result `open` runs the optimisation first, and `runDone` opens the view once that run is complete |
 | [`A.replay.sync`](src/app/views/replay.js#L462) / [`render`](src/app/views/replay.js#L431) | Label and state of the entry points; draws the current step |
 | [`build`](src/app/views/replay.js#L33) | Trace → list of steps, with the starting point and the cross-check added, and what is known about each month after each step |
 | [`qa`](src/app/views/replay.js#L109), [`renderStrip`](src/app/views/replay.js#L221), [`drawPlan`](src/app/views/replay.js#L267), [`drawSearch`](src/app/views/replay.js#L296), [`renderFigs`](src/app/views/replay.js#L324), [`renderHood`](src/app/views/replay.js#L400) | One step: question and answer, horizon strip, month-end balances, search progress, key figures, *Under the hood* |
@@ -597,11 +597,11 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`index`](src/app/handbook.js#L121) | One search entry per chapter and section: title, text and chapter title, each in both folded forms |
 | [`score`](src/app/handbook.js#L143) / [`search`](src/app/handbook.js#L158) | Ranking: every word must occur in the section or its chapter's title, at least one in the section itself; words in a title, at the start of a word, the whole query as a phrase and an exact title count extra; ties keep the handbook's order |
 | [`ranges`](src/app/handbook.js#L167), [`highlight`](src/app/handbook.js#L179), [`snippet`](src/app/handbook.js#L184) | Where the search words are in a text; the text with them marked; a snippet of about 180 characters around the first one |
-| [`parse`](src/app/handbook.js#L329) / [`route`](src/app/handbook.js#L330) | An address taken apart into chapter and section; following it on `hashchange` and `popstate` |
-| [`show`](src/app/handbook.js#L342) / [`reveal`](src/app/handbook.js#L366) | Draws a chapter unless it is already on screen; scrolls to a section, focuses its heading and marks the search words in it |
-| [`laid`](src/app/handbook.js#L361) | Repeats that scroll once a theory chapter's layout is final, unless the reader has scrolled, typed or clicked since |
-| [`enter`](src/app/handbook.js#L393) / [`close`](src/app/handbook.js#L401) | Switch the page mode on (closing the step-by-step view if it is open) and off; `close` returns to the scroll position the page had |
-| [`render`](src/app/handbook.js#L415) | Draws everything again after a change of language or theme, keeping the section being read in place; also writes the version into the page footer |
+| [`parse`](src/app/handbook.js#L330) / [`route`](src/app/handbook.js#L331) | An address taken apart into chapter and section; following it on `hashchange` and `popstate` |
+| [`show`](src/app/handbook.js#L343) / [`reveal`](src/app/handbook.js#L367) | Draws a chapter unless it is already on screen; scrolls to a section, focuses its heading and marks the search words in it |
+| [`laid`](src/app/handbook.js#L362) | Repeats that scroll once a theory chapter's layout is final, unless the reader has scrolled, typed or clicked since |
+| [`enter`](src/app/handbook.js#L394) / [`close`](src/app/handbook.js#L402) | Switch the page mode on (closing the step-by-step view if it is open) and off; `close` returns to the scroll position the page had |
+| [`render`](src/app/handbook.js#L416) | Draws everything again after a change of language or theme, keeping the section being read in place; also writes the version into the page footer |
 
 ### `app/handbook/` – the theory chapters (`LP.hb.extra`, `LP.hb.lpChart`)
 
@@ -627,9 +627,10 @@ In load order: `theory-de.js` and `theory-en.js` (the texts, `LP.hb.theoryText`)
 |---|---|
 | [`A.saveFile`](src/app/export.js#L11) | Download helper |
 | [`A.buildHtml`](src/app/export.js#L30) | Re-assembles the page from its own blocks, with the current state embedded |
-| [`A.xlsxLibs`](src/app/export.js#L44) | Loads ExcelJS and JSZip from the CDN, once, for either workbook |
-| [`A.exportXlsx`](src/app/export.js#L49) | Builds and saves the full Excel workbook |
-| [`ladderCtx`](src/app/export.js#L60) / [`A.exportLadderXlsx`](src/app/export.js#L61) | What the ladder spreadsheet is built from (plan, simulation, language, scenario name, time); the *Download* button's handler, which says why when the download is blocked and checks again after loading the library, in case the result changed meanwhile |
+| [`A.excelJs`](src/app/export.js#L44) | Loads ExcelJS from the CDN, once; all the ladder spreadsheet needs |
+| [`A.xlsxLibs`](src/app/export.js#L45) | Loads ExcelJS and then JSZip, once, for the full Excel export and the self-test |
+| [`A.exportXlsx`](src/app/export.js#L50) | Builds and saves the full Excel workbook |
+| [`ladderCtx`](src/app/export.js#L61) / [`A.exportLadderXlsx`](src/app/export.js#L62) | What the ladder spreadsheet is built from (plan, simulation, language, scenario name, time); the *Download* button's handler, which says why when the download is blocked and checks again after loading the library, in case the result changed meanwhile |
 | [`applyState`](src/app/main.js#L20) / [`applyRates`](src/app/main.js#L29) | JSON import of the full state (own format or the spec format) or of the rate table |
 | [`A.selftest`](src/app/selftest.js#L7) | The self-test described above |
 | [`wire`](src/app/main.js#L49) / [start-up](src/app/main.js#L113) | Event wiring, first render (blank slate, or the ready card for saved inputs) and a warm-up of the solver worker; the first optimisation waits for **Optimise** |

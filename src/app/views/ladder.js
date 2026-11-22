@@ -28,7 +28,7 @@
   var lad = { mode: null, year: null, open: null };
   A.lad = lad;
   // the spreadsheet download (export.js) is offered only for a result that matches the inputs; otherwise the button says why
-  function xlsxBlock() { return !A.view ? (A.lastError ? 'v_hint' : 'lx_none') : A.busy ? 'lx_busy' : A.stale ? 'lx_stale' : null; }
+  function xlsxBlock() { return A.busy ? 'lx_busy' : !A.view ? (A.lastError ? 'v_hint' : 'lx_none') : A.stale ? 'lx_stale' : null; }
   function syncXlsx() {
     var b = $('ladXlsx'); if (!b) return;
     var why = xlsxBlock();

@@ -424,9 +424,9 @@ The handbook ([`markup/handbook.html`](src/markup/handbook.html), [`app/handbook
 
 The theory texts use `$…$` for inline and `$$…$$` for display formulas (TeX, typeset by MathJax) and the same glossary markup. UI strings of the handbook live in `de.js` and `en.js` under the prefix `hb_` (those of the ladder spreadsheet under `lx_`).
 
-**Adding a chapter.** A file pushes an object onto `LP.hb.extra`: `{ id: 'th-…', title: { de, en }, sections: [{ id, title: { de, en }, text: { de, en } }], render(box, lang), teardown() }`. `render` fills an empty block element and creates one element per section whose `id` is the section's id; `text` is the plain text the search indexes; `teardown`, if present, runs before the chapter is left or drawn again. Such chapters appear in the menu group *Theory* after *How the optimiser thinks*; without any, the group is left out.
+**Adding a chapter.** A file pushes an object onto `LP.hb.extra`: `{ id: 'th-…', title: { de, en }, sections: [{ id, title: { de, en }, text: { de, en } }], render(box, lang), teardown() }`. `render` fills an empty block element and creates one element per section whose `id` is the section's id. It may return a promise that settles once the chapter's layout is final (the theory chapters settle it when their formulas are typeset); the handbook then scrolls once more to where it had put the reader (a section, or the position Back returns to), unless they have scrolled, typed or clicked since. `text` is the plain text the search indexes; `teardown`, if present, runs before the chapter is left or drawn again. Such chapters appear in the menu group *Theory* after *How the optimiser thinks*; without any, the group is left out.
 
-**Addresses are the only state.** Links in the handbook are plain links to `#handbuch/…`, and the page follows `hashchange` and `popstate`, so every chapter opened is a history entry. [`A.handbook`](src/app/handbook.js#L27) offers `open(id)`, `close()`, `render()` (after a change of language or theme) and `isOpen()`, and for tests `index`, `search` and `chapters`.
+**Addresses are the only state.** Links in the handbook are plain links to `#handbuch/…`, and the page follows `hashchange` and `popstate`, so every chapter opened is a history entry. [`A.handbook`](src/app/handbook.js#L29) offers `open(id)`, `close()`, `render()` (after a change of language or theme) and `isOpen()`, and for tests `index`, `search` and `chapters`.
 
 **The changelog rule.** Every user-visible change adds an item to [`changelog.js`](src/app/i18n/changelog.js), in German and in English, in the same commit as the change (refactoring, tests and the build get none). Version numbers are MAJOR.MINOR, with a third number for a release that only fixes things (1.3.1): MINOR goes up with every release that adds or changes something users see, MAJOR only when saved inputs or the JSON format stop working with the new version (the [state format](#state-format) is v1). The handbook section that describes the changed behaviour and this README move with the change too.
 
@@ -590,17 +590,18 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 
 | Function | Purpose |
 |---|---|
-| [`chapters`](src/app/handbook.js#L39) | The chapter list of the current language in menu order, from the outline, the texts, the glossary, the changelog and `LP.hb.extra`; cached per language and number of extra chapters |
-| [`textCh`](src/app/handbook.js#L56), [`glossCh`](src/app/handbook.js#L66), [`newsCh`](src/app/handbook.js#L75), [`extraCh`](src/app/handbook.js#L82) | One chapter of each kind in the common shape `{ id, kind, title, lead, sections }` |
-| [`rich`](src/app/handbook.js#L92) / [`plain`](src/app/handbook.js#L99) | The text markup turned into HTML for the page, or into plain text for the search index |
-| [`fold`](src/app/handbook.js#L107) | Text folded for comparison: lower case, no accents, hyphens or apostrophes, ß as ss, umlauts once as two letters (*ueber*) and once as the plain vowel (*uber*), with a map back to the original positions |
-| [`index`](src/app/handbook.js#L119) | One search entry per chapter and section: title, text and chapter title, each in both folded forms |
-| [`score`](src/app/handbook.js#L141) / [`search`](src/app/handbook.js#L156) | Ranking: every word must occur in the section or its chapter's title, at least one in the section itself; words in a title, at the start of a word, the whole query as a phrase and an exact title count extra; ties keep the handbook's order |
-| [`ranges`](src/app/handbook.js#L165), [`highlight`](src/app/handbook.js#L177), [`snippet`](src/app/handbook.js#L182) | Where the search words are in a text; the text with them marked; a snippet of about 180 characters around the first one |
-| [`parse`](src/app/handbook.js#L326) / [`route`](src/app/handbook.js#L327) | An address taken apart into chapter and section; following it on `hashchange` and `popstate` |
-| [`show`](src/app/handbook.js#L339) / [`reveal`](src/app/handbook.js#L351) | Draws a chapter unless it is already on screen; scrolls to a section, focuses its heading and marks the search words in it |
-| [`enter`](src/app/handbook.js#L378) / [`close`](src/app/handbook.js#L386) | Switch the page mode on (closing the step-by-step view if it is open) and off; `close` returns to the scroll position the page had |
-| [`render`](src/app/handbook.js#L400) | Draws everything again after a change of language or theme, keeping the section being read in place; also writes the version into the page footer |
+| [`chapters`](src/app/handbook.js#L41) | The chapter list of the current language in menu order, from the outline, the texts, the glossary, the changelog and `LP.hb.extra`; cached per language and number of extra chapters |
+| [`textCh`](src/app/handbook.js#L58), [`glossCh`](src/app/handbook.js#L68), [`newsCh`](src/app/handbook.js#L77), [`extraCh`](src/app/handbook.js#L84) | One chapter of each kind in the common shape `{ id, kind, title, lead, sections }` |
+| [`rich`](src/app/handbook.js#L94) / [`plain`](src/app/handbook.js#L101) | The text markup turned into HTML for the page, or into plain text for the search index |
+| [`fold`](src/app/handbook.js#L109) | Text folded for comparison: lower case, no accents, hyphens or apostrophes, ß as ss, umlauts once as two letters (*ueber*) and once as the plain vowel (*uber*), with a map back to the original positions |
+| [`index`](src/app/handbook.js#L121) | One search entry per chapter and section: title, text and chapter title, each in both folded forms |
+| [`score`](src/app/handbook.js#L143) / [`search`](src/app/handbook.js#L158) | Ranking: every word must occur in the section or its chapter's title, at least one in the section itself; words in a title, at the start of a word, the whole query as a phrase and an exact title count extra; ties keep the handbook's order |
+| [`ranges`](src/app/handbook.js#L167), [`highlight`](src/app/handbook.js#L179), [`snippet`](src/app/handbook.js#L184) | Where the search words are in a text; the text with them marked; a snippet of about 180 characters around the first one |
+| [`parse`](src/app/handbook.js#L329) / [`route`](src/app/handbook.js#L330) | An address taken apart into chapter and section; following it on `hashchange` and `popstate` |
+| [`show`](src/app/handbook.js#L342) / [`reveal`](src/app/handbook.js#L366) | Draws a chapter unless it is already on screen; scrolls to a section, focuses its heading and marks the search words in it |
+| [`laid`](src/app/handbook.js#L361) | Repeats that scroll once a theory chapter's layout is final, unless the reader has scrolled, typed or clicked since |
+| [`enter`](src/app/handbook.js#L393) / [`close`](src/app/handbook.js#L401) | Switch the page mode on (closing the step-by-step view if it is open) and off; `close` returns to the scroll position the page had |
+| [`render`](src/app/handbook.js#L415) | Draws everything again after a change of language or theme, keeping the section being read in place; also writes the version into the page footer |
 
 ### `app/handbook/` – the theory chapters (`LP.hb.extra`, `LP.hb.lpChart`)
 
@@ -608,11 +609,11 @@ In load order: `theory-de.js` and `theory-en.js` (the texts, `LP.hb.theoryText`)
 
 | Function | Purpose |
 |---|---|
-| [`chapter`](src/app/handbook/theory.js#L122) | One theory chapter in the `LP.hb.extra` shape; `th-lp`, `th-model`, `th-lex`, `th-int` and `th-check` are added in this order |
+| [`chapter`](src/app/handbook/theory.js#L130) | One theory chapter in the `LP.hb.extra` shape; `th-lp`, `th-model`, `th-lex`, `th-int` and `th-check` are added in this order |
 | [`toHtml`](src/app/handbook/theory.js#L22) / [`plain`](src/app/handbook/theory.js#L40) | A text with `$…$`, `$$…$$` and glossary terms turned into HTML with MathJax delimiters, or into plain text for the search, with inline TeX as readable symbols |
 | [`mathjax`](src/app/handbook/theory.js#L48) | Loads MathJax ([`A.CDN.mathjax`](src/app/ui/dom.js#L13)) once, configured so that it typesets nothing by itself; after a failed load the next chapter tries again |
-| [`typeset`](src/app/handbook/theory.js#L92) / [`fallback`](src/app/handbook/theory.js#L87) | Typesets one chapter's formulas; if MathJax cannot be loaded within 20 seconds, the TeX source stays readable and a note says so |
-| [`start`](src/app/handbook/theory.js#L105) / [`stop`](src/app/handbook/theory.js#L114) | Renders a chapter and mounts the chart where its text has a `.th-chart` element; tears both down |
+| [`typeset`](src/app/handbook/theory.js#L93) / [`fallback`](src/app/handbook/theory.js#L87) | Typesets one chapter's formulas and returns a promise that settles when they are done, or when it has given up: if MathJax cannot be loaded within 20 seconds, the TeX source stays readable and a note says so. `render` hands this promise to the handbook |
+| [`start`](src/app/handbook/theory.js#L110) / [`stop`](src/app/handbook/theory.js#L122) | Renders a chapter and mounts the chart where its text has a `.th-chart` element; tears both down |
 | [`halfPlanes`](src/app/handbook/simplex-chart.js#L19), [`gains`](src/app/handbook/simplex-chart.js#L25), [`model`](src/app/handbook/simplex-chart.js#L27) | The toy problem: how much of €100,000 goes into a 12-month and how much into a 24-month deposit, as four conditions and an objective, shaped like a model from `model.js` |
 | [`walk`](src/app/handbook/simplex-chart.js#L37) | Solves it with `LP.simplex.Dense` and records every corner on the way: it wraps the solver's `pivot` method and watches its bound flags (`atUp`), so each corner drawn is one the solver visited |
 | [`corners`](src/app/handbook/simplex-chart.js#L67) / [`grid`](src/app/handbook/simplex-chart.js#L78) | The brute-force cross-check shown below the chart (every corner of the feasible region) and the best point on the €10,000 grid |

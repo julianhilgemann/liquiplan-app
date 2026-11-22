@@ -397,7 +397,7 @@
     S.overWiz = !!(A.wizard && A.wizard.open);
     if (A.runSheet) A.runSheet.hide();
     $('app').classList.add('hb'); $('handbook').classList.remove('hide');
-    labels(); renderMenu();
+    labels(); renderMenu(); headHeight();
   }
   function close(fromHistory) {
     if (!S.on) return;
@@ -422,12 +422,17 @@
       c.sections.forEach(function (s) { var n = document.getElementById(s.id); if (n && n.getBoundingClientRect().top <= lim) { anchor = s.id; top = n.getBoundingClientRect().top; } });
     }
     var y = window.pageYOffset;
-    labels(); renderMenu(); S.drawn = null; renderChapter(c); paint();
+    labels(); renderMenu(); headHeight(); S.drawn = null; renderChapter(c); paint();
     if (S.q.trim().length >= 2) runSearch(false);
     var n = anchor && document.getElementById(anchor), keep = function () { var m = document.getElementById(anchor); if (m) window.scrollBy(0, m.getBoundingClientRect().top - top); };
     if (n) { keep(); laid(keep); } else window.scrollTo(0, y);
   }
   function barBottom() { var b = document.querySelector('.hb-bar'); return b ? b.getBoundingClientRect().bottom : 0; }
+  /* The title block is pinned above the search (handbook.css). The search, the chapter menu and the place a link scrolls
+     to sit below it, so they need its height: --hb-head-h, measured whenever the block changes size (the handbook opens,
+     the language changes, the lead wraps in a narrower window). */
+  function headHeight() { var h = document.querySelector('.hb-head'); if (h && h.offsetHeight) $('handbook').style.setProperty('--hb-head-h', h.offsetHeight + 'px'); }
+  try { new ResizeObserver(headHeight).observe(document.querySelector('.hb-head')); } catch (e) { window.addEventListener('resize', headHeight); }
 
   // ---------- wiring ----------
   $('btnHandbook').onclick = function () { if (S.on) close(); else go('#handbuch'); };

@@ -1,6 +1,7 @@
 /* ---------- Handbuch: the in-app handbook, a page mode like the wizard (phone: the chapter list and a chapter take turns) ---------- */
-/* --hb-top: what is pinned above the search bar (the toolbar where it is sticky); --hb-bar: the search bar itself */
-.handbook { --hb-top: 0px; --hb-bar: 60px; max-width: 1120px; margin: 0 auto; padding: 24px 20px 40px; display: grid; gap: 4px; }
+/* --hb-top: what is pinned above the handbook (the toolbar where it is sticky); --hb-head: the title block where it is
+   pinned too (its height is measured, handbook.js sets --hb-head-h); --hb-bar: the search bar itself */
+.handbook { --hb-top: 0px; --hb-head: 0px; --hb-bar: 60px; max-width: 1120px; margin: 0 auto; padding: 24px 20px 40px; display: grid; gap: 4px; }
 @media (min-width: 1360px) { .handbook { --hb-top: var(--top-h); } }
 @media (pointer: coarse) { .handbook { --hb-bar: 64px; } }
 .hb .shell, .hb .wizard, .hb .replay { display: none !important; }
@@ -17,9 +18,16 @@
 .hb-head h2 { font-size: 24px; letter-spacing: -0.02em; }
 .hb-head h2:focus, #hbChTitle:focus { outline: none; }
 .hb-lead { margin: 4px 0 0; max-width: 88ch; color: var(--muted); font-size: 13.5px; }
+/* Title and lead stay above the search while a chapter scrolls, from tablet width up and where the window has the height
+   for it. The block takes in the page's top padding and the gap to the search, so it is pinned exactly where it stands
+   and nothing shifts when scrolling starts. On a phone the title belongs to the chapter list and scrolls with it. */
+@media (min-width: 721px) and (min-height: 520px) {
+  .handbook { --hb-head: var(--hb-head-h, 96px); }
+  .hb-head { position: sticky; top: var(--hb-top); z-index: 20; margin: -24px -20px -4px; padding: 24px 20px 10px; background: var(--bg); }
+}
 
 /* the search: pinned at the top, so it can be reached from anywhere in a chapter */
-.hb-bar { position: sticky; top: var(--hb-top); z-index: 20; display: flex; align-items: center; min-height: var(--hb-bar); margin: 0 -20px; padding: 8px 20px; background: var(--bg); }
+.hb-bar { position: sticky; top: calc(var(--hb-top) + var(--hb-head)); z-index: 20; display: flex; align-items: center; min-height: var(--hb-bar); margin: 0 -20px; padding: 8px 20px; background: var(--bg); }
 .hb-field { position: relative; flex: 1; display: flex; align-items: center; }
 .hb-field > svg { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
 .hb-field #hbQ { width: 100%; max-width: none; min-height: 40px; padding: 8px 44px 8px 36px; border-radius: 10px; font-size: 15px; color: var(--input); }
@@ -33,7 +41,7 @@
 @media (min-width: 721px) and (max-width: 1023px) { .hb-grid { grid-template-columns: 224px minmax(0, 1fr); gap: 18px; } }
 
 /* the chapter menu: sticky below the search, grouped, the current chapter marked */
-.hb-menu { position: sticky; top: calc(var(--hb-top) + var(--hb-bar) + 4px); max-height: calc(100vh - var(--hb-top) - var(--hb-bar) - 20px); overflow: auto; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--card-line); border-radius: var(--r-lg); padding: 6px; }
+.hb-menu { position: sticky; top: calc(var(--hb-top) + var(--hb-head) + var(--hb-bar) + 4px); max-height: calc(100vh - var(--hb-top) - var(--hb-head) - var(--hb-bar) - 20px); overflow: auto; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--card-line); border-radius: var(--r-lg); padding: 6px; }
 .hb-steps { gap: 0; }
 .hb-g + .hb-g { margin-top: 2px; }
 .hb-grp { display: block; padding: 10px 10px 3px; font-size: 12px; font-weight: 600; color: var(--muted); }
@@ -57,7 +65,7 @@ a.hb-item { text-decoration: none; grid-template-columns: 24px minmax(0, 1fr); m
 #hbBody .prose { max-width: 760px; font-size: inherit; line-height: inherit; } /* a theory chapter: same type as the others */
 #hbBody .prose h3 { margin: 22px 0 8px; font-size: 17px; line-height: 1.3; letter-spacing: -0.015em; }
 #hbBody .prose h3:first-child { margin-top: 0; }
-#hbBody [id] { scroll-margin-top: calc(var(--hb-top) + var(--hb-bar) + 12px); }
+#hbBody [id] { scroll-margin-top: calc(var(--hb-top) + var(--hb-head) + var(--hb-bar) + 12px); }
 .hb-intro { font-size: 16px; line-height: 1.55; color: var(--ink-2); margin-bottom: 14px; }
 .hb-text p { margin: 0 0 10px; }
 .hb-text ul, .hb-text ol { margin: 0 0 12px; padding-left: 22px; }

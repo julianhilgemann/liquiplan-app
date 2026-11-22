@@ -100,15 +100,15 @@
 
   // ---------- search: folding, index, ranking, snippets ----------
   /* Text is compared in two folded forms, so that spellings with and without umlauts find each other: lower case,
-     no accents, no hyphens, ß as ss, and umlauts once as two letters ("über" → "ueber") and once as the plain vowel
+     no accents, no hyphens or apostrophes, ß as ss, and umlauts once as two letters ("über" → "ueber") and once as the plain vowel
      ("über" → "uber"). A word matches when it occurs in either form. map[i] is the position in the original text
      of the folded character i, which places the highlight. */
-  var UML = { 'ä': ['ae', 'a'], 'ö': ['oe', 'o'], 'ü': ['ue', 'u'], 'ß': ['ss', 'ss'] };
+  var UML = { 'ä': ['ae', 'a'], 'ö': ['oe', 'o'], 'ü': ['ue', 'u'], 'ß': ['ss', 'ss'] }, SKIP = '-­\'’‘';
   function fold(str, k) {
     var out = '', map = [], i, c, r, j;
     for (i = 0; i < str.length; i++) {
       c = str.charAt(i).toLowerCase();
-      if (c === '-' || c === '­') continue;
+      if (SKIP.indexOf(c) >= 0) continue;
       if (UML[c]) r = UML[c][k]; else if (c < 'À') r = c; else r = c.normalize('NFD').replace(/[̀-ͯ]/g, '');
       for (j = 0; j < r.length; j++) { out += r.charAt(j); map.push(i); }
     }

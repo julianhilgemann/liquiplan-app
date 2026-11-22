@@ -8,3 +8,6 @@ Solver-Reproducibility-Report_*
 
 # the built single-file app (node build.mjs); the Pages workflow builds its own
 dist/
+
+# worktrees of delegated workers
+.claude/worktrees/

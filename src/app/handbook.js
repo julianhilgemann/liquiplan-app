@@ -7,7 +7,8 @@
    - chapters other files push onto LP.hb.extra, shown in the menu group "Theorie" after the chapter on the optimiser.
      The interface: { id: 'th-…', title: { de, en }, sections: [{ id, title: { de, en }, text: { de, en } }],
      render(box, lang), teardown() }. render fills an empty block element (class "prose") and creates one element
-     with id === section.id per section; teardown, when present, runs before the chapter is left or drawn again.
+     with id === section.id per section; it may return a promise that settles once the chapter's layout is final (the
+     formulas typeset). teardown, when present, runs before the chapter is left or drawn again.
    Addresses: #handbuch opens the handbook (the chapter list on phones), #handbuch/<id> a chapter, or any section by
    its id, and #handbuch/<chapter>/<section> a section. Links in the handbook are plain links to these addresses, and
    the hash is the only state: following one adds a history entry, so the browser's Back button goes back through the
@@ -22,8 +23,9 @@
   var OUTLINE = [['start', ['intro', 'quick']], ['use', ['inputs', 'results', 'howto', 'privacy']], ['bg', ['optimiser']], ['theory', null], ['ref', ['faq', 'glossary', 'news', 'disclaimer']]];
   // on: shown; cur: chapter on screen; last: the chapter read last (where the handbook reopens); menu: the phone's chapter list
   // y: page scroll of the page underneath; overWiz: opened on top of the wizard; hash: the address on screen;
-  // q, hits, act: the search; ext: the theory chapter on screen (for its teardown); drawn: language + chapter drawn
-  var S = { on: false, cur: null, last: null, menu: false, y: 0, overWiz: false, hash: null, q: '', hits: [], act: -1, open: false, ext: null, drawn: null, marks: null, flash: 0, live: 0 };
+  // q, hits, act: the search; ext: the theory chapter on screen (for its teardown); ready: its promise from render;
+  // drawn: language + chapter drawn
+  var S = { on: false, cur: null, last: null, menu: false, y: 0, overWiz: false, hash: null, q: '', hits: [], act: -1, open: false, ext: null, ready: null, drawn: null, marks: null, flash: 0, live: 0 };
   var H = A.handbook = {};
 
   function narrow() { return window.matchMedia('(max-width: 720px)').matches; }
@@ -217,9 +219,10 @@
     body.innerHTML = ''; body.className = 'hb-text hb-' + c.kind;
     $('hbChTitle').textContent = c.title;
     $('hbKicker').textContent = t('hb_g_' + c.group) + ' · ' + t('hb_ch', { n: c.no, N: list.length });
+    S.ready = null;
     if (c.kind === 'extra') {
       var box = el('div', { class: 'prose' }); body.appendChild(box);
-      try { c.ext.render(box, A.lang); S.ext = c.ext; }
+      try { var r = c.ext.render(box, A.lang); S.ext = c.ext; if (r && typeof r.then === 'function') S.ready = r; }
       catch (e) { box.innerHTML = ''; box.appendChild(el('p', { class: 'note warn', text: t('hb_err') })); if (window.console) console.error(e); }
     } else {
       if (c.lead) body.appendChild(el('p', { class: 'hb-intro', html: rich(c.lead) }));
@@ -343,9 +346,21 @@
     S.open = false; paint();
     var marks = S.marks; S.marks = null;
     if (S.menu) { window.scrollTo(0, y || 0); focus($('hbTitle')); return; }
-    if (y != null) { window.scrollTo(0, y); focus($('hbChTitle')); return; }
-    if (sec && document.getElementById(sec) && $('hbBody').contains(document.getElementById(sec))) { reveal(sec, c.kind === 'extra' ? null : marks); return; }
+    if (y != null) { window.scrollTo(0, y); focus($('hbChTitle')); laid(function () { window.scrollTo(0, y); }); return; }
+    if (sec && document.getElementById(sec) && $('hbBody').contains(document.getElementById(sec))) {
+      reveal(sec, c.kind === 'extra' ? null : marks);
+      laid(function () { var n = document.getElementById(sec); if (n) n.scrollIntoView({ block: 'start' }); });
+      return;
+    }
     window.scrollTo(0, 0); focus($('hbChTitle'));
+  }
+  /* A theory chapter typesets its formulas after it is drawn, which moves the text below them. Where the handbook has
+     just put the reader, fn puts them again once the layout is final, unless they have scrolled, typed or clicked since. */
+  var acted = 0;
+  ['wheel', 'touchmove', 'keydown', 'mousedown'].forEach(function (k) { window.addEventListener(k, function () { acted++; }, { capture: true, passive: true }); });
+  function laid(fn) {
+    var p = S.ready, n = acted, cur = S.cur;
+    if (p) p.then(function () { if (S.on && S.cur === cur && S.ready === p && acted === n) fn(); });
   }
   function focus(n) { try { n.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
   function reveal(id, tms) {
@@ -408,8 +423,8 @@
     var y = window.pageYOffset;
     labels(); renderMenu(); S.drawn = null; renderChapter(c); paint();
     if (S.q.trim().length >= 2) runSearch(false);
-    var n = anchor && document.getElementById(anchor);
-    if (n) window.scrollBy(0, n.getBoundingClientRect().top - top); else window.scrollTo(0, y);
+    var n = anchor && document.getElementById(anchor), keep = function () { var m = document.getElementById(anchor); if (m) window.scrollBy(0, m.getBoundingClientRect().top - top); };
+    if (n) { keep(); laid(keep); } else window.scrollTo(0, y);
   }
   function barBottom() { var b = document.querySelector('.hb-bar'); return b ? b.getBoundingClientRect().bottom : 0; }
 

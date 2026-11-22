@@ -89,26 +89,31 @@
     live.box.classList.remove('th-wait'); live.box.classList.add('th-raw');
     live.box.insertBefore(A.el('p', { class: 'note warn th-mjnote', role: 'status', text: live.T.mjFail }), live.box.firstChild);
   }
+  // settles once the formulas are typeset, or the TeX stays (the layout of the chapter is final then)
   function typeset(live) {
-    mathjax().then(function (MJ) {
-      if (live.dead) return;
-      var job = MJ.startup.promise.then(function () { if (!live.dead) return MJ.typesetPromise([live.box]); });
-      MJ.startup.promise = job.catch(function () { /* the next chapter starts from a clean chain */ });
-      job.then(function () {
-        if (live.dead) return;
-        live.box.classList.remove('th-wait');
-        fit(live);
-        if (window.ResizeObserver) { live.ro = new ResizeObserver(function () { if (!live.dead) fit(live); }); live.ro.observe(live.box); }
-      }, function () { fallback(live); });
-    }, function () { fallback(live); });
+    return new Promise(function (done) {
+      function failed() { fallback(live); done(); }
+      mathjax().then(function (MJ) {
+        if (live.dead) { done(); return; }
+        var job = MJ.startup.promise.then(function () { if (!live.dead) return MJ.typesetPromise([live.box]); });
+        MJ.startup.promise = job.catch(function () { /* the next chapter starts from a clean chain */ });
+        job.then(function () {
+          if (live.dead) { done(); return; }
+          live.box.classList.remove('th-wait');
+          fit(live);
+          if (window.ResizeObserver) { live.ro = new ResizeObserver(function () { if (!live.dead) fit(live); }); live.ro.observe(live.box); }
+          done();
+        }, failed);
+      }, failed);
+    });
   }
   function start(id, box, lang) {
-    var T = TX[lang], ch = T.chapters[id], live = { T: T, dead: false, chart: null, ro: null, box: A.el('div', { class: 'th-body th-wait' }) };
+    var T = TX[lang], ch = T.chapters[id], live = { T: T, dead: false, chart: null, ro: null, ready: null, box: A.el('div', { class: 'th-body th-wait' }) };
     live.box.innerHTML = ch.sections.map(function (s) { return '<section class="th-sec" id="' + s[0] + '"><h3>' + A.esc(s[1]) + '</h3>' + toHtml(s[2], lang) + '</section>'; }).join('');
     box.appendChild(live.box);
     var host = live.box.querySelector('.th-chart');
     if (host && LP.simplex && LP.hb.lpChart) live.chart = LP.hb.lpChart.mount(host, T.chart);
-    typeset(live);
+    live.ready = typeset(live);
     return live;
   }
   function stop(live) {
@@ -128,6 +133,7 @@
       render: function (box, lang) {
         if (live) { stop(live); if (live.box.parentNode) live.box.parentNode.removeChild(live.box); } // rendered again without a teardown
         live = start(id, box, lang === 'en' ? 'en' : 'de');
+        return live.ready;
       },
       teardown: function () { if (live) stop(live); live = null; }
     };

@@ -1,21 +1,21 @@
 /* ---------- handbook, theory chapters: formulas and the simplex chart (theory.js, simplex-chart.js) ---------- */
 .th-sec { scroll-margin-top: 16px; }
 .th-sec + .th-sec { margin-top: 22px; }
-.th-sec > h3:first-child { margin-top: 0; }
 /* display formulas: a wide one scrolls inside its own box, never the page */
 .th-eq { max-width: 100%; margin: 8px 0 12px; padding: 2px 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }
 .th-eq > mjx-container[jax="SVG"][display="true"] { margin: 0 !important; }
 .th-eq[tabindex]:focus-visible { outline-offset: 0; border-radius: var(--r-sm); }
 /* a formula cut off at the right fades out there until it is scrolled to its end */
 .th-eq.th-over:not(.th-end) { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+.th-m { white-space: nowrap; }
 .th-m mjx-container[jax="SVG"] { overflow: visible; }
 mjx-container[jax="SVG"] { color: inherit; }
 .prose .th-cons li { margin-bottom: 8px; }
 .prose .th-cons .th-eq { margin: 6px 0 4px; }
 /* while MathJax loads the TeX is shown faint; if it cannot load, the TeX stays, set as code */
 .th-wait .th-eq, .th-wait .th-m { opacity: 0.35; }
-.th-raw .th-eq { font: 12.5px/1.5 var(--mono); white-space: pre; background: var(--surface-2); border-radius: var(--r); padding: 8px 12px; }
-.th-raw .th-m { font-family: var(--mono); font-size: 0.9em; }
+.th-raw .th-eq { font: 12.5px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); border-radius: var(--r); padding: 8px 12px; }
+.th-raw .th-m { font-family: var(--mono); font-size: 0.9em; white-space: normal; overflow-wrap: anywhere; }
 .th-mjnote { margin: 0 0 14px; }
 
 /* the chart: plot, steps and words on the left, conditions and controls on the right (stacked when narrow) */

@@ -24,8 +24,10 @@
     MATH.lastIndex = 0;
     while ((m = MATH.exec(src))) {
       out += terms(src.slice(last, m.index), lang, true);
-      out += m[1] != null ? '<div class="th-eq">\\[' + A.esc(m[1].trim()) + '\\]</div>' : '<span class="th-m">\\(' + A.esc(m[2]) + '\\)</span>';
       last = MATH.lastIndex;
+      if (m[1] != null) { out += '<div class="th-eq">\\[' + A.esc(m[1].trim()) + '\\]</div>'; continue; }
+      var p = /^[.,;:)]+/.exec(src.slice(last)); p = p ? p[0] : ''; last += p.length; // a full stop never starts a line of its own
+      out += '<span class="th-m">\\(' + A.esc(m[2]) + '\\)' + p + '</span>';
     }
     return out + terms(src.slice(last), lang, true);
   }

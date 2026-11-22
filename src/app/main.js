@@ -45,7 +45,7 @@
     syncInputsBtn();
     A.resizeCharts();
   }
-  function setLang(l) { A.lang = l; A.state.lang = l; A.save(); A.renderStatic(); A.renderSide(); A.renderAll(); A.onSolverInfo(); A.wizard.render(); A.replay.render(); }
+  function setLang(l) { A.lang = l; A.state.lang = l; A.save(); A.renderStatic(); A.renderSide(); A.renderAll(); A.onSolverInfo(); A.wizard.render(); A.replay.render(); A.handbook.render(); }
   function wire() {
     $('btnInputs').onclick = function () { toggleSide(); };
     $('btnCloseSide').onclick = function () { toggleSide(false); }; $('scrim').onclick = function () { toggleSide(false); };

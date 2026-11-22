@@ -187,6 +187,14 @@
     lx_lBop: 'Anfangsbestand (BOP)', lx_lPl: 'Anlage', lx_lCap: 'Zinsgutschrift (thesauriert)', lx_lRep: 'Rückzahlung', lx_lEop: 'Endbestand (EOP)', lx_lInt: 'Zinsauszahlung',
     lx_chk: 'Prüfung: Summe der Tranchen − Endbestand (= 0)', lx_chk2: 'Prüfung: Endbestand − Monatsplan am Jahresende (= 0)',
     lx_cash: 'Liquide Konten (Girokonto und Tagesgeld)', lx_cPl: 'Anlagen (Abfluss)', lx_cRep: 'Rückzahlungen (Zufluss)', lx_cInt: 'Zinsen (Zufluss)', lx_cNet: 'Netto-Zahlungsstrom'
+    // Handbuch (app/handbook.js); the long texts are in i18n/handbook-de.js
+    , hb_btn: 'Handbuch', hb_title: 'Handbuch', hb_lead: 'Liquiplan von den ersten Schritten bis zur Theorie. Die Suche findet jeden Begriff; die Taste / springt hinein.',
+    hb_allCh: 'Alle Kapitel', hb_menu: 'Kapitel', hb_ch: 'Kapitel {n} von {N}', hb_toc: 'In diesem Kapitel', hb_pager: 'Vorheriges und nächstes Kapitel', hb_prev: 'Zurück', hb_next: 'Weiter',
+    hb_g_start: 'Einstieg', hb_g_use: 'Bedienung', hb_g_bg: 'Hintergrund', hb_g_theory: 'Theorie', hb_g_ref: 'Nachschlagen',
+    hb_search: 'Im Handbuch suchen', hb_ph: 'Handbuch durchsuchen', hb_clear: 'Suche leeren', hb_results: 'Treffer',
+    hb_hit1: '1 Treffer für „{q}“', hb_hitN: '{n} Treffer für „{q}“', hb_shown: '(die ersten {n} angezeigt)', hb_none: 'Keine Treffer für „{q}“.', hb_noneHint: 'Ein kürzeres Wort oder eine andere Schreibweise hilft oft. Oder direkt nachschlagen:',
+    hb_version: 'Version {v}', hb_whatsNew: 'Was ist neu', hb_k_new: 'Neu', hb_k_improved: 'Verbessert', hb_k_fixed: 'Behoben',
+    hb_err: 'Dieses Kapitel konnte nicht angezeigt werden.', hb_more: 'Im Handbuch erklärt', hb_esLink: 'Neu hier? Das Handbuch erklärt Liquiplan Schritt für Schritt.'
   };
 
   LP.i18n = { de: DE };

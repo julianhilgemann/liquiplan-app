@@ -1,0 +1,27 @@
+<!--# "Handbuch": the in-app handbook, a page mode like the wizard and the step-by-step view. src/app/handbook.js fills -->
+<!--# the menu, the chapter and the search results from LP.hb (texts in src/app/i18n/handbook-de.js and handbook-en.js). -->
+<section class="handbook hide" id="handbook" aria-labelledby="hbTitle">
+  <div class="hb-head"><h2 id="hbTitle" tabindex="-1" data-i18n="hb_title">Handbuch</h2><p class="hb-lead" data-i18n="hb_lead">Liquiplan von den ersten Schritten bis zur Theorie.</p></div>
+  <div class="hb-bar" role="search">
+    <div class="hb-field">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.3 10.3l3.9 3.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input type="text" id="hbQ" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="hbHits" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      <kbd class="hb-key" aria-hidden="true">/</kbd>
+      <button type="button" class="hb-clear hide" id="hbClear"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+    </div>
+    <p class="sr" id="hbLive" role="status" aria-live="polite"></p>
+  </div>
+  <div class="hb-grid">
+    <nav class="hb-menu" id="hbMenu" aria-label="Kapitel"><ol class="wiz-steps hb-steps" id="hbSteps"></ol><p class="hb-ver" id="hbVer"></p></nav>
+    <div class="hb-main" id="hbMain">
+      <a class="hb-tomenu" id="hbToMenu" href="#handbuch" data-i18n="hb_allCh">Alle Kapitel</a>
+      <div class="hb-res hide" id="hbRes"><p class="hb-count" id="hbCount"></p><ol class="hb-hits" id="hbHits" role="listbox"></ol><div class="hb-none hide" id="hbNone"></div></div>
+      <article class="card hb-body" id="hbArt" aria-labelledby="hbChTitle">
+        <p class="hb-kicker" id="hbKicker"></p>
+        <h2 id="hbChTitle" tabindex="-1"></h2>
+        <div id="hbBody"></div>
+      </article>
+      <nav class="hb-pager" id="hbPager"></nav>
+    </div>
+  </div>
+</section>

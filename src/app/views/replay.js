@@ -484,6 +484,8 @@
     $('app').classList.remove('rp'); $('replay').classList.add('hide');
     sync(); A.resizeCharts();
     window.scrollTo(0, S.y);
+    var a = document.activeElement, b = $('btnReplay'); // focus was on the page just hidden: back to the toolbar, as the handbook does
+    if ((!a || a === document.body || $('replay').contains(a)) && b && b.offsetParent) { try { b.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
   }
   function open() {
     if (S.on) { go(0); return; }

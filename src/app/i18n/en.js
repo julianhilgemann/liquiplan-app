@@ -158,6 +158,14 @@
     rp_k_lp: 'linear programme', rp_k_milp: 'branch-and-bound search', rp_k_ask: 'yes/no question',
     rp_s_optimal: 'solved to optimality', rp_s_optimalP: 'solvable: a plan exists', rp_s_feasible: 'plan found, search not finished', rp_s_feasibleA: 'plan found',
     rp_s_infeasible: 'no feasible solution', rp_s_unknown: 'no answer within the work limit'
+    // handbook (app/handbook.js); the long texts are in i18n/handbook-en.js
+    , hb_btn: 'Handbook', hb_title: 'Handbook', hb_lead: 'Liquiplan from the first steps to the theory. The search finds every term; the / key jumps into it.',
+    hb_allCh: 'All chapters', hb_menu: 'Chapters', hb_ch: 'Chapter {n} of {N}', hb_toc: 'In this chapter', hb_pager: 'Previous and next chapter', hb_prev: 'Previous', hb_next: 'Next',
+    hb_g_start: 'Getting started', hb_g_use: 'Using Liquiplan', hb_g_bg: 'Background', hb_g_theory: 'Theory', hb_g_ref: 'Reference',
+    hb_search: 'Search the handbook', hb_ph: 'Search the handbook', hb_clear: 'Clear the search', hb_results: 'Results',
+    hb_hit1: '1 result for “{q}”', hb_hitN: '{n} results for “{q}”', hb_shown: '(the first {n} shown)', hb_none: 'No results for “{q}”.', hb_noneHint: 'A shorter word or another spelling often helps. Or look it up directly:',
+    hb_version: 'Version {v}', hb_whatsNew: 'What’s new', hb_k_new: 'New', hb_k_improved: 'Improved', hb_k_fixed: 'Fixed',
+    hb_err: 'This chapter could not be shown.', hb_more: 'Explained in the handbook', hb_esLink: 'New here? The handbook explains Liquiplan step by step.'
   };
 
   LP.i18n.en = EN;

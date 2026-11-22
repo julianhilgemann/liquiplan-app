@@ -1,0 +1,179 @@
+/* ---------- Handbuch: the in-app handbook, a page mode like the wizard (phone: the chapter list and a chapter take turns) ---------- */
+/* --hb-top: what is pinned above the search bar (the toolbar where it is sticky); --hb-bar: the search bar itself */
+.handbook { --hb-top: 0px; --hb-bar: 60px; max-width: 1120px; margin: 0 auto; padding: 24px 20px 40px; display: grid; gap: 4px; }
+@media (min-width: 1360px) { .handbook { --hb-top: var(--top-h); } }
+@media (pointer: coarse) { .handbook { --hb-bar: 64px; } }
+.hb .shell, .hb .wizard, .hb .replay { display: none !important; }
+/* in the handbook the toolbar keeps the way back, language and appearance; in the wizard the handbook stays reachable */
+.hb .top .ctl > :not(#btnHandbook):not(.seg):not(.theme-switch), .hb #btnInputs { display: none !important; }
+#app.hb .top .ctl > #btnHandbook, #app.wiz .top .ctl > #btnHandbook { display: inline-flex !important; }
+.hb #btnHandbook svg { display: none; }
+#btnHandbook svg { width: 15px; height: 15px; flex: none; }
+/* the label needs room: an icon only where the one-row toolbar is full (measured: German needs 1580px with both labels) */
+@media (min-width: 721px) and (max-width: 1599px) { #app:not(.hb):not(.wiz):not(.blank) #btnHandbook { width: 32px; padding: 0; } #app:not(.hb):not(.wiz):not(.blank) #btnHandbook span { display: none; } }
+@media (pointer: coarse) and (min-width: 721px) and (max-width: 1599px) { #app:not(.hb):not(.wiz):not(.blank) #btnHandbook { width: 44px; } }
+
+.hb-head { padding-bottom: 6px; }
+.hb-head h2 { font-size: 24px; letter-spacing: -0.02em; }
+.hb-head h2:focus, #hbChTitle:focus { outline: none; }
+.hb-lead { margin: 4px 0 0; max-width: 88ch; color: var(--muted); font-size: 13.5px; }
+
+/* the search: pinned at the top, so it can be reached from anywhere in a chapter */
+.hb-bar { position: sticky; top: var(--hb-top); z-index: 20; display: flex; align-items: center; min-height: var(--hb-bar); margin: 0 -20px; padding: 8px 20px; background: var(--bg); }
+.hb-field { position: relative; flex: 1; display: flex; align-items: center; }
+.hb-field > svg { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+.hb-field #hbQ { width: 100%; max-width: none; min-height: 40px; padding: 8px 44px 8px 36px; border-radius: 10px; font-size: 15px; color: var(--input); }
+.hb-key { position: absolute; right: 10px; min-width: 22px; padding: 1px 6px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--surface-2); color: var(--muted); font: 12px/18px var(--mono); text-align: center; pointer-events: none; }
+.has-q .hb-key, .hb-field #hbQ:focus ~ .hb-key { display: none; }
+.hb-clear { position: absolute; right: 4px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
+.hb-clear:hover { background: var(--fill); color: var(--ink); }
+.hb-clear svg { width: 16px; height: 16px; }
+
+.hb-grid { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (min-width: 721px) and (max-width: 1023px) { .hb-grid { grid-template-columns: 224px minmax(0, 1fr); gap: 18px; } }
+
+/* the chapter menu: sticky below the search, grouped, the current chapter marked */
+.hb-menu { position: sticky; top: calc(var(--hb-top) + var(--hb-bar) + 4px); max-height: calc(100vh - var(--hb-top) - var(--hb-bar) - 20px); overflow: auto; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--card-line); border-radius: var(--r-lg); padding: 6px; }
+.hb-steps { gap: 0; }
+.hb-g + .hb-g { margin-top: 2px; }
+.hb-grp { display: block; padding: 10px 10px 3px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.hb-g:first-child .hb-grp { padding-top: 5px; }
+a.hb-item { text-decoration: none; grid-template-columns: 24px minmax(0, 1fr); min-height: 36px; padding: 5px 10px; }
+.hb-item .tt { min-width: 0; }
+.hb-item[aria-current="page"] { background: var(--fill-2); font-weight: 600; }
+.hb-item[aria-current="page"] .no { background: var(--accent); color: var(--accent-ink); }
+.hb-ver { margin: 6px 0 0; padding: 8px 10px 4px; border-top: 1px solid var(--line); font-size: 12px; }
+.hb-ver a { color: var(--muted); text-decoration: none; }
+.hb-ver a:hover { color: var(--link); text-decoration: underline; }
+
+.hb-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; max-width: 816px; }
+.hb-tomenu { display: none; }
+
+/* one chapter: a card; the text column is at most 760px wide, which is also what a theory chapter gets */
+.hb-body { padding: 24px 28px 30px; }
+.hb-kicker { margin: 0 0 4px; font-size: 12.5px; color: var(--muted); }
+#hbChTitle { font-size: 23px; line-height: 1.25; letter-spacing: -0.02em; margin-bottom: 14px; }
+#hbBody { max-width: 760px; font-size: 15px; line-height: 1.6; }
+#hbBody .prose { max-width: 760px; }
+#hbBody [id] { scroll-margin-top: calc(var(--hb-top) + var(--hb-bar) + 12px); }
+.hb-intro { font-size: 16px; line-height: 1.55; color: var(--ink-2); margin-bottom: 14px; }
+.hb-text p { margin: 0 0 10px; }
+.hb-text ul, .hb-text ol { margin: 0 0 12px; padding-left: 22px; }
+.hb-text li { margin-bottom: 4px; }
+.hb-text li > ul, .hb-text li > ol { margin: 4px 0 0; }
+.hb-text a { color: var(--link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.hb-text a:hover { text-decoration-thickness: 2px; }
+.hb-text strong, .hb-ui { font-weight: 600; }
+.hb-text code { font: 13px var(--mono); padding: 1px 5px; border-radius: 5px; background: var(--fill); overflow-wrap: anywhere; }
+kbd { font: 12px/1.4 var(--mono); padding: 1px 6px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 5px; background: var(--surface-2); white-space: nowrap; }
+.hb-text .note { margin: 4px 0 12px; font-size: 14px; }
+.hb-text .note p:last-child { margin-bottom: 0; }
+.hb-text dl { margin: 0 0 12px; }
+.hb-text dt { font-weight: 600; }
+.hb-text dd { margin: 0 0 10px; }
+
+.hb-sec { padding-top: 10px; }
+.hb-sec + .hb-sec { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 18px; }
+.hb-sec > h3 { margin: 0 0 8px; font-size: 17px; line-height: 1.3; letter-spacing: -0.015em; }
+.hb-sec h4 { margin: 14px 0 4px; font-size: 15px; }
+.hb-sec > h3:focus { outline: none; }
+.hb-sec > h3:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: 4px; }
+/* a heading is a link to itself: copy it, or open it in a new tab */
+.hb-text a.hb-self { color: inherit; text-decoration: none; }
+.hb-hash { margin-left: 8px; color: var(--muted); font-weight: 400; opacity: 0; }
+.hb-self:hover .hb-hash, .hb-self:focus-visible .hb-hash { opacity: 1; }
+@media (hover: none) { .hb-hash { display: none; } }
+.hb-alt { margin-left: 10px; font-size: 13px; font-weight: 400; color: var(--muted); }
+/* where a search result or a link led: a highlight that fades (with Reduce Motion it stays a moment, then goes) */
+.hb-target { border-radius: 6px; animation: hb-flash 2.4s ease-in forwards; }
+@keyframes hb-flash { 0%, 35% { background: var(--override); box-shadow: 0 0 0 6px var(--override); } 100% { background: transparent; box-shadow: 0 0 0 6px transparent; } }
+@media (prefers-reduced-motion: reduce) { .hb-target { background: var(--override); box-shadow: 0 0 0 6px var(--override); } }
+mark { background: var(--override); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+/* the chapter's own table of contents, for the longer ones */
+.hb-toc { margin: 0 0 16px; padding: 12px 16px; border-radius: var(--r); background: var(--surface-2); font-size: 14px; }
+.hb-toc-h { margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.hb-toc ul { margin: 0; padding: 0; list-style: none; columns: 2 220px; column-gap: 24px; }
+.hb-toc li { margin: 0; padding: 2px 0; break-inside: avoid; }
+.hb-toc a { text-decoration: none; }
+.hb-toc a:hover { text-decoration: underline; }
+
+/* glossary and changelog: compact */
+.hb-gloss .hb-sec { padding-top: 12px; }
+.hb-gloss .hb-sec + .hb-sec { margin-top: 0; padding-top: 12px; }
+.hb-gloss .hb-sec > h3 { font-size: 15.5px; margin-bottom: 4px; }
+.hb-gloss .hb-sec p { margin-bottom: 4px; }
+.hb-date { color: var(--muted); font-size: 13.5px; }
+.hb-log { list-style: none; padding-left: 0 !important; }
+.hb-log li { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; align-items: baseline; margin-bottom: 8px; }
+.hb-kind { justify-self: start; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.hb-kind.new { background: var(--chip-mat); color: var(--chip-mat-ink); }
+.hb-kind.improved { background: var(--chip-place); color: var(--chip-place-ink); }
+.hb-kind.fixed { background: var(--fill); color: var(--ink-2); }
+
+/* previous / next */
+.hb-pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hb-pg { display: grid; gap: 2px; align-content: center; min-height: 64px; padding: 12px 16px; border: 1px solid var(--card-line); border-radius: var(--r-lg); background: var(--surface); color: var(--ink); text-decoration: none; }
+.hb-pg:hover { border-color: var(--line-2); background: var(--surface-2); }
+.hb-pg .k { font-size: 12.5px; color: var(--muted); }
+.hb-pg .tt { font-weight: 600; color: var(--link); }
+.hb-pg.next { grid-column: 2; text-align: right; }
+
+/* search results: they take the chapter's place while there is a query */
+.hb-res { display: grid; gap: 10px; }
+.hb-count { margin: 0; font-size: 13px; color: var(--muted); }
+.hb-hits { list-style: none; margin: 0; padding: 4px; background: var(--surface); border: 1px solid var(--card-line); border-radius: var(--r-lg); }
+.hb-hit { display: grid; gap: 2px; padding: 10px 12px 11px; border-radius: 10px; cursor: pointer; }
+.hb-hit + .hb-hit { margin-top: 2px; }
+.hb-hit:hover { background: var(--fill); }
+.hb-hit[aria-selected="true"] { background: var(--fill-2); box-shadow: inset 3px 0 0 var(--focus); }
+.hb-hit-path { font-size: 12px; color: var(--muted); }
+.hb-hit-t { font-size: 15px; font-weight: 600; line-height: 1.35; }
+.hb-hit-x { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.hb-none { padding: 22px 20px; background: var(--surface); border: 1px solid var(--card-line); border-radius: var(--r-lg); font-size: 14px; }
+.hb-none p { margin: 0; color: var(--ink-2); }
+.hb-none .hb-none-h { margin-bottom: 4px; font-size: 16px; font-weight: 600; color: var(--ink); }
+.hb-none a { color: var(--link); }
+
+/* the foot of the analysis: version and the way into the handbook */
+.app-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; padding: 6px 0 2px; font-size: 12.5px; color: var(--muted); }
+.app-foot a { color: var(--muted); text-decoration: none; }
+.app-foot a:hover { color: var(--link); text-decoration: underline; }
+.app-foot a:empty, .app-foot a:empty + span { display: none; }
+.es-help { margin-top: 6px !important; font-size: 13.5px !important; }
+.es-help a { color: var(--link); text-decoration: none; }
+.es-help a:hover { text-decoration: underline; }
+
+@media (pointer: coarse) {
+  a.hb-item { min-height: 44px; }
+  .hb-toc li { padding: 6px 0; }
+  .app-foot a, .hb-ver a { display: inline-flex; align-items: center; min-height: 44px; }
+  .hb-field #hbQ { min-height: 44px; }
+  .hb-clear { width: 40px; height: 40px; }
+}
+@media (max-width: 720px) {
+  .handbook { padding: 12px 16px 32px; gap: 2px; }
+  .hb-head h2 { font-size: 22px; }
+  .hb-bar { margin: 0 -16px; padding: 8px 16px; }
+  .hb-field #hbQ { font-size: 16px; }
+  .hb-key { display: none; }
+  .hb-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .handbook:not(.show-menu) .hb-menu, .handbook.show-menu .hb-main, .handbook:not(.show-menu) .hb-head { display: none; }
+  .handbook.searching .hb-head { display: none; }
+  .hb-menu { position: static; max-height: none; overflow: visible; padding: 4px; }
+  a.hb-item { grid-template-columns: 26px minmax(0, 1fr) 10px; min-height: 50px; font-size: 15px; }
+  .hb-item .chev { display: block; width: 7px; height: 7px; border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted); transform: rotate(-45deg); }
+  .hb-tomenu { display: inline-flex; align-items: center; gap: 6px; justify-self: start; color: var(--link); font-size: 15px; padding: 0 2px; min-height: 44px; text-decoration: none; }
+  .hb-tomenu::before { content: ""; width: 8px; height: 8px; margin-left: 3px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+  .handbook.searching .hb-tomenu { display: none; }
+  /* the chapter runs from edge to edge, so that its text column keeps the full width (288px on a 320px screen) */
+  .hb-body, .hb-hits, .hb-none { margin: 0 -16px; border-radius: 0; border-left: 0; border-right: 0; }
+  .hb-body { padding: 18px 16px 24px; }
+  #hbChTitle { font-size: 21px; }
+  #hbBody { font-size: 15.5px; }
+  .hb-sec > h3 { font-size: 17px; }
+  .hb-log li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .hb-pager { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .hb-pg.next { grid-column: auto; }
+  .hb-hits { padding: 4px 8px; }
+}

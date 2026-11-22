@@ -54,7 +54,9 @@ a.hb-item { text-decoration: none; grid-template-columns: 24px minmax(0, 1fr); m
 .hb-kicker { margin: 0 0 4px; font-size: 12.5px; color: var(--muted); }
 #hbChTitle { font-size: 23px; line-height: 1.25; letter-spacing: -0.02em; margin-bottom: 14px; }
 #hbBody { max-width: 760px; font-size: 15px; line-height: 1.6; }
-#hbBody .prose { max-width: 760px; }
+#hbBody .prose { max-width: 760px; font-size: inherit; line-height: inherit; } /* a theory chapter: same type as the others */
+#hbBody .prose h3 { margin: 22px 0 8px; font-size: 17px; line-height: 1.3; letter-spacing: -0.015em; }
+#hbBody .prose h3:first-child { margin-top: 0; }
 #hbBody [id] { scroll-margin-top: calc(var(--hb-top) + var(--hb-bar) + 12px); }
 .hb-intro { font-size: 16px; line-height: 1.55; color: var(--ink-2); margin-bottom: 14px; }
 .hb-text p { margin: 0 0 10px; }
@@ -134,7 +136,7 @@ a.hb-item { text-decoration: none; grid-template-columns: 24px minmax(0, 1fr); m
 .hb-none a { color: var(--link); }
 
 /* the foot of the analysis: version and the way into the handbook */
-.app-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; padding: 6px 0 2px; font-size: 12.5px; color: var(--muted); }
+.app-foot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; padding: 6px 0 2px; font-size: 12.5px; color: var(--muted); }
 .app-foot a { color: var(--muted); text-decoration: none; }
 .app-foot a:hover { color: var(--link); text-decoration: underline; }
 .app-foot a:empty, .app-foot a:empty + span { display: none; }

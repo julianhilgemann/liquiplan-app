@@ -4,9 +4,10 @@
   var LP = window.LP, A = LP.app, $ = A.$, esc = A.esc;
 
   (function () {
-    var tip = $('tip'), cur = null;
+    var tip = $('tip'), cur = null, since = 0;
     function show(n) {
       var g = LP.i18n.gloss[n.getAttribute('data-term')]; if (!g) return;
+      if (cur !== n) since = Date.now();
       cur = n; tip.innerHTML = '<strong>' + esc(g[A.lang === 'de' ? 0 : 2]) + '</strong><br>' + esc(g[A.lang === 'de' ? 1 : 3]);
       tip.style.display = 'block';
       var r = n.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
@@ -19,7 +20,8 @@
     document.addEventListener('mouseout', function (e) { if (e.target.closest && e.target.closest('.term')) hide(); });
     document.addEventListener('focusin', function (e) { var n = e.target.closest && e.target.closest('.term'); if (n) show(n); });
     document.addEventListener('focusout', function (e) { if (e.target.closest && e.target.closest('.term')) hide(); });
-    document.addEventListener('click', function (e) { var n = e.target.closest && e.target.closest('.term'); if (n) { if (cur === n) hide(); else show(n); } else hide(); });
+    // a tap sends mouseover and focus right before its click: that click must not take back what they just showed
+    document.addEventListener('click', function (e) { var n = e.target.closest && e.target.closest('.term'); if (n) { if (cur === n && Date.now() - since > 600) hide(); else show(n); } else hide(); });
     window.addEventListener('scroll', hide, true);
   })();
 })();

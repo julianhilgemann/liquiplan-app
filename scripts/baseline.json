@@ -1,0 +1,26 @@
+{
+  "note": "T* and a digest (FNV-1a of JSON.stringify(res.placements)) per example under its default rate scenario, solved with HiGHS. Rewrite with: node scripts/check.mjs --update-baseline",
+  "presets": {
+    "g": {
+      "rateScenario": "events",
+      "Tstar": 32,
+      "T": 32,
+      "placements": 23,
+      "digest": "157431cc"
+    },
+    "ruhestand": {
+      "rateScenario": "current",
+      "Tstar": 187,
+      "T": 187,
+      "placements": 91,
+      "digest": "7714432a"
+    },
+    "zinsfalle": {
+      "rateScenario": "events",
+      "Tstar": 32,
+      "T": 32,
+      "placements": 23,
+      "digest": "157431cc"
+    }
+  }
+}

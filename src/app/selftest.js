@@ -37,6 +37,22 @@
         var reach = ws.getCell('F2').value, reachV = reach && reach.result, expect = o.sim.firstShort >= 0 ? o.sim.firstShort : o.P.H;
         lx.done(maxd <= 0.01 && reachV === expect, t('st_xlsx', { d: A.eur2(maxd), e: reachV + ' = ' + expect }));
       } catch (e) { lx.done(false, t('st_xlsx', { d: '–', e: String(e && e.message || e) })); }
+      // the ladder spreadsheet, read back: per month the tranches' closing balances add up to the locked capital, the cash lines match
+      var lq = line(t('lx_st', { d: '…', n: '…' }));
+      try {
+        var lb = await LP.ladderXlsx.build(A.ladderCtx({ P: o.P, sim: o.sim }), window.ExcelJS), lw = new window.ExcelJS.Workbook(); await lw.xlsx.load(lb.data);
+        var ms = lw.worksheets[1], RW = LP.ladderXlsx.ROWS, c0 = LP.ladderXlsx.C0, nM = lb.schedule.M, dev = 0, chk = true;
+        var eopRows = lb.schedule.rows.map(function (rw, i) { return lb.rows.blockRow[i] + 1 + rw.lines.indexOf('eop'); });
+        var num = function (r, k) { var x = ms.getCell(r, c0 + k).value; x = x && typeof x === 'object' ? x.result : x; return typeof x === 'number' ? x : 0; }; // a cached 0 reads back as undefined
+        for (n = 0; n < o.P.H; n++) {
+          if (n >= nM) { dev = Math.max(dev, Math.abs(o.sim.locked[n]), Math.abs(o.sim.place[n]), Math.abs(o.sim.trCash[n])); continue; } // nothing after the last maturity
+          var sumE = eopRows.reduce(function (a, r) { return a + num(r, n); }, 0);
+          dev = Math.max(dev, Math.abs(sumE - o.sim.locked[n]), Math.abs(num(RW.eop, n) - o.sim.locked[n]), Math.abs(-num(RW.cPl, n) - o.sim.place[n]),
+            Math.abs(num(RW.cRep, n) + num(RW.cInt, n) - o.sim.trCash[n]), Math.abs(num(RW.int, n) + num(RW.cap, n) - o.sim.intFG[n]));
+          if (num(RW.chk, n) !== 0) chk = false;
+        }
+        lq.done(dev <= 0.01 && chk && eopRows.length === o.sim.tranches.length, t('lx_st', { d: A.eur2(dev), n: nM }));
+      } catch (e3) { lq.done(false, t('lx_st', { d: '–', n: String(e3 && e3.message || e3) })); }
     } catch (e2) { line(String(e2 && e2.message || e2)).done(false); }
     box.appendChild(el('div', null, el('span', { class: 'pill ' + (pass === total ? 'ok' : 'bad'), text: pass + '/' + total }), el('strong', { text: t('st_done', { p: pass, n: total }) })));
     btn.disabled = false;

@@ -41,7 +41,8 @@
     if (!libs[url]) libs[url] = new Promise(function (res, rej) { var s = el('script', { src: url }); s.onload = res; s.onerror = function () { delete libs[url]; rej(new Error(url.split('/').slice(-1)[0])); }; document.head.appendChild(s); });
     return libs[url];
   }
-  A.xlsxLibs = async function () { await loadScript(A.CDN.exceljs); await loadScript(A.CDN.jszip); if (!window.ExcelJS || !window.JSZip) throw new Error('ExcelJS/JSZip'); };
+  A.excelJs = async function () { await loadScript(A.CDN.exceljs); if (!window.ExcelJS) throw new Error('ExcelJS'); }; // enough for the ladder spreadsheet
+  A.xlsxLibs = async function () { await A.excelJs(); await loadScript(A.CDN.jszip); if (!window.JSZip) throw new Error('JSZip'); }; // the full workbook also needs JSZip
   function xlsxCtx(v, state) {
     var names = {}; ['events'].concat(C.SCENARIOS).forEach(function (sc) { names[sc] = t('sc_' + sc); });
     return { P: v.P, sim: v.sim, res: v.res, base: v.base, scen: v.scen || {}, scenNames: names, state: state, lang: A.lang };
@@ -56,5 +57,19 @@
     } catch (e2) { A.toast(t('saveFail', { e: String(e2 && e2.message || e2) }), true); }
   };
 
-  A.stamp = stamp; A.xlsxCtx = xlsxCtx;
+  // ---------- the ladder as a small spreadsheet (the Download button of the ladder card) ----------
+  function ladderCtx(v) { return { P: v.P, sim: v.sim, t: t, lang: A.lang, scenName: t('sc_' + v.P.scenario), created: new Date() }; }
+  A.exportLadderXlsx = async function () {
+    var why = A.ladXlsxBlock(); if (why) { A.toast(t(why)); return; } // ladder.js: no result, a run in progress, or results out of date
+    var v = A.view; A.toast(t('lx_building'));
+    try { await A.excelJs(); } catch (e) { A.toast(t('libFail', { l: e.message }), true); return; }
+    await new Promise(function (res) { setTimeout(res, 30); }); // let the toast appear before the main thread is busy
+    why = A.ladXlsxBlock(); if (why || v !== A.view) { A.toast(t(why || 'lx_stale')); return; } // the result changed meanwhile
+    try {
+      var r = await LP.ladderXlsx.build(ladderCtx(v), window.ExcelJS);
+      await A.saveFile(t('lx_file') + '_' + stamp() + '.xlsx', new Blob([r.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    } catch (e2) { A.toast(t('saveFail', { e: String(e2 && e2.message || e2) }), true); }
+  };
+
+  A.stamp = stamp; A.xlsxCtx = xlsxCtx; A.ladderCtx = ladderCtx;
 })();

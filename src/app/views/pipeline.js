@@ -26,7 +26,7 @@
     $('solverText').textContent = text; $('solverBadge').title = text;
     $('progressBar').style.width = on ? (pct || 8) + '%' : '0';
     $('btnOptimize').disabled = !hasData(A.state); // greyed out until there is something to optimise
-    A.replay.sync();
+    A.replay.sync(); A.syncLadXlsx();
   }
   function badgeDone(ms) {
     if (!hasData(A.state)) { setBusy(false, t('e_status')); $('solverBadge').title = t('e_status'); return; } // nothing to plan with (an older result may still be in memory)
@@ -43,7 +43,7 @@
     clearTimeout(debounce); A.stale = true; $('main').classList.add('stale'); $('staleNote').classList.toggle('hide', !(any && A.view)); $('btnOptimize').classList.toggle('due', any); $('btnOptimize').disabled = !any; $('app').classList.toggle('blank', !any);
     runSeq++; A.solver.cancelAll(); // a run for the previous inputs is of no use any more
     A.busy = false; $('progressBar').style.width = '0'; $('solverBadge').className = 'badge'; $('solverText').textContent = t('s_stale'); $('solverBadge').title = t('s_stale');
-    runClose(); A.replay.sync();
+    runClose(); A.replay.sync(); A.syncLadXlsx();
     if (!A.view || !any) renderAll(); // placeholders switch to "not calculated yet", or to the empty state
   };
   function fresh() { $('main').classList.remove('stale'); } // results on screen match the inputs again

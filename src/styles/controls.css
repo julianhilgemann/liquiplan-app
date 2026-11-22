@@ -2,7 +2,7 @@
 select, input[type="text"], input[type="number"], input[type="date"], input[type="month"], textarea {
   background-color: var(--surface); border: 1px solid var(--field-line); border-radius: var(--r-sm); padding: 5px 9px; min-height: 32px; max-width: 100%; font-size: 14px;
 }
-select { -webkit-appearance: none; appearance: none; padding-right: 28px; text-overflow: ellipsis;
+select { -webkit-appearance: none; appearance: none; padding-right: 28px; text-overflow: ellipsis; overflow: hidden; /* without it WebKit lets a long option spill out and widen the page */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 9px center; background-size: 10px 14px; }
 input[type="date"], input[type="month"] { padding-top: 4px; padding-bottom: 4px; } /* their inner date parts add 1px each way: same height as a text field */

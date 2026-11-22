@@ -4,16 +4,18 @@
   .top { position: relative; }
   .brand { width: 100%; min-height: 44px; padding-right: 156px; }
   .top .ctl #btnInputs { position: absolute; top: 16px; right: 92px; width: 32px; }
-  .top .ctl #btnWizard, .top .ctl #btnReplay { order: -1; } /* Assistent and Rechenweg share the first row */
-  .wiz .top .ctl #btnWizard { grid-column: auto; }
+  .top .ctl #btnWizard, .top .ctl #btnReplay, .top .ctl #btnHandbook { order: -1; } /* Assistent, Rechenweg and Handbuch share the first row */
   .top .ctl .theme-switch { position: absolute; top: 16px; right: 16px; } /* beside the title */
-  .top .ctl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; align-items: end; }
-  .top .ctl > * { min-width: 0; }
+  .top .ctl { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; width: 100%; align-items: end; } /* six tracks: two controls a row, or three */
+  .top .ctl > * { min-width: 0; grid-column: span 3; }
+  .top .ctl #btnWizard, .top .ctl #btnReplay, .top .ctl #btnHandbook, .wiz .top .ctl > * { grid-column: span 2; }
+  .rp .top .ctl #btnReplay, .hb .top .ctl > *, .hb .top .ctl #btnHandbook, #app.blank:not(.wiz) .top .ctl #btnHandbook { grid-column: span 3; }
+  .top .ctl #btnReplay, .top .ctl #btnHandbook { padding: 0 6px; } .top .ctl #btnReplay svg, .top .ctl #btnHandbook svg { display: none; } /* three in a row: labels only */
   .top .ctl .btn, .top .ctl .seg, .top .ctl select, .menu, .menu > .btn { width: 100%; }
   /* primary action and status get full rows near the thumb; nothing else moves */
   .top .ctl #btnOptimize { order: 9; grid-column: 1 / -1; }
   .top .ctl .badge { order: 10; grid-column: 1 / -1; width: auto; height: 20px; }
-  #app.blank:not(.wiz) .top .ctl .seg { grid-column: 1 / -1; } /* blank slate: the language switch is alone in its row */
+  /* blank slate: Handbuch and the language switch share a row */
   #selPreset, #selScenario { width: 100%; } /* both selects fill their column (the desktop widths differ) */
   .shell, .wizard { padding: 12px 16px; }
   .card { padding: 16px; }

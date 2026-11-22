@@ -158,6 +158,43 @@
     rp_k_lp: 'linear programme', rp_k_milp: 'branch-and-bound search', rp_k_ask: 'yes/no question',
     rp_s_optimal: 'solved to optimality', rp_s_optimalP: 'solvable: a plan exists', rp_s_feasible: 'plan found, search not finished', rp_s_feasibleA: 'plan found',
     rp_s_infeasible: 'no feasible solution', rp_s_unknown: 'no answer within the work limit'
+    , lx_btn: 'Download', lx_aria: 'Download: the building blocks of the deposit ladder as a spreadsheet (.xlsx for Excel and Google Sheets)', lx_building: 'Building the spreadsheet …', lx_file: 'Deposit-ladder',
+    lx_none: 'No result yet: press “Optimise” first, then download.', lx_stale: 'The inputs have changed: press “Optimise” first, then download.', lx_busy: 'Calculating. The spreadsheet is available as soon as the plan is ready.',
+    lx_st: 'Ladder spreadsheet: closing balances, placements, repayments and interest agree with the simulation in every month (max. deviation {d}, {n} months)',
+    lx_shTr: 'Tranches', lx_shMon: 'Monthly', lx_shYear: 'Yearly', lx_title: 'Building blocks of the deposit ladder', lx_titleM: 'Deposit ladder month by month', lx_titleY: 'Deposit ladder year by year',
+    lx_what: 'Every fixed-term deposit of the plan with its terms. Sheet {m}: each tranche month by month from placement to maturity. Sheet {y}: the same per calendar year.',
+    lx_start: 'Plan start', lx_horizon: 'Planning horizon', lx_months: 'months', lx_last: 'Last month of the plan', lx_amounts: 'Amounts', lx_amountsV: 'in EUR · negatives in parentheses, zero as –',
+    lx_ts: 'T* (last covered month)', lx_tsNone: 'no month covered', lx_tsAll: 'to the end of the planning horizon', lx_tsN: '{n} months secured', lx_scen: 'Rate scenario', lx_created: 'Created', lx_noteL: 'Note', lx_advice: 'Not investment advice.',
+    lx_hNo: 'No.', lx_hType: 'Type', lx_hBank: 'Bank', lx_hTerm: 'Term (months)', lx_hPlaced: 'Placed', lx_hMat: 'Matures', lx_hAmt: 'Principal', lx_hRate: 'Rate p.a.', lx_hConv: 'Interest convention', lx_hInt: 'Total interest',
+    lx_hPay: 'Payout at maturity', lx_hYld: 'Effective yield p.a.', lx_hInPlan: 'Interest within the plan', lx_hNote: 'Note', lx_hLine: 'Tranche / line', lx_hTot: 'Total',
+    lx_tyEx: 'Existing', lx_tyPin: 'Pinned', lx_tyNew: 'New', lx_dep: 'deposit {n} m', lx_cvSimple: 'simple', lx_cvAnnual: 'annual', lx_cvCompound: 'compounding',
+    lx_nEx: 'held at the plan start; term = remaining months', lx_nPin: 'pinned in the inputs', lx_nAfter: 'matures after the end of the plan; the schedule ends before', lx_noTr: 'The plan contains no fixed-term deposits.',
+    lx_sum: 'Total', lx_wavg: 'Weighted by principal', lx_legend: 'Legend', lx_lgBlue: 'Blue: values from the plan, entered as numbers', lx_lgBlack: 'Black: formula on the same sheet', lx_lgGreen: 'Green: link to another sheet',
+    lx_lgFmt: 'Accounting format: negatives in parentheses, zero as –. All amounts in EUR.', lx_b1: '≤ 6 m', lx_b2: '7–12 m', lx_b3: '13–36 m', lx_b4: '> 36 m',
+    lx_lgBars: 'Bars in the monthly and yearly schedules: the months in which the tranche is held at month end. Colour by term, as in the app.',
+    lx_lgDueS: 'Due', lx_lgDue: 'Maturity month: repayment and the last interest', lx_lgTsS: 'T*', lx_lgTs: 'T*: the last month in which the plan covers the need (header of the monthly schedule)',
+    lx_lgEopS: 'Closing', lx_lgEop: 'Closing balance in months in which money is placed', lx_lgChkS: 'Check', lx_lgChk: 'Check rows turn red when they are not zero',
+    lx_lgLateS: 'after plan', lx_lgLate: 'Matures after the end of the plan: the schedule ends with the plan, the repayment comes later',
+    lx_lgSimple: 'simple: all interest at maturity.', lx_lgAnnual: 'annual: interest paid out on each anniversary, the rest at maturity.',
+    lx_lgCompound: 'compounding: interest added to the balance on each anniversary and paid out with the principal at maturity.',
+    lx_lgEx: 'Existing: already placed at the plan start. Term and interest count from the plan start, as in the app.',
+    lx_lgSigns: 'Signs: in each tranche, placement and capitalised interest increase the balance and the repayment reduces it. The liquid accounts see the reverse: placements flow out, repayments and interest flow in.',
+    lx_lgTiming: 'Timing: placed at the start of a month, repaid in the maturity month. The closing balance is the balance at month end.',
+    lx_lgTotal: 'Total column: flows summed over all months, balances at the start of the first and the end of the last month.',
+    lx_lgGroups: 'The lines of each tranche are grouped: collapse them and the bars of the ladder and the totals remain.',
+    lx_sub: 'Amounts in EUR. Each tranche: opening balance + placement + capitalised interest + repayment = closing balance. Interest paid out goes to the liquid accounts.',
+    lx_schedEnd: 'Schedule ends', lx_year: 'Year', lx_inPlan: 'Months in the plan', lx_all: 'All tranches', lx_byTr: 'By tranche',
+    lx_lBop: 'Opening balance (BOP)', lx_lPl: 'Placement', lx_lCap: 'Capitalised interest', lx_lRep: 'Repayment', lx_lEop: 'Closing balance (EOP)', lx_lInt: 'Interest paid out',
+    lx_chk: 'Check: sum of tranches − closing balance (= 0)', lx_chk2: 'Check: closing balance − Monthly at year end (= 0)',
+    lx_cash: 'Liquid accounts (current account and overnight money)', lx_cPl: 'Placements (outflow)', lx_cRep: 'Repayments (inflow)', lx_cInt: 'Interest (inflow)', lx_cNet: 'Net cash flow'
+    // handbook (app/handbook.js); the long texts are in i18n/handbook-en.js
+    , hb_btn: 'Handbook', hb_title: 'Handbook', hb_lead: 'Liquiplan from the first steps to the theory. The search finds every term; the / key jumps into it.',
+    hb_allCh: 'All chapters', hb_menu: 'Chapters', hb_ch: 'Chapter {n} of {N}', hb_toc: 'In this chapter', hb_pager: 'Previous and next chapter', hb_prev: 'Previous', hb_next: 'Next',
+    hb_g_start: 'Getting started', hb_g_use: 'Using Liquiplan', hb_g_bg: 'Background', hb_g_theory: 'Theory', hb_g_ref: 'Reference',
+    hb_search: 'Search the handbook', hb_ph: 'Search the handbook', hb_clear: 'Clear the search', hb_results: 'Results',
+    hb_hit1: '1 result for “{q}”', hb_hitN: '{n} results for “{q}”', hb_shown: '(the first {n} shown)', hb_none: 'No results for “{q}”.', hb_noneHint: 'A shorter word or another spelling often helps. Or look it up directly:',
+    hb_version: 'Version {v}', hb_whatsNew: 'What’s new', hb_k_new: 'New', hb_k_improved: 'Improved', hb_k_fixed: 'Fixed',
+    hb_err: 'This chapter could not be shown.', hb_more: 'Explained in the handbook', hb_esLink: 'New here? The handbook explains Liquiplan step by step.'
   };
 
   LP.i18n.en = EN;

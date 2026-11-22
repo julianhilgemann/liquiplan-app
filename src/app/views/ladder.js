@@ -27,7 +27,17 @@
   A.trancheTotals = trancheTotals; A.trancheDates = trancheDates;
   var lad = { mode: null, year: null, open: null };
   A.lad = lad;
+  // the spreadsheet download (export.js) is offered only for a result that matches the inputs; otherwise the button says why
+  function xlsxBlock() { return A.busy ? 'lx_busy' : !A.view ? (A.lastError ? 'v_hint' : 'lx_none') : A.stale ? 'lx_stale' : null; }
+  function syncXlsx() {
+    var b = $('ladXlsx'); if (!b) return;
+    var why = xlsxBlock();
+    b.setAttribute('aria-disabled', why ? 'true' : 'false'); b.title = why ? t(why) : t('lx_aria');
+    b.setAttribute('aria-label', why ? t('lx_aria') + '. ' + t(why) : t('lx_aria'));
+  }
+  A.ladXlsxBlock = xlsxBlock; A.syncLadXlsx = syncXlsx;
   function renderLadder() {
+    syncXlsx();
     var v = A.view, g = $('gantt'), leg = $('ladderLegend'); g.innerHTML = ''; leg.innerHTML = ''; $('trancheDetail').innerHTML = ''; $('ladYears').innerHTML = '';
     [['f1', 'seriesF1'], ['f2', 'seriesF2'], ['f3', 'seriesF3'], ['f4', 'seriesF4'], ['ex', 'seriesEx']].forEach(function (s) { leg.appendChild(el('span', { html: '<i style="background:' + A.css('--c-' + s[0]) + '"></i>' + esc(t(s[1])) })); });
     leg.appendChild(el('span', { html: '<i style="background:transparent;box-shadow:inset 0 0 0 2px ' + A.css('--ink') + '"></i>' + A.term('pin', t('d_pinned')) }));

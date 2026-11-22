@@ -38,3 +38,6 @@
 @media (max-width: 1439px) { .brand span { display: none; } }
 /* the toolbar stays pinned only where it fits on one row */
 @media (min-width: 1360px) { .top { position: sticky; top: 0; } }
+/* there the page modes keep the analysis's toolbar height (--top-h) with the controls in the same place: what is pinned
+   below it (the handbook's search) sits flush, and nothing in the toolbar moves when a mode opens or closes */
+@media (min-width: 1360px) { #app.wiz .top-in, #app.rp .top-in, #app.hb .top-in { min-height: calc(var(--top-h) - 1px); } #app.wiz .top .ctl, #app.rp .top .ctl, #app.hb .top .ctl { align-self: flex-end; } }

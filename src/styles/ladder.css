@@ -3,7 +3,7 @@
 .btn.xl-dl { font-size: 13px; padding: 0 12px 0 9px; }
 .btn.xl-dl[aria-disabled="true"] { opacity: 0.4; cursor: default; }
 .btn.xl-dl[aria-disabled="true"]:hover, .btn.xl-dl[aria-disabled="true"]:active { background: var(--fill); }
-.main.stale .btn.xl-dl[aria-disabled="true"] { opacity: 0.8; } /* the section is dimmed already */
+.main.stale .btn.xl-dl[aria-disabled="true"] { opacity: 0.6; } /* the section is dimmed already: a little fainter than the switch beside it */
 .xl-ico { width: 16px; height: 16px; flex: none; color: var(--good); }
 .xl-ico path { stroke: var(--surface); }
 .gantt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }

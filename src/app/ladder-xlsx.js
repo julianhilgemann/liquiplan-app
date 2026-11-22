@@ -123,10 +123,9 @@
       blkPct: st({ color: INK.green }, PCT, { fill: BLOCKFILL, border: { top: hair } }), blkAmt: st({ color: INK.green }, AMT, { fill: BLOCKFILL, border: { top: hair } }),
       blkInt: st({ color: INK.green }, INT, { fill: BLOCKFILL, border: { top: hair } }), blkTxt: st({ color: INK.green }, null, { fill: BLOCKFILL, border: { top: hair } }),
       blkMon: st({ color: INK.green }, MON, { fill: BLOCKFILL, border: { top: hair }, alignment: { horizontal: 'right' } }),
-      amt: st({}, AMT), amtIn: st({ color: INK.blue }, AMT), amtL: st({ color: INK.green }, AMT), amtB: st({ bold: true }, AMT), amtBL: st({ bold: true, color: INK.green }, AMT),
-      amtE: st({ bold: true }, AMT, { border: { top: hair } }), amtEL: st({ bold: true, color: INK.green }, AMT, { border: { top: hair } }),
+      amt: st({}, AMT), amtIn: st({ color: INK.blue }, AMT), amtL: st({ color: INK.green }, AMT),
+      amtE: st({ bold: true }, AMT, { border: { top: hair } }),
       amtT: st({ bold: true }, AMT, { border: { top: thin, bottom: { style: 'double', color: { argb: 'FF9AA5A8' } } } }),
-      amtTL: st({ bold: true, color: INK.green }, AMT, { border: { top: thin, bottom: { style: 'double', color: { argb: 'FF9AA5A8' } } } }),
       chk: st({ italic: true, color: INK.grey }, AMT), chkL: st({ italic: true, color: INK.green }, AMT),
       pct: st({}, PCT), pctIn: st({ color: INK.blue }, PCT), pct2: st({}, PCT2), int: st({}, INT), intIn: st({ color: INK.blue }, INT),
       mon: st({}, MON, { alignment: { horizontal: 'right' } }), monIn: st({ color: INK.blue }, MON, { alignment: { horizontal: 'right' } }),
@@ -155,7 +154,7 @@
 
     var typeOf = function (tr) { return tr.kind === 'existing' ? t('lx_tyEx') : tr.pinned ? t('lx_tyPin') : t('lx_tyNew'); };
     var bankOf = function (tr) { var b = tr.bank || (tr.k >= 0 && P.products[tr.k] ? P.products[tr.k].id : ''); return tr.kind === 'existing' ? (tr.label && tr.label !== b ? (b ? b + ' · ' : '') + tr.label : b || t('lx_tyEx')) : b; };
-    var nameOf = function (tr) { return tr.kind === 'existing' ? bankOf(tr) + ' · ' + t('lx_tyEx') : bankOf(tr) + ' · ' + t('lx_dep', { n: tr.term }); };
+    var nameOf = function (tr) { return tr.kind === 'existing' ? bankOf(tr) : bankOf(tr) + ' · ' + t('lx_dep', { n: tr.term }); }; // the type stands beside it
     var trRow = function (i) { return TR.row0 + i; };
     var Tst = sim.Tstar, lastMonth = monthDate(P, H - 1), schedEnd = monthDate(P, M - 1);
 
@@ -273,6 +272,7 @@
       put(ws, R.cash, 2, t('lx_cash'), ST.sec); put(ws, R.cash, 1, null, ST.sec); put(ws, R.cash, 3, null, ST.sec); put(ws, R.cash, 4, null, ST.sec);
       put(ws, R.cPl, 2, t('lx_cPl'), ST.labIn); put(ws, R.cRep, 2, t('lx_cRep'), ST.labIn); put(ws, R.cInt, 2, t('lx_cInt'), ST.labIn); put(ws, R.cNet, 2, t('lx_cNet'), ST.totLab);
       put(ws, R.trs, 2, t('lx_byTr'), ST.sec); put(ws, R.trs, 1, null, ST.sec); put(ws, R.trs, 3, null, ST.sec); put(ws, R.trs, 4, null, ST.sec);
+      if (!nT) put(ws, R.tr0, 2, t('lx_noTr'), ST.labI);
       var sumRow = function (r) { return 'SUM(' + first + r + ':' + cL + r + ')'; };
       var sum = function (arr) { return arr.reduce(function (a, x) { return a + x; }, 0); };
       // total column D

@@ -19,5 +19,6 @@
 #app.blank:not(.wiz) .top .ctl > :not(#btnOptimize):not(#btnHandbook):not(.seg):not(.theme-switch) { display: none !important; }
 #app.blank:not(.wiz) .shell { grid-template-columns: minmax(0, 1fr); }
 #app.blank:not(.wiz) .side, #app.blank:not(.wiz) .scrim, #app.blank:not(.wiz) .kpis { display: none !important; }
-.btn.cta[disabled] { background: var(--fill); color: var(--muted); box-shadow: none; opacity: 0.75; } /* greyed out: nothing to optimise yet */
+.btn.cta[disabled] { background: var(--fill); color: var(--muted); box-shadow: none; opacity: 1; } /* greyed out: nothing to optimise yet */
+.btn.cta[disabled] > * { opacity: 0.75; } /* faded label; opacity on the whole button drew a lighter box behind the label in Chromium */
 .btn.cta[disabled]::after { display: none; }

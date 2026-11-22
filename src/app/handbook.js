@@ -220,16 +220,17 @@
     $('hbChTitle').textContent = c.title;
     $('hbKicker').textContent = t('hb_g_' + c.group) + ' · ' + t('hb_ch', { n: c.no, N: list.length });
     S.ready = null;
+    // the chapter's own table of contents, for the longer text and theory chapters
+    var toc = (c.kind === 'text' || c.kind === 'extra') && c.toc !== false && c.sections.length >= 4 ? el('nav', { class: 'hb-toc', 'aria-label': t('hb_toc') }, el('p', { class: 'hb-toc-h', 'aria-hidden': 'true', text: t('hb_toc') }),
+      el('ul', null, c.sections.map(function (s) { return el('li', null, el('a', { href: '#handbuch/' + c.id + '/' + s.id, text: s.title })); }))) : null;
     if (c.kind === 'extra') {
+      if (toc) body.appendChild(toc);
       var box = el('div', { class: 'prose' }); body.appendChild(box);
       try { var r = c.ext.render(box, A.lang); S.ext = c.ext; if (r && typeof r.then === 'function') S.ready = r; }
       catch (e) { box.innerHTML = ''; box.appendChild(el('p', { class: 'note warn', text: t('hb_err') })); if (window.console) console.error(e); }
     } else {
       if (c.lead) body.appendChild(el('p', { class: 'hb-intro', html: rich(c.lead) }));
-      if (c.kind === 'text' && c.toc !== false && c.sections.length >= 4) {
-        body.appendChild(el('nav', { class: 'hb-toc', 'aria-label': t('hb_toc') }, el('p', { class: 'hb-toc-h', 'aria-hidden': 'true', text: t('hb_toc') }),
-          el('ul', null, c.sections.map(function (s) { return el('li', null, el('a', { href: '#handbuch/' + c.id + '/' + s.id, text: s.title })); }))));
-      }
+      if (toc) body.appendChild(toc);
       c.sections.forEach(function (s) {
         var sec = el('section', { class: 'hb-sec', id: s.id, 'aria-labelledby': s.id + '-h' }, heading(c, s));
         sec.insertAdjacentHTML('beforeend', rich(s.html));

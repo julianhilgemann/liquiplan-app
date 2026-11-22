@@ -1,0 +1,136 @@
+/* ===== handbook/theory-en.js: English texts of the theory chapters (same structure as theory-de.js) ===== */
+(function () {
+  'use strict';
+  var LP = window.LP; LP.hb = LP.hb || {}; LP.hb.extra = LP.hb.extra || [];
+  var R = String.raw;
+  var T = LP.hb.theoryText = LP.hb.theoryText || {};
+
+  T.en = {
+    mjFail: 'The formulas could not be loaded (MathJax from jsDelivr). They are shown here in TeX notation.',
+    eqScroll: 'Formula, scrolls sideways',
+    chart: {
+      title: 'Toy model: 12 or 24 months?', sub: 'Amounts in thousand euros · overnight rate 1.5 %',
+      aria: 'Plane of the amounts a (12 months, across) and b (24 months, up) with the feasible region, conditions 1 to 4, the contour line of the objective and the path of the simplex. Arrow keys step forward and back.',
+      axA: 'a · 12 months', axB: 'b · 24 months',
+      back: 'Back', next: 'Next', play: 'Play', pause: 'Pause', reset: 'Start again',
+      cons: ['a + b ≤ 90: the buffer stays today.', 'Month 12: payment Z, the buffer stays.', 'a ≤ 60: cap at bank A', 'b ≤ 60: cap at bank B'], binding: 'binding',
+      r12: 'Rate 12 months', r24: 'Rate 24 months', z: 'Payment Z in month 12', grid: 'Show whole steps of €10,000',
+      hint: 'Condition 2 can also be dragged by the round handle on the right of the picture. In the picture, the arrow keys step forward and back.',
+      corner: 'a = {a}; b = {b}', start: 'Start', step: 'Step {i} of {n}', optimum: 'Optimum', gain: 'Gain over overnight money: {z}',
+      startTxt: 'Everything stays in overnight money. The simplex checks which deposit gains most per €1,000 and raises it.',
+      startOpt: 'No deposit beats overnight money here: the start is already optimal.',
+      vars: ['The 12-month deposit a', 'The 24-month deposit b'], slack: 'The distance to condition {i}', up: 'rises', down: 'falls', away: 'grows',
+      move: '{v} {verb} ({g} more gain per €1,000) until {w}.', hits: 'condition {i} binds', zero: ['a = 0 is reached', 'b = 0 is reached'],
+      done: 'No neighbouring corner is better: this is the optimum.',
+      check: 'Cross-check: all {n} corners computed, none is better.', checkBad: 'Cross-check: another corner would be better. That should not happen.',
+      gridTxt: 'Whole steps: best grid point {p} with {z}, {d} below the LP bound of {lp}.', gridSame: 'Whole steps: the best corner is itself a grid point ({z}).'
+    },
+    chapters: {
+      'th-lp': { title: 'Linear programming in one picture', sections: [
+        ['th-lp-idea', 'What “Optimising …” means', R`<p>While the app shows “Optimising …”, it solves a series of <strong>linear programmes</strong> (LPs). An LP has three parts: <em>unknowns</em> (how much goes into which deposit, in which month), an <em>objective</em> that depends linearly on them (wealth at the end), and <em>conditions</em> that are linear too (no month below the {sockel|buffer}, no bank above its cap). Linear means that each unknown enters with a fixed factor: twice the deposit earns twice the interest and locks up twice the money.</p>
+<p>The app's model has hundreds to thousands of unknowns; the step-by-step view shows the size of every calculation. The idea already shows with two. A toy case: €100,000 sit in {tg|overnight money} (1.5 % a year, interest at the end of each year). On offer are a 12-month deposit (amount $a$) and a 24-month deposit (amount $b$), at two banks that each take at most €60,000. A payment $Z$ is due in month 12, and €10,000 should always remain as a buffer. How much goes into which deposit?</p>`],
+        ['th-lp-model', 'The small model', R`<p>All amounts in thousand euros; $g = 0.015$ is the overnight rate. The objective is the gain $z$ in wealth at month 24 over “everything stays in overnight money”:</p>
+$$\max\; z = c_{12}\,a + c_{24}\,b$$
+$$c_{12} = (r_{12} - g)(1 + g)$$
+$$c_{24} = (1 + 2\,r_{24}) - (1 + g)^2$$
+<p>$c_{12}$ is what one euro in the 12-month deposit earns on top: one year at the deposit rate instead of the overnight rate, then it is back in overnight money. $c_{24}$ compares two years of deposit with simple interest at the end against two years of overnight money with compound interest. With the chart's starting rates (2.6 % for 12 and 2.2 % for 24 months), every thousand euros gains about €13.80 in the 24-month deposit and about €11.20 in the 12-month one. The conditions, numbered as in the chart:</p>
+<ol class="th-cons">
+<li>Today the buffer stays in the account. $$a + b \le 90$$</li>
+<li>In month 12 the money not placed, with a year's interest, and the repaid 12-month deposit carry the payment, and the buffer is still there afterwards. The 24-month deposit is still locked. $$\begin{aligned} &(1+g)(100 - a - b) \\ &\quad + (1 + r_{12})\,a - Z \;\ge\; 10 \end{aligned}$$</li>
+<li>Cap at bank A: $a \le 60$.</li>
+<li>Cap at bank B: $b \le 60$. And of course $a \ge 0$ and $b \ge 0$.</li>
+</ol>
+<p>Every point $(a, b)$ that meets all conditions is a feasible plan. Together they form the <em>feasible region</em>, a polygon. Points with the same objective lie on parallel lines $c_{12}\,a + c_{24}\,b = \text{const}$. The best plan lies where the highest of these lines still touches the polygon: at a corner, or along a whole edge if the line runs parallel to it.</p>`],
+        ['th-lp-walk', 'The simplex method, step by step', R`<p>The chart solves the small model with the app's embedded simplex (<code>LP.simplex</code>), the same code that solves the LPs in the worker when HiGHS is missing and that the branch and bound builds on. The path is not drawn in advance: this code really reached every corner shown while solving.</p>
+<div class="th-chart"></div>
+<p>The blue area is the feasible region, lines 1 to 4 are the conditions; a binding condition turns dark. The dashed line is the contour of the objective through the current corner, and the arrow shows where the objective grows. The simplex starts at the corner $(0, 0)$, takes the deposit with the largest gain per thousand euros and raises it until a condition binds. Then it works out what the other directions gain from there and carries on until none leads uphill.</p>
+<p>To try: lower the 24-month rate slowly. Just below 2.1 % the optimum jumps from the corner of conditions 1 and 2 to the corner of 1 and 3, because from there the shorter deposit pays more. Below about 1.5 % the 24-month deposit earns less than overnight money and drops out altogether. With a small payment $Z$ condition 2 binds at no corner; a large one (above about 62) makes condition 1 redundant. The switch for whole steps shows what the chapter <a href="#handbuch/th-int">Whole steps</a> is about: the best grid point usually sits next to the LP corner and gains a little less.</p>`],
+        ['th-lp-why', 'Why corners are enough', R`<p>The feasible region of an LP is <em>convex</em>: with two feasible plans, every mixture of the two is feasible too, because all conditions are linear. On a convex set a linear objective has no local optimum that is not also the global one. If no neighbouring corner is better, no point is. This is what the <strong>simplex method</strong> (George Dantzig, 1947) builds on: from corner to corner along the edges, uphill every time, until there is no uphill left.</p>
+<p>The arithmetic uses equations. Each inequality gets a slack variable that measures how far it is from its limit; $a + b \le 90$ becomes $a + b + s_1 = 90$ with $s_1 \ge 0$. At a corner, as many variables sit at one of their bounds as there are unknowns (the <em>non-basic</em> ones); the others (the <em>basis</em>) follow from the equations. One step (a pivot) of the embedded simplex goes like this:</p>
+<ol>
+<li><strong>Entering.</strong> For each non-basic variable $j$, its reduced cost $d_j$ says how the objective changes per unit when it leaves its bound. The one with the largest improvement is chosen (Dantzig's rule).</li>
+<li><strong>Ratio test.</strong> It grows until the first basic variable hits a bound; that one leaves the basis. If the entering variable reaches its own upper bound first, it merely flips, without a change of basis. This is how upper limits such as “at most 60 per bank” are handled as bounds rather than as rows of their own.</li>
+<li><strong>Stop.</strong> When no $d_j$ improves any more, the corner is optimal.</li>
+</ol>
+<p>If the starting point, every unknown at its lower bound, lies outside the region, a first phase with auxiliary variables looks for any feasible corner. If it finds none, the LP is infeasible, and that is exactly the answer the <a href="#handbuch/th-lex">search for T*</a> needs. Where more conditions than necessary meet at a corner, a pivot can change the basis without moving; after too many such steps the code takes the first suitable variable instead of the best (Bland's rule), so as not to go round in circles. Theory promises no quick end; there are constructed cases with very many corners on the way. In practice a few pivots per row are enough: for the LP of the wealth stage of example G, 33 rows and almost 400 columns, the embedded simplex needs about 60. HiGHS, which solves the LPs when it has loaded, uses faster variants of the same idea.</p>`]
+      ] },
+      'th-model': { title: 'The ladder as a linear model', sections: [
+        ['th-model-vars', 'Unknowns on the monthly grid', R`<p>Everything runs on a monthly grid $t = 0, \dots, T$ for a fixed horizon $T$; which one is decided in the <a href="#handbuch/th-lex">next chapter</a>. For every month $\tau$ and every product $k$ with a positive rate there is an unknown</p>
+$$\begin{gathered} n_{\tau k} \in \{0, 1, 2, \dots\} \\ \text{placement} = D \cdot n_{\tau k} \end{gathered}$$
+<p>the number of steps of the {denom|denomination} $D$ that go into product $k$ at the start of month $\tau$; the product's maximum amount is its upper bound. Existing holdings and {pin|pinned tranches} are not unknowns: their payments enter the model as fixed numbers.</p>`],
+        ['th-model-balance', 'Monthly balance and safety lead', R`<p>Liquidity $s_t$ (current account and overnight money together) follows the balance, month by month,</p>
+$$\begin{aligned} s_t = {} & (1 + \rho_t)\,s_{t-1} + \mathit{net}_t \\ & + A_t - D \textstyle\sum_k n_{t k} - S_t \end{aligned}$$
+<p>with $\rho_t = r^{TG}_t / 12$, the opening balance as $s_{-1}$, $\mathit{net}_t$ = inflows minus need and spending, $A_t$ = payouts from deposits and $S_t$ = tax. A month is only safe, though, when the money is really available. A maturity can arrive late, so the final payout of a deposit only counts after the {lead|safety lead} of $\lambda$ months. With $R_t$, the final payouts of months $t - \lambda + 1$ to $t$, the hard condition is</p>
+$$u_t = s_t - R_t \;\ge\; f_t \qquad (t = 0, \dots, T).$$
+<p>$f_t$ is the {sockel|buffer} or the minimum from the monthly grid. The code makes $u_t$ itself the variable: the condition becomes a plain lower bound instead of another row, and what $R_t$ does in later months appears as a factor in the column of each placement. Yearly interest payouts count at once; only the final payout waits for the lead.</p>`],
+        ['th-model-pay', 'What €1 in a deposit pays out', R`<p>For a deposit with annual rate $r$ and a term of $L$ months, $n = \lfloor (L-1)/12 \rfloor$ full years before the last stretch and $f = L - 12n$ months in that stretch (<code>unitFlows</code>):</p>
+<ul>
+<li><strong>simple:</strong> $1 + rL/12$ at maturity;</li>
+<li><strong>annual payout:</strong> $r$ to overnight money after each full year, $1 + rf/12$ at maturity;</li>
+<li><strong>compounding:</strong> $(1+r)^n (1 + rf/12)$ at maturity; the interest added each year, $r(1+r)^{j-1}$, is still taxed in its year.</li>
+</ul>
+<p>$r$ is the rate for a placement in month $\tau$; in rate scenarios it changes over time. Since all of this depends only on $r$, $L$ and $\tau$, it is a fixed factor for each column, and the model stays linear. Powers are computed by repeated multiplication, not with <code>Math.pow</code>, so that every browser gets the same numbers. A deposit still running at $T$ counts towards wealth with its principal and accrued interest (<code>unitAccrued</code>).</p>`],
+        ['th-model-tax', 'Tax without losing linearity', R`<p>The {abg|flat tax} is due only on interest above the {spb|saver's allowance} $P$, that is on $\max(0, I_y - P)$ with the interest $I_y$ of calendar year $y$. A maximum is not linear, so for every year whose December lies on the grid the model adds a variable $q_y$:</p>
+$$\begin{gathered} q_y \ge I_y - P, \quad q_y \ge 0 \\ S_{\text{Dec}\,y} = \sigma\, q_y \end{gathered}$$
+<p>$I_y$ is linear: overnight interest $\rho_t\, s_{t-1}$ and the interest part of each payout. Paying more tax than necessary helps no condition, so every feasible plan stays feasible when $q_y$ drops to $\max(0, I_y - P)$, and with the wealth objective the optimum lands exactly there. The linearisation is exact. The rate includes the solidarity surcharge and church tax $k$: $\sigma = \frac{0.25}{1 + 0.25\,k}\,(1.055 + k)$. Interest of a year whose December lies after $T$ is still untaxed for this $T$, in the model as in the simulator.</p>`],
+        ['th-model-cap', 'Cap per bank and minimum amounts', R`<p>With the {esi|deposit guarantee} option, the open deposits at a bank $b$ may in no month add up to more than the cap $G$:</p>
+$$D \sum_{(\tau, k)\ \text{open in}\ t,\ \text{at}\ b} n_{\tau k} \;\le\; G - F_{b t}$$
+<p>$F_{bt}$ are existing holdings and pinned tranches at that bank. There would be such a row for every bank and every month; the code adds them only when they are needed: solve, find violated bank-months, add just those rows, solve again, for at most 25 rounds. Only months in which a tranche starts are checked, because only there can the sum rise. Minimum amounts make $n_{\tau k}$ semi-integer: either 0 or at least $m_k$ steps. How that is solved is the subject of the chapter <a href="#handbuch/th-int">Whole steps</a>.</p>`]
+      ] },
+      'th-lex': { title: 'One goal after another', sections: [
+        ['th-lex-order', 'Four goals, strictly in turn', R`<p>The planner pursues four goals in a fixed order ({lexi|lexicographic}):</p>
+<ol>
+<li>the {tstar|survival horizon T*} as late as possible,</li>
+<li>at that $T^*$, wealth at $T^*$ as large as possible,</li>
+<li>at equal wealth, money locked up for as short a time as possible,</li>
+<li>report how much is at least missing in month $T^*+1$.</li>
+</ol>
+<p>Each stage solves programmes of its own and takes the result of the previous one as a fixed condition. A later goal can therefore never worsen an earlier one.</p>`],
+        ['th-lex-tstar', 'Finding T*', R`<p>For a candidate $T$, an LP without an objective only asks: are there placements with which all months $0, \dots, T$ hold? The answer is <em>monotone</em>: if the money lasts until $T$, it lasts until $T - 1$. A search is therefore enough, instead of a check of every month. It starts at the month the simulator reaches without any new placement, climbs with doubling steps until a month fails, and then halves the interval. For 240 months that is about 15 LPs. In this stage only deposits that are back, lead included, by $T$ count: a longer one would only take money away before $T$. The amounts are freely divisible, the {lprel|LP relaxation}; its result $T_{LP}$ is an upper bound on the horizon with whole steps.</p>`],
+        ['th-lex-wealth', 'Wealth, then short terms', R`<p>With $T$ fixed, the second stage maximises wealth</p>
+$$W = s_T + \sum_{\text{open at}\ T} \left(\text{principal} + \text{interest}\right)$$
+<p>with the interest accrued up to $T$, now also for deposits that run beyond $T$. The LP provides the bound $W_{LP}$; then the {milp|MILP} looks for a plan with whole steps (<a href="#handbuch/th-int">how</a>). If it finds none for $T$, the optimiser tries $T - 1$, and so on until there is a plan. The third stage picks, among the plans whose wealth is at most $\varepsilon$ below the best $W^*$ (5 cents or $10^{-6} W^*$, whichever is larger), the one that locks money up for the shortest time:</p>
+$$\begin{gathered} \min \sum_{\tau, k} D\, n_{\tau k}\, L_k \\ \text{subject to}\ \ W \ge W^* - \varepsilon \end{gathered}$$
+<p>Equally good ladders are common, and the shorter one keeps more money free. With whole steps this stage only searches among the placements (month, product) that the plan from stage 2 already uses, and it keeps its result only if wealth stays within the tolerance.</p>`],
+        ['th-lex-slack', 'The month after', R`<p>If $T^*$ ends before the planning horizon does, the fourth stage measures the smallest shortfall $z$ (the {slack|slack}) in month $T^* + 1$:</p>
+$$\begin{gathered} \min z \\ \text{subject to}\ \ u_{T^*+1} + z \ge f_{T^*+1}, \quad z \ge 0 \end{gathered}$$
+<p>The LP gives a lower bound, an integer search a value that a plan with whole steps reaches; the tile shows the larger one as “Shortfall in the following month”. This stage does not change the plan and is free of the conditions of stages 2 and 3: it says how much any plan would at least be missing for one more month.</p>`],
+        ['th-lex-why', 'Why not a weighted sum', R`<p>A single objective might seem simpler, for instance with a yes/no variable $\delta_t$ for “month $t$ covered”: $\max\ \alpha \sum_t \delta_t + W$. The plan would then hang on the weight $\alpha$. Too small, and a high rate buys off a month of safety without anyone deciding so. Large, and the solver computes with numbers of very different size and loses precision, and which $\alpha$ is enough depends on the inputs. The fixed order needs no weight: “interest never shortens T*” is a property of the method, not a matter of tuning. The price is several programmes instead of one, and the small tolerance $\varepsilon$ between the stages, so that rounding errors in one do not make the next unsolvable.</p>`]
+      ] },
+      'th-int': { title: 'Whole steps and minimum amounts', sections: [
+        ['th-int-steps', 'Why whole numbers make it hard', R`<p>Banks take deposits in fixed steps and from a minimum amount. In the model this means that $n_{\tau k}$ is an integer, and with the minimum $m_k$ (in steps)</p>
+$$n_{\tau k} = 0 \quad \text{or} \quad m_k \le n_{\tau k} \le M_k .$$
+<p>The feasible region is then no longer a connected, convex area but a set of separate grid points. The argument “no neighbouring corner is better, so this is optimal” no longer holds, and rounding the LP solution is not enough: rounded down, money is missing; rounded up, a condition breaks; and if the LP suggests 3 steps but the minimum requires 10, only 0 or 10 remain. The LP becomes a {milp|mixed-integer linear programme} (MILP). In the chart of the chapter <a href="#handbuch/th-lp">Linear programming</a>, the switch for whole steps shows such grid points and the best of them.</p>`],
+        ['th-int-bb', 'Branch and bound', R`<p>It is solved by <strong>branch and bound</strong>, always in the app's embedded solver:</p>
+<ol>
+<li>Solve the LP without integrality. If every $n$ is whole, this branch is done.</li>
+<li>Otherwise pick a variable with an unsuitable value, say $n = 3.4$, and split into two subproblems: $n \le 3$ and $n \ge 4$. With a minimum amount the split is $n = 0$ or $n \ge m_k$, without an auxiliary variable.</li>
+<li>Each subproblem is again an LP, and its value bounds everything below it. If that bound is no better than the best plan so far, the whole branch is dropped.</li>
+</ol>
+<p>The tree is searched depth first; each subproblem starts with the dual simplex from its parent's basis. A heuristic provides a first plan: round everything down, fix it, solve the rest again. The choice of variable changes in slices of the budget: first the earliest placement (violated minimum amounts first), then the largest, then the most fractional. Every plan is “polished”: integer columns rounded and fixed, liquidity and tax recomputed exactly; whatever does not survive this is discarded. The search ends when the tree is exhausted or the best plan is at most 5 cents, or $10^{-5}$ relative, below the bound.</p>
+<p>The MILP does not work with every possible placement but on a candidate set: every (month, product) pair that the LPs of stages 2 and 3 use, plus every product in event months (month 0, maturities of existing holdings with their lead, months with one-off inflows). For example G this leaves about a fifth of the columns.</p>`],
+        ['th-int-bound', 'The LP bound', R`<p>The LP allows more than the MILP, since every plan with whole steps is also an LP plan. Its optimum is therefore a <strong>bound</strong>: no plan with whole steps lasts beyond $T_{LP}$ or ends with more wealth than $W_{LP}$. The gap $W_{LP} - W$ says how much a better plan could gain at most; the step-by-step view shows it.</p>
+<p>The “Liquidity secured until” tile shows <em>LP bound: month</em> when $T_{LP}$ lies later than the $T^*$ reached. The addition “not reached with integers” means that for every month in between it was shown that no plan with whole steps exists on the candidate set in question. “No integer plan found within the search budget” means that for at least one month the budget ran out with neither a plan nor a proof; such a plan is not ruled out. If HiGHS has loaded, the optimiser may then ask up to two direct yes/no questions per run. A yes comes with a plan, and the month given up is back.</p>`],
+        ['th-int-budget', 'The search budget', R`<p>A MILP can take very long; the search needs a budget. It is not measured in seconds but on a work clock that advances with every arithmetic operation on the tableau: 700,000 operations count as one millisecond, about the speed of a 2020 laptop. The main search of stage 2 gets 1.2 seconds of this clock, stages 3 and 4 get 0.5 each. A fast device finishes sooner but gets no further: the same inputs give the same plan everywhere. If the budget ends with a plan, it is the best one found, and the gap to the bound limits what could still be gained. With the app's examples this is the normal case.</p>`]
+      ] },
+      'th-check': { title: 'Why the result can be trusted', sections: [
+        ['th-check-sim', 'Computed twice', R`<p>The solver only returns a list of placements. Whether it holds is decided by a second program, the <strong>simulator</strong> (<code>LP.sim</code>). It shares only the preparation of the inputs with the model, not a single line of balance, interest or tax logic. It walks through the calendar month by month and tracks every tranche with its principal and age: overnight interest, maturities and yearly interest, inflows and outflows, new placements, tax in December. At each month end it checks whether liquidity, without the maturities still inside the lead, holds the buffer, to half a cent.</p>
+<p>Then <code>verify</code> checks every placement: a multiple of the denomination, minimum and maximum amount, a positive rate, inside the horizon, the cap per bank, and whether the simulated horizon reaches at least the solver's $T^*$. If a check fails, an error appears instead of the plan. Tiles, charts and actions show the simulator's numbers, not the solver's. The Excel export recomputes the balance a third time with formulas, and the self-test compares the three.</p>`],
+        ['th-check-chain', 'The solver chain', R`<p>The work runs in a Web Worker. It loads <strong>HiGHS</strong> (WebAssembly) from jsDelivr, or else <strong>javascript-lp-solver</strong>; each must first solve a small test programme correctly. The <strong>embedded solver</strong> (simplex and branch and bound) is always there. Who answers which question:</p>
+<ul>
+<li><strong>LPs</strong> (search for T*, bounds, candidates): the first solver that loaded. An optimum from javascript-lp-solver counts only if the embedded simplex finds the same objective value, and its “infeasible” never counts; after two rejected answers it is dropped.</li>
+<li><strong>Integer programmes with an objective:</strong> always the embedded solver. HiGHS would hand over an intermediate result only on a time limit, and that would depend on the speed of the device.</li>
+<li><strong>Yes/no questions</strong> (is there any plan with whole steps?): HiGHS, with a clock that counts calls instead of measuring time.</li>
+</ul>
+<p>A watchdog on the main thread ends the worker if a solver hangs, leaves that solver out and starts again; if there is no worker at all, the embedded solver runs on the main thread. When the tile says “Computed with the fallback solver”, HiGHS was missing. The plan is checked just the same but may look different: if an LP has several optimal corners (a whole edge is optimal), different solvers pick different ones, and the corner decides the candidate set of the MILP.</p>`],
+        ['th-check-repro', 'Same inputs, same plan', R`<p>No limit of the optimisation depends on seconds. The embedded solver measures on its work clock; for yes/no questions HiGHS sees, instead of the clock, a counter that goes up by one each time it is read; powers such as $(1+r)^n$ come from multiplication, because <code>Math.pow</code> can differ in the last bit between browsers, and that is enough to send the search down another branch. So the same inputs with the same LP solver give the same plan on every device. Only the watchdog measures real time, and it is generous, so that a slow device is not mistaken for a hang.</p>`],
+        ['th-check-limits', 'What the checks do not promise', R`<ul>
+<li>The simulator shows that the plan holds, not that it is the best. It is the best in the sense of the stages: on the candidate set and within the search budget. The LP bounds say how far away a better plan could be at most.</li>
+<li>Model and simulator simplify in the same way: current account and overnight money are one pot, tax is settled in December, processing days after maturity are folded into the safety lead in whole months. The simulator finds calculation errors, not modelling errors.</li>
+<li>Future rates are assumptions. The scenario comparison optimises each rate assumption on its own; the Excel file also recomputes the plan with shifted rates.</li>
+<li>The “shortfall in the following month” is a true lower bound with freely divisible amounts; with whole steps it is the smallest one the search found.</li>
+</ul>`]
+      ] }
+    }
+  };
+})();

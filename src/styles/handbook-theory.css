@@ -1,0 +1,75 @@
+/* ---------- handbook, theory chapters: formulas and the simplex chart (theory.js, simplex-chart.js) ---------- */
+.th-sec { scroll-margin-top: 16px; }
+.th-sec + .th-sec { margin-top: 22px; }
+.th-sec > h3:first-child { margin-top: 0; }
+/* display formulas: a wide one scrolls inside its own box, never the page */
+.th-eq { max-width: 100%; margin: 8px 0 12px; padding: 2px 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }
+.th-eq > mjx-container[jax="SVG"][display="true"] { margin: 0 !important; }
+.th-eq[tabindex]:focus-visible { outline-offset: 0; border-radius: var(--r-sm); }
+/* a formula cut off at the right fades out there until it is scrolled to its end */
+.th-eq.th-over:not(.th-end) { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+.th-m mjx-container[jax="SVG"] { overflow: visible; }
+mjx-container[jax="SVG"] { color: inherit; }
+.prose .th-cons li { margin-bottom: 8px; }
+.prose .th-cons .th-eq { margin: 6px 0 4px; }
+/* while MathJax loads the TeX is shown faint; if it cannot load, the TeX stays, set as code */
+.th-wait .th-eq, .th-wait .th-m { opacity: 0.35; }
+.th-raw .th-eq { font: 12.5px/1.5 var(--mono); white-space: pre; background: var(--surface-2); border-radius: var(--r); padding: 8px 12px; }
+.th-raw .th-m { font-family: var(--mono); font-size: 0.9em; }
+.th-mjnote { margin: 0 0 14px; }
+
+/* the chart: plot, steps and words on the left, conditions and controls on the right (stacked when narrow) */
+.th-fig { container-type: inline-size; margin: 14px 0 16px; padding: 14px; font-size: 13.5px; line-height: 1.45; }
+.th-fig-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin-bottom: 10px; }
+.th-fig-h strong { font-size: 14px; }
+.th-fig-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px 18px; }
+@container (min-width: 520px) { .th-fig-grid { grid-template-columns: minmax(0, 1fr) 210px; } }
+.th-main, .th-side { min-width: 0; }
+.th-plot { min-width: 0; }
+.th-svg { display: block; max-width: 100%; height: auto; border-radius: var(--r-sm); }
+.th-svg:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.th-svg text { font: 11px var(--font); }
+.th-tk { fill: var(--muted); }
+.th-at { fill: var(--ink-2); font-weight: 500; }
+.th-gl { stroke: var(--grid); stroke-width: 1; }
+.th-ax { stroke: var(--axis); stroke-width: 1.25; }
+.th-reg { fill: var(--chip-place); stroke: none; }
+.th-cl { stroke: var(--line-2); stroke-width: 1.25; }
+.th-cl.on { stroke: var(--ink); stroke-width: 2; }
+.th-bd circle { fill: var(--surface); stroke: var(--line-2); stroke-width: 1.25; }
+.th-bd text { fill: var(--ink-2); font-weight: 600; }
+.th-bd.on circle { fill: var(--ink); stroke: var(--ink); }
+.th-bd.on text { fill: var(--surface); }
+.th-obj { stroke: var(--c-giro); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.th-arr { stroke: var(--c-giro); stroke-width: 2; }
+.th-arrh { fill: var(--c-giro); }
+.th-path { fill: none; stroke: var(--c-opt); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.th-corner { fill: var(--surface); stroke: var(--muted); stroke-width: 1.25; }
+.th-vis { fill: var(--c-opt); }
+.th-cur { fill: var(--c-opt); stroke: var(--surface); stroke-width: 2; }
+.th-ring { fill: none; stroke: var(--c-opt); stroke-width: 1.5; }
+.th-gp { fill: var(--muted); }
+.th-gb { fill: var(--c-tg); stroke: var(--surface); stroke-width: 1.5; }
+.th-hd { cursor: ns-resize; }
+.th-hit { fill: transparent; touch-action: none; }
+.th-knob { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.5; }
+.th-grip { stroke: var(--ink-2); stroke-width: 1; }
+.th-knob, .th-grip { pointer-events: none; } /* the 44 px circle under them takes the pointer */
+.th-hd.drag .th-knob, .th-hd:hover .th-knob { stroke: var(--ink); fill: var(--fill-2); }
+.th-ctl { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.th-status { margin-top: 10px; }
+.th-status p { margin: 0 0 4px; }
+.th-status .pill { margin-left: 4px; vertical-align: 1px; }
+.th-fig .th-leg { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.th-fig .th-leg li { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: 8px; margin: 0; color: var(--ink-2); }
+.th-leg .pill { margin-left: 2px; vertical-align: 1px; }
+.th-fig .th-leg li.on { color: var(--ink); }
+.th-num { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1.25px solid var(--line-2); font-size: 11px; font-weight: 600; }
+.th-leg li.on .th-num { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.th-sl { margin-bottom: 8px; }
+.th-sl-h { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.th-sl-h output { font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.th-sl input[type="range"] { margin: 4px 0 0; min-height: 28px; }
+.th-gridchk { margin: 10px 0 6px; font-size: 13px; }
+.th-hint { margin: 6px 0 0; }
+@media (pointer: coarse) { .th-sl input[type="range"] { min-height: 44px; } .th-gridchk { min-height: 44px; } .th-gridchk input { width: 20px; height: 20px; } }

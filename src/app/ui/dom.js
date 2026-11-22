@@ -9,7 +9,8 @@
     exceljs: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
     jszip: 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
     highs: 'https://cdn.jsdelivr.net/npm/highs@1.15.4/build/highs.js',
-    jslp: 'https://cdn.jsdelivr.net/npm/javascript-lp-solver@0.4.24/prod/solver.js'
+    jslp: 'https://cdn.jsdelivr.net/npm/javascript-lp-solver@0.4.24/prod/solver.js',
+    mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js' // formulas of the handbook's theory chapters, loaded when the first one is shown
   };
   var $ = A.$ = function (id) { return document.getElementById(id); };
   A.skeleton = $('app').innerHTML; // pristine markup, kept for "HTML herunterladen"

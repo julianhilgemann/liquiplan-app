@@ -17,7 +17,7 @@
     box.classList.remove('skeleton');
     if (!v && A.lastError) { tile('hero bad', A.term('tstar', t('k_safe')), '–', esc(t('v_hint'))); return; }
     if (!v) { // no result yet: same tiles as the result, so nothing jumps when it arrives
-      tile('hero', A.term('tstar', t('k_safe')), '–', esc(t(A.busy ? 's_solving' : 'k_notRun'))); tile('', esc(t('k_runway')), '–', '&nbsp;'); tile('', esc(t('k_interest')), '–', '&nbsp;');
+      tile('hero', A.term('tstar', t('k_safe')), '–', esc(t(A.busy ? 's_solving' : 'k_notRun'))); tile('', esc(t('k_runway')), '–', '&nbsp;'); tile('', esc(t('k_interest')), '–', '&nbsp;<br>&nbsp;');
       tile('wide', A.term('base', t('k_gain')), '–', '&nbsp;'); tile('k-lock', esc(t('k_locked')), '–', '&nbsp;'); tile('full', esc(t('k_next')), '–', '', 'sm'); return;
     }
     var P = v.P, T = v.sim.Tstar, H = P.H, res = v.res, sub;
@@ -37,7 +37,8 @@
     box.appendChild(el('div', { class: 'kpi wide' }, el('div', { class: 'lab', html: A.term('base', t('k_gain')) }), el('div', { class: 'duo' },
       el('div', null, el('div', { class: 'val', text: sg(g1) + ' M' }), el('div', { class: 'sub', text: t('k_gainTG') })),
       el('div', null, el('div', { class: 'val', text: sg(g2) + ' M' }), el('div', { class: 'sub', text: t('k_gainNaive') })))));
-    tile('', esc(t('k_interest')), esc(A.eur(v.sim.interestToT)), esc(t('k_interestSub', { t: A.eur(v.sim.taxToT) })));
+    // the total counts overnight money and deposits; the line below says how much the deposits earn (the ladder spreadsheet holds only those)
+    tile('', esc(t('k_interest')), esc(A.eur(v.sim.interestToT)), esc(t('k_interestDep', { d: A.eur(v.sim.interestDepToT) })) + '<br>' + esc(t('k_interestSub', { t: A.eur(v.sim.taxToT) })));
     tile('k-lock', esc(t('k_locked')), esc(A.pct(100 * v.sim.lockShareAvg, 0)), esc(t('k_lockedSub', { p: A.pct(100 * v.sim.lockSharePeak, 0) })));
     var acts = V.buildActions(v), first = null;
     for (var i = 0; i < acts.length; i++) if (acts[i].type === 'place') { first = acts[i]; break; }

@@ -49,22 +49,23 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 | **KPIs** | T\*, runway in months, months gained against two baselines, interest until T\*, share of locked capital, the next action to take |
 | **Timeline** | Month-end balances as stacked areas: current account, overnight money, deposits by term bucket, existing holdings, buffer line, shortfall zone |
 | **Strategies** | Optimised plan vs. "everything in overnight money" vs. a naive rate chaser, as available liquidity or total wealth |
-| **Ladder** | One bar per tranche from placement to maturity, per year or for the whole horizon; tap a bar for details |
+| **Ladder** | One bar per tranche from placement to maturity, per year or for the whole horizon; tap a bar for details. *Download* saves the ladder as a small spreadsheet for Excel and Google Sheets |
 | **Cash flow** | Waterfall per year or month: opening balance, income, need, other expenses, placements, deposit repayments, overnight interest, tax, closing balance |
 | **Actions** | A dated to-do list: order deadlines, value dates, maturities, and the monthly transfer to the current account |
 | **Scenarios** | The whole optimisation re-run and re-verified under each interest-rate scenario |
 | **Monthly grid** | Month-by-month table. Extra need, extra income and a minimum liquidity can be overridden for single months |
 | **Step by step** | The decisions the optimiser took for the plan on screen, one at a time: each question and its answer, the months asked about so far, the plan at that step as month-end balances (or the progress of the integer search), and the linear system behind it |
-| **Methodology / Self-test** | The model explained inside the app, and a button that tests solver, simulator and Excel export against each other |
+| **Methodology / Self-test** | The model explained inside the app, and a button that tests solver, simulator, Excel export and ladder spreadsheet against each other |
+| **Handbook** | A page of its own with sixteen chapters, from a quick start to five theory chapters with formulas and an interactive simplex chart, plus frequently asked questions, the glossary and *What's new*; a search finds every word |
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/start.png" alt="Blank start screen"><br><sub>Start: a blank slate with two ways in</sub></td>
+<td width="50%"><img src="docs/screenshots/start.png" alt="Blank start screen with the Handbook button and a link into the handbook"><br><sub>Start: a blank slate with two ways in, and the handbook</sub></td>
 <td width="50%"><img src="docs/screenshots/ready.png" alt="Example loaded, ready to optimise"><br><sub>Data loaded: Optimise is now active</sub></td>
 </tr>
 <tr>
 <td width="50%"><img src="docs/screenshots/wizard.png" alt="Setup wizard"><br><sub>Six-chapter setup wizard</sub></td>
-<td width="50%"><img src="docs/screenshots/ladder.png" alt="Deposit ladder as Gantt bars"><br><sub>Ladder: one bar per tranche</sub></td>
+<td width="50%"><img src="docs/screenshots/ladder.png" alt="Deposit ladder as Gantt bars, with the Download button in the card's head"><br><sub>Ladder: one bar per tranche, and the spreadsheet download</sub></td>
 </tr>
 <tr>
 <td><img src="docs/screenshots/actions.png" alt="Dated action list"><br><sub>What to do, and when</sub></td>
@@ -78,6 +79,10 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 <td colspan="2"><img src="docs/screenshots/steps.png" alt="Step-by-step view: the list of steps, the question of step 7 and its answer, the horizon strip and the progress of the integer search"><br><sub>Step by step: how the plan was found, here the integer search against the best case</sub></td>
 </tr>
 <tr>
+<td><img src="docs/screenshots/handbook.png" alt="Handbook: search field, chapter menu in five groups and the Quick start chapter"><br><sub>Handbook: chapter menu, search, and a chapter</sub></td>
+<td><img src="docs/screenshots/theory.png" alt="Theory chapter: the simplex chart with the feasible region, the path to the optimum, sliders and the cross-check"><br><sub>Theory: the app's simplex walks to the optimum of a toy model</sub></td>
+</tr>
+<tr>
 <td><img src="docs/screenshots/overview-dark.png" alt="Dark theme"><br><sub>Dark theme</sub></td>
 <td align="center"><img src="docs/screenshots/mobile.png" alt="Phone layout" width="45%"><br><sub>Phone layout</sub></td>
 </tr>
@@ -86,20 +91,24 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 ## Using the app
 
 - **Online**: open the [GitHub Pages site](https://julianhilgemann.github.io/liquiplan-app/).
-- **Your own copy**: save [the published page](https://julianhilgemann.github.io/liquiplan-app/Liquiditaetsplaner_20261114.html), or build it from this repository with `node build.mjs` (see the [code guide](#code-guide)), and open the file in a browser. It is one HTML file and needs no server. The page loads its charting, solver and Excel libraries from jsDelivr. If the solver libraries cannot load, a solver built into the page takes over.
+- **Your own copy**: save [the published page](https://julianhilgemann.github.io/liquiplan-app/Liquiditaetsplaner_20261114.html), or build it from this repository with `node build.mjs` (see the [code guide](#code-guide)), and open the file in a browser. It is one HTML file and needs no server. The page loads its charting, solver and Excel libraries from jsDelivr, and the formula typesetter when a theory chapter of the handbook is first opened. If the solver libraries cannot load, a solver built into the page takes over.
 - **First visit**: the app opens on a blank slate with two choices, *Open the wizard* or *Load example G*. **Optimise** stays greyed out until there is data. The setup wizard has six chapters, of which only the first two are required: starting liquidity and withdrawals, the economic baseline, expected central-bank rate steps, ongoing deposits, other recurring payments and new deposit offers. A chapter menu (a list on phones) jumps between them, and **Analysis** in the toolbar leads back. Once there is data, the gear button (*Inputs*) shows the same data as a side panel with a few extra settings (buffer, safety lead, denomination, tax, deposit-guarantee cap, pinned tranches).
 - **Examples**: *Example G* (the reference case from the original specification), *Retirement with rental income* (20 years, pension from 2028, large one-off repairs, tax on) and *Rate trap* (example G plus a tempting 10-year deposit at 5.9 % that a naive rate chaser falls for).
 - **Rate scenarios**: own central-bank steps, current rates held constant, −1 pp from 2028, rising rates (+0.5 pp a year up to +1.5 pp), inverted curve.
 - **Calculation is manual**: nothing is computed until you press **Optimise**, not even when the page opens or an example is loaded. A card then confirms that the data is loaded and points to the button. After an input change the old results are greyed out until the next run. A progress dialog then ticks off each optimisation stage; *Cancel* stops the run and keeps the previous results on screen.
 - **Step by step**: a page of its own, like the wizard, that replays the decisions the optimiser took for the plan on screen, one at a time, with the list of steps beside it and *Back* / *Next* below. Three ways in: the *Step by step* button in the toolbar (an icon only in windows from 721 to 1519 px wide), *See how this was found* in the *Liquidity secured until* tile, and the button in the Methodology section. Without a current result (none yet, or the inputs have changed since), each of them runs **Optimise** first and opens the page when the run is over. On phones the list and the step take turns: *All steps* leads to the list, a tap on a step opens it. ← and → move one step, Home and End jump to the first and the last, and Escape, *Analysis* in the toolbar or *Back to the analysis* on the last step lead back.
+- **Handbook**: *Handbook* in the toolbar opens the in-app handbook, a page of its own like the wizard. Above the analysis the button is an icon only in windows from 721 to 1599 px wide; it is also there, with its label, on the blank slate and in the wizard. The blank slate (*New here? …*), the Methodology section (*Explained in the handbook*) and the foot of the page link into it as well. Sixteen chapters in five groups: *Getting started* (*What Liquiplan is*, *Quick start*), *Using Liquiplan* (*Entering your data*, *Reading the results*, *How-tos*, *Your data and privacy*), *Background* (*How the optimiser thinks*), *Theory* (*Linear programming in one picture*, *The ladder as a linear model*, *One goal after another*, *Whole steps and minimum amounts*, *Why the result can be trusted*) and *Reference* (*Frequently asked questions* with 15 questions, *Glossary*, *What's new*, *Disclaimer*). The search above the chapter finds every word, with or without umlauts (`uber` and `ueber` both find *über*); ↑ / ↓ and Enter pick a result, and outside the theory chapters the words are marked in the section it opens. `/` jumps into the search, Escape clears it, and Escape anywhere else closes the handbook, as does the toolbar button, which reads *Analysis* while the handbook is open (*Wizard* if it was opened from the wizard).
+- **Handbook addresses** (in German, like the code: *Handbuch*): `#handbuch` opens the handbook (the chapter list on phones, otherwise the chapter read last, at first *What Liquiplan is*), `#handbuch/<chapter>` a chapter, `#handbuch/<chapter>/<section>` a section, and `#handbuch/<section-id>` finds a section by its id alone. Any part can be linked to: the app opened at `…/liquiplan-app/#handbuch/quick` starts on the quick start. Every chapter opened is a step in the browser history: Back goes back through the chapters and finally out of the handbook, and after leaving it, Back opens it again.
+- **Version and What's new**: the foot of the page shows the version (*Version 1.3*), which links to *What's new*, the handbook chapter that lists the changes of each version, newest first.
+- **Ladder spreadsheet**: *Download* in the head of *Building blocks of the deposit ladder* saves a small workbook (.xlsx, for Excel and Google Sheets) with every deposit of the plan, on three sheets. *Tranches* lists them with type, bank, term, placement and maturity month, principal, rate, interest convention, total interest, payout at maturity, effective yield and the interest that falls within the plan, with totals and principal-weighted averages. *Monthly* and *Yearly* show each tranche as a roll-forward per month and per calendar year: opening balance + placement + capitalised interest + repayment = closing balance, plus the interest it pays out. Above the tranches stand their totals, the cash view of the liquid accounts (placements flow out, repayments and interest flow in) and check rows that must be 0. Amounts are in accounting format, every derived cell is a live formula with its value stored, and the ladder's bars are drawn as conditional formats in the app's colours. In German the sheets are *Tranchen*, *Monatsplan* and *Jahresplan*. The button is greyed out while there is no result, during a run and while the results are out of date; pressed then, it says why.
 - **Numbers**: every number field accepts a decimal comma or a decimal point, whatever language the browser is set to (`3,12` and `3.12` are the same rate). In amounts, `10.000` and `10,000` both mean ten thousand. The field echoes back what it understood, and text that is not a number is flagged and ignored instead of being read as 0.
-- **Export / import**: HTML with your inputs embedded, an Excel workbook with live formulas, the full state as JSON, and the rate table as JSON (for quick updates of offers).
+- **Export / import**: HTML with your inputs embedded, an Excel workbook with live formulas (the whole model in nine sheets; the ladder spreadsheet above is the lean one), the full state as JSON, and the rate table as JSON (for quick updates of offers).
 
-**Where your data lives.** Inputs are stored only in your browser's `localStorage`. Nothing is sent to a server; the only network requests fetch the libraries. The published file itself contains no data and opens on the blank slate. *Download HTML* writes a copy of the app with your current inputs embedded, so treat that file like a private document.
+**Where your data lives.** Inputs are stored only in your browser's `localStorage`. Nothing is sent to a server; the only network requests fetch the libraries. The published file itself contains no data and opens on the blank slate. *Download HTML* writes a copy of the app with your current inputs embedded, so treat that file like a private document, and the same goes for both spreadsheets and the JSON.
 
 ## Glossary of German terms
 
-The code and UI use German finance terms. The English UI translates them; here they are side by side.
+The code and UI use German finance terms. The English UI translates them; here they are side by side. The app's own glossary is the fuller one: the handbook chapter *Glossary* explains 46 terms in both languages, from the same entries as the tooltips of the dotted-underlined terms ([`glossary.js`](src/app/i18n/glossary.js)).
 
 | German | English | Meaning in the app |
 |---|---|---|
@@ -237,11 +246,13 @@ HiGHS and javascript-lp-solver must each solve a tiny test MILP correctly on loa
 
 **Inside the embedded solver** ([`Dense`](src/solver/simplex.js#L16), [`solveMILP`](src/solver/simplex.js#L329)):
 
-- A **bounded-variable tableau simplex**: two-phase [primal](src/solver/simplex.js#L144) with artificial variables, and [dual simplex](src/solver/simplex.js#L199) re-optimisation after bound changes, so every B&B node is warm-started from its parent's basis. A periodic [`refactor()`](src/solver/simplex.js#L66) rebuilds the tableau from the original rows to remove floating-point drift.
+- A **bounded-variable tableau simplex**: two-phase [primal](src/solver/simplex.js#L144) with artificial variables, and [dual simplex](src/solver/simplex.js#L199) re-optimisation after bound changes. Branch-and-bound keeps one tableau for the whole search: each node applies its bounds to whatever basis the solver last had (in depth-first order often its parent's, otherwise that of the node evaluated just before) and re-optimises from there instead of starting from scratch. A periodic [`refactor()`](src/solver/simplex.js#L66) rebuilds the tableau from the original rows to remove floating-point drift.
 - **Branch-and-bound** as a [depth-first search](src/solver/simplex.js#L422) with bound pruning and absolute/relative gap tolerances. A root heuristic (round everything down, fix it, re-solve) provides an early incumbent. The search cycles through three branching rules in slices of its work budget: chronological with semi-integer violations first and the down branch first (50 % of the budget), largest value (to 75 %), most fractional with the nearest branch first (to 100 %). It stops as soon as one rule has searched the tree completely.
 - **Semi-integer branching**: a column with `0 < n < min` branches into `n = 0` and `n ≥ min`, with no binary helper variable.
 
-**What the engine records.** Every answer the engine uses is also written to a log ([`Engine.log`](src/solver/engine.js#L19), one entry per call from [`rec()`](src/solver/engine.js#L23)): the kind of call (LP, integer search or yes/no question), the backend that answered, the size of the model, its rows and columns counted by kind (by the first letter of their name in `model.js`: `b` balance rows, `x` tax rows, `n` placements, …) and the status. When the answer came from the embedded solver, the entry also has its simplex pivots ([`pivots()`](src/solver/simplex.js#L14)) and, for an integer search, the search nodes. Pivots are known only then: HiGHS (like javascript-lp-solver) hands back only the final answer, not how it got there. The log is what the step-by-step view shows under the hood (section 6).
+The handbook's chapter *Linear programming in one picture* runs this same `Dense` on a toy model with two deposits and draws every corner it visits on the way to the optimum ([`walk()`](src/app/handbook/simplex-chart.js#L37)).
+
+**What the engine records.** Every answer the engine uses is also written to a log ([`Engine.log`](src/solver/engine.js#L19), one entry per call from [`rec()`](src/solver/engine.js#L23)): the kind of call (LP, integer search or yes/no question), the backend that answered, the size of the model, its rows and columns counted by kind (by the first letter of their name in `model.js`: `b` balance rows, `x` tax rows, `n` placements, …) and the status. When the answer came from the embedded solver, the entry also has its simplex pivots (counted in [`PIVOTS`](src/solver/simplex.js#L14), read with `LP.simplex.pivots()`) and, for an integer search, the search nodes. Pivots are known only then: HiGHS (like javascript-lp-solver) hands back only the final answer, not how it got there. The log is what the step-by-step view shows under the hood (section 6).
 
 ### 5. Independent verification: [`LP.sim.run()`](src/app/sim.js#L10) and [`verify()`](src/app/sim.js#L113)
 
@@ -286,9 +297,20 @@ The workbook is written with ExcelJS and post-processed with JSZip. It has nine 
 - The `Solver` sheet comes with **pre-filled Excel Solver settings** (`solver_*` defined names) to re-run stage 2 (maximise wealth at a fixed T\*) inside Excel, with step-by-step instructions.
 - [`sensitivity()`](src/app/xlsx.js#L61) re-simulates the plan under parallel rate shifts.
 
-### 9. Self-test: [`A.selftest()`](src/app/selftest.js#L7)
+### 9. The ladder spreadsheet: [`LP.ladderXlsx.build()`](src/app/ladder-xlsx.js#L97)
 
-The **Self-test** button runs, for every example: the plan is verified and the simulated T\* ≥ the solver's T\*; the optimised T\* ≥ the all-overnight baseline. Then three property tests: the rate trap never ends worse than the plain case; **adding a product never shortens T\***; **adding an inflow never shortens T\***. Finally the Excel export is built, re-opened with ExcelJS, and its formula values are compared with the web simulation (≤ 1 cent per month, same first shortfall).
+The *Download* button of the ladder card writes a second, much smaller workbook: only the deposits of the plan, as described under [Using the app](#using-the-app). It is built for Excel and Google Sheets alike, so it keeps to what both understand:
+
+- Written with ExcelJS alone, with no JSZip post-processing and no charts. Formulas use classic functions only (`SUM`, `SUMIF`, `SUMPRODUCT`, `COUNTIF`, `INDEX`, `EDATE`, `ROUND`, …), and the conditional formats (the ladder bars, maturity months, the T\* month, red check rows) are rules of the "formula" and "cell value" kinds that refer only to their own sheet.
+- The terms of each tranche are the inputs (blue) on *Tranches*; the blocks of *Monthly* and *Yearly* link to them (green), so a changed amount, rate, term or placement month recalculates both schedules. *Yearly* sums the monthly rows, and a second check row compares its closing balances with *Monthly* at each year end.
+- The bookkeeping follows the simulator: placed at the start of the month, repaid in the maturity month; *annual* pays interest out on each anniversary, *compound* adds it to the balance there, and an existing holding is a *simple* tranche whose term counts from the plan start. The schedule runs from the plan start to the last maturity, or to the end of the horizon for a tranche that matures later.
+- [`schedule()`](src/app/ladder-xlsx.js#L44) computes every formula cell in plain JS, the way the sheet computes it. Its values are stored as cached results, so the numbers show in viewers that do not recalculate, and the self-test compares them with the simulator.
+
+For this release every formula was verified by recalculating it with an independent formula engine; the file has not yet been opened in Excel or Google Sheets themselves.
+
+### 10. Self-test: [`A.selftest()`](src/app/selftest.js#L7)
+
+The **Self-test** button runs eleven checks. For every example: the plan is verified and the simulated T\* ≥ the solver's T\*; the optimised T\* ≥ the all-overnight baseline. Then three property tests: the rate trap never ends worse than the plain case; **adding a product never shortens T\***; **adding an inflow never shortens T\***. Then the Excel export is built, re-opened with ExcelJS, and its formula values are compared with the web simulation (≤ 1 cent per month, same first shortfall). Finally the ladder spreadsheet is built for example G and read back: in every month the tranches' closing balances add up to the locked capital, the placement, repayment and interest lines match the simulator's to the cent, and every check row is 0.
 
 ### Simplifications
 
@@ -319,12 +341,12 @@ The build needs Node.js and nothing else. It does not bundle, transpile or minif
 |---|---|---|---|
 | [`src/index.html`](src/index.html) | the page | – | the template: the head, the order of all includes, and [`<script id="src-theme">`](src/index.html#L10), which applies the saved light/dark choice before the first paint |
 | [`src/styles/`](src/styles/) | [`<style id="css">`](src/styles/tokens.css#L1) | – | the design system and the styles of each part of the page (see [Styles](#styles)) |
-| [`src/markup/`](src/markup/) | [`<div id="app">`](src/markup/toolbar.html#L1) | – | the static page skeleton: toolbar, wizard, the step-by-step view, the workspace with one file per result section, overlays |
+| [`src/markup/`](src/markup/) | [`<div id="app">`](src/markup/toolbar.html#L1) | – | the static page skeleton: toolbar, wizard, the step-by-step view, the handbook, the workspace with one file per result section and the footer, overlays |
 | [`src/core/`](src/core/) | [`<script id="src-core">`](src/core/core.js#L1) | main thread **and** worker | `core.js` (dates, calendar, timeline), `presets.js` |
 | [`src/solver/`](src/solver/) | [`<script id="src-solver">`](src/solver/model.js#L1) | worker | `model.js`, `simplex.js`, `backends.js`, `engine.js`, `optimize.js`, `workerglue.js` |
-| [`src/app/`](src/app/) | [`<script id="src-app">`](src/app/sim.js#L1) | main thread | `sim.js`, `i18n/`, `ui/`, `views/`, `xlsx.js`, `wizard.js`, `export.js`, `selftest.js`, `main.js` |
+| [`src/app/`](src/app/) | [`<script id="src-app">`](src/app/sim.js#L1) | main thread | `sim.js`, `i18n/`, `ui/`, `views/`, `xlsx.js`, `ladder-xlsx.js`, `wizard.js`, `handbook.js`, `export.js`, `selftest.js`, `handbook/` (the theory chapters), `main.js` |
 
-The page also carries [`<script id="embedded-state">`](src/index.html#L69): the inputs a downloaded copy was saved with, empty in the published app.
+The page also carries [`<script id="embedded-state">`](src/index.html#L74): the inputs a downloaded copy was saved with, empty in the published app.
 
 The three script blocks are a functional split: the worker is assembled from the text of `src-core` + `src-solver`, so a file's folder decides where it runs.
 
@@ -341,8 +363,9 @@ There are no ES modules. Every `.js` file is an IIFE that hangs its API on one g
 | [`controls.css`](src/styles/controls.css) | Fields, buttons, segmented control, theme switch |
 | `toolbar.css`, `shell.css`, `inputs.css` | Top bar with solver status and export menu, the two-column layout with the inputs drawer, input groups and entry cards |
 | `cards.css`, `kpis.css`, `notes.css`, `charts.css`, `tables.css` | Building blocks of the results: cards, KPI tiles, pills and notes and the section navigation, chart sizes and legends, tables |
-| `ladder.css`, `ladder-years.css`, `actions.css`, `waterfall.css`, `strategies.css` | One result section each |
-| `methodology.css`, `dialogs.css`, `empty-state.css`, `progress.css`, `wizard.css`, `replay.css`, `stale.css` | Methodology text and glossary tooltip, toasts and the JSON dialog, the blank slate, the progress dialog, the setup wizard, the step-by-step view, the "inputs changed" bar |
+| `ladder.css`, `ladder-years.css`, `actions.css`, `waterfall.css`, `strategies.css` | One result section each; `ladder.css` also styles the ladder's *Download* button |
+| `methodology.css`, `dialogs.css`, `empty-state.css`, `progress.css` | Methodology text and glossary tooltip, toasts and the JSON dialog, the blank slate, the progress dialog |
+| `wizard.css`, `replay.css`, `handbook.css`, `handbook-theory.css`, `stale.css` | The page modes: the setup wizard, the step-by-step view, the handbook (its toolbar button, search, menu, chapters, the page footer) and its theory chapters (formulas, the simplex chart); the "inputs changed" bar |
 | [`responsive.css`](src/styles/responsive.css) | Phones, touch targets, *Reduce Motion*. Last, so that it overrides the rest |
 
 ### How the parts work together
@@ -355,6 +378,7 @@ flowchart LR
         SS --> V["LP.sim.verify()"]
         V --> RA["renderAll()"]
         V --> X["LP.xlsx.build()"]
+        V --> LX["LP.ladderXlsx.build()<br/>(ladder spreadsheet)"]
         V --> RP["A.replay<br/>(step by step)"]
     end
     subgraph worker["Web Worker (src-core + src-solver)"]
@@ -366,7 +390,7 @@ flowchart LR
     OPT -- "placements, T*, trace" --> SS
 ```
 
-Besides the plan, the result carries the trace of the run (`res.trace`). The step-by-step view reads it from `A.view` only when it is opened; the result views do not use it.
+Besides the plan, the result carries the trace of the run (`res.trace`). The step-by-step view reads it from `A.view` only when it is opened; the result views do not use it. Both workbooks are built from `A.view` only when their button is pressed. The handbook stands apart from the run: it reads its texts, the glossary and the changelog, and only the theory chart touches solver code (it runs `LP.simplex.Dense` on a toy model of its own, on the main thread).
 
 ### Follow one run
 
@@ -379,6 +403,37 @@ If you want to read the code end to end, this is the order in which it executes 
 5. The result returns to `solveState`, goes through [`verify()`](src/app/sim.js#L113), and lands in `A.view`.
 6. [`renderAll()`](src/app/views/render.js#L38) draws KPIs, charts, ladder, waterfall, actions, scenarios and grid from `A.view`.
 7. When the scenarios are done, `A.run` calls [`A.replay.runDone()`](src/app/views/replay.js#L494) with its run id ([`A.runId`](src/app/views/pipeline.js#L71)). If the step-by-step view was asked for before this run, it opens now.
+
+### The handbook and the changelog
+
+The handbook ([`markup/handbook.html`](src/markup/handbook.html), [`app/handbook.js`](src/app/handbook.js)) is a page mode like the wizard and the step-by-step view: it puts the class `hb` on `#app`, hides the workspace and trims the toolbar to the way back, language and theme. Its chapters come from four sources. The menu, the page and the search index are all built from the same chapter list, so what is searched is what is shown.
+
+| Source | Becomes |
+|---|---|
+| [`app/i18n/handbook-de.js`](src/app/i18n/handbook-de.js), [`handbook-en.js`](src/app/i18n/handbook-en.js) (`LP.hb.de`, `LP.hb.en`) | The text chapters, one entry each: `{ t: title, l: lead, s: [[section id, title, html], …] }`. Section ids are the same in both languages and unique in the page, because they are addresses |
+| [`app/i18n/glossary.js`](src/app/i18n/glossary.js) (`LP.i18n.gloss`) | The *Glossary* chapter, one section per term; the same entries are behind the dotted-underlined terms everywhere in the app |
+| [`app/i18n/changelog.js`](src/app/i18n/changelog.js) (`LP.changelog`) | The *What's new* chapter, and `A.version`: the version the app shows is the first entry's |
+| `LP.hb.extra` | Chapters that other files add. [`app/handbook/theory.js`](src/app/handbook/theory.js) adds the five theory chapters there, with their texts in [`theory-de.js`](src/app/handbook/theory-de.js) and [`theory-en.js`](src/app/handbook/theory-en.js) and the chart in [`simplex-chart.js`](src/app/handbook/simplex-chart.js) |
+
+**Markup in the texts.** Titles and HTML of the text chapters may contain:
+
+- `[[key]]`: a UI label exactly as the app shows it, from `de.js` or `en.js`, so the handbook cannot drift from the buttons it names;
+- `[[#id]]`: a link to a chapter or a section, with the target's title as its text;
+- `{key}` or `{key|text}`: a glossary term with its tooltip;
+- `data-needs="<chapter id>"` on a `p`, `div` or `li`: the element is left out while that chapter does not exist, so the text chapters can refer to the theory chapters without depending on them.
+
+The theory texts use `$…$` for inline and `$$…$$` for display formulas (TeX, typeset by MathJax) and the same glossary markup. UI strings of the handbook live in `de.js` and `en.js` under the prefix `hb_` (those of the ladder spreadsheet under `lx_`).
+
+**Adding a chapter.** A file pushes an object onto `LP.hb.extra`: `{ id: 'th-…', title: { de, en }, sections: [{ id, title: { de, en }, text: { de, en } }], render(box, lang), teardown() }`. `render` fills an empty block element and creates one element per section whose `id` is the section's id. It may return a promise that settles once the chapter's layout is final (the theory chapters settle it when their formulas are typeset); the handbook then scrolls once more to where it had put the reader (a section, or the position Back returns to), unless they have scrolled, typed or clicked since. `text` is the plain text the search indexes; `teardown`, if present, runs before the chapter is left or drawn again. Such chapters appear in the menu group *Theory* after *How the optimiser thinks*; without any, the group is left out.
+
+**Addresses are the only state.** Links in the handbook are plain links to `#handbuch/…`, and the page follows `hashchange` and `popstate`, so every chapter opened is a history entry. [`A.handbook`](src/app/handbook.js#L29) offers `open(id)`, `close()`, `render()` (after a change of language or theme) and `isOpen()`, and for tests `index`, `search` and `chapters`.
+
+**The changelog rule.** Every user-visible change adds an item to [`changelog.js`](src/app/i18n/changelog.js), in German and in English, in the same commit as the change (refactoring, tests and the build get none). Version numbers are MAJOR.MINOR, with a third number for a release that only fixes things (1.3.1): MINOR goes up with every release that adds or changes something users see, MAJOR only when saved inputs or the JSON format stop working with the new version (the [state format](#state-format) is v1). The handbook section that describes the changed behaviour and this README move with the change too.
+
+### Before a pull request
+
+- [`CLAUDE.md`](CLAUDE.md) holds the working rules for AI-assisted development of this repository: what the code relies on, which documents move with a change, how a change is checked and released. It is a useful checklist for any contributor.
+- Run `node scripts/check.mjs` before opening a pull request. It builds the app, drives it in a headless browser, compares the plans with a baseline and checks that the links from this README into the code still point at their functions.
 
 ## Function reference
 
@@ -425,7 +480,7 @@ If you want to read the code end to end, this is the order in which it executes 
 | [`Dense.prototype.refactor`](src/solver/simplex.js#L66) | Rebuild the tableau from the original rows (removes drift) |
 | [`solveLP`](src/solver/simplex.js#L295) | One LP solve |
 | [`now`](src/solver/simplex.js#L13) | The work clock: every limit of the embedded solver is measured on it |
-| [`pivots`](src/solver/simplex.js#L14) | Number of simplex pivots so far, for the trace of a run. It only counts and never limits, so it cannot change a result |
+| [`PIVOTS`](src/solver/simplex.js#L14) / `pivots()` | Number of simplex pivots so far, read with `pivots()`, for the trace of a run. It only counts and never limits, so it cannot change a result |
 | [`polish`](src/solver/simplex.js#L304) | Fix rounded integers, re-solve the continuous rest exactly |
 | [`solveMILP`](src/solver/simplex.js#L329) | Branch-and-bound: root heuristic, [DFS](src/solver/simplex.js#L422), branching rules, gap control. Also returns the [`trail`](src/solver/simplex.js#L398): each better plan as the node count at which it was found and its objective (at most 300, always ending at the plan returned) |
 
@@ -462,7 +517,7 @@ The backends behind one interface, the engine that decides which backend answers
 
 ### `app/i18n/` – texts (`LP.i18n`)
 
-The UI strings in [German](src/app/i18n/de.js) and [English](src/app/i18n/en.js) under the same keys (those of the step-by-step view start with `rp_`), the [glossary](src/app/i18n/glossary.js#L6) behind the dotted terms, and the [methodology text](src/app/i18n/methodology.js#L6) shown in the app.
+The UI strings in [German](src/app/i18n/de.js) and [English](src/app/i18n/en.js) under the same keys (those of the step-by-step view start with `rp_`, of the handbook with `hb_`, of the ladder spreadsheet with `lx_`), the [glossary](src/app/i18n/glossary.js#L6) behind the dotted terms and the handbook's *Glossary*, the [methodology text](src/app/i18n/methodology.js#L6) shown in the app, the [changelog](src/app/i18n/changelog.js#L16) (`LP.changelog`, newest release first) and the handbook's text chapters in [German](src/app/i18n/handbook-de.js#L12) and [English](src/app/i18n/handbook-en.js#L7) (`LP.hb.de`, `LP.hb.en`).
 
 ### `app/ui/` – state, formatting, solver client, input drawer (`LP.app`, alias `A`)
 
@@ -470,7 +525,8 @@ In load order: `dom.js`, `state.js`, `format.js`, `tooltip.js`, `solver-client.j
 
 | Function | Purpose |
 |---|---|
-| [`el`](src/app/ui/dom.js#L17) | Builds a DOM element from a tag, properties and children; used for nearly all markup the scripts create |
+| [`A.CDN`](src/app/ui/dom.js#L7) | The pinned addresses of every library the page loads (see [Dependencies](#dependencies-and-deployment)) |
+| [`el`](src/app/ui/dom.js#L18) | Builds a DOM element from a tag, properties and children; used for nearly all markup the scripts create |
 | [`normalize`](src/app/ui/state.js#L12) / [`loadState`](src/app/ui/state.js#L32) | Fill defaults; load from `localStorage`, else the embedded state, else a blank state ([`A.blankState`](src/app/ui/state.js#L28)) |
 | [`A.save`](src/app/ui/state.js#L39) | Debounced save to `localStorage` |
 | [`t`](src/app/ui/format.js#L7), [`A.eur`](src/app/ui/format.js#L15), [`A.monthLabel`](src/app/ui/format.js#L52), … | Translation and number/date formatting |
@@ -490,7 +546,8 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`renderMain`](src/app/views/timeline.js#L61) | Liquidity and locked-capital area chart (ECharts) |
 | [`balances`](src/app/views/timeline.js#L16), [`balanceItems`](src/app/views/timeline.js#L8), [`balanceOption`](src/app/views/timeline.js#L48) | The parts of that chart for one simulated plan: series and tooltip, legend entries, chart options. Shared by the main chart and the step-by-step view |
 | [`renderStrat`](src/app/views/strategies.js#L9) | Strategy comparison |
-| [`renderLadder`](src/app/views/ladder.js#L30), [`trancheDates`](src/app/views/ladder.js#L8), [`trancheTotals`](src/app/views/ladder.js#L19) | Ladder (Gantt) and tranche details |
+| [`renderLadder`](src/app/views/ladder.js#L39), [`trancheDates`](src/app/views/ladder.js#L8), [`trancheTotals`](src/app/views/ladder.js#L19) | Ladder (Gantt) and tranche details |
+| [`xlsxBlock`](src/app/views/ladder.js#L31) / [`syncXlsx`](src/app/views/ladder.js#L32) | As `A.ladXlsxBlock`: why the ladder spreadsheet cannot be downloaded right now (no result, a run in progress, results out of date), or nothing. As `A.syncLadXlsx`: the *Download* button's state to match, `aria-disabled` with the reason as its title; the pipeline calls it whenever a run starts or ends or the inputs change |
 | [`renderWf`](src/app/views/waterfall.js#L18) | Cash-flow waterfall |
 | [`buildActions`](src/app/views/actions.js#L7) / [`renderActions`](src/app/views/actions.js#L24) | Dated action list |
 | [`renderScen`](src/app/views/scenarios.js#L7) | Scenario chart and table |
@@ -513,6 +570,15 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`sensitivity`](src/app/xlsx.js#L61) | Plan re-simulated under parallel rate shifts |
 | [`build`](src/app/xlsx.js#L70) | Writes the nine sheets, charts and Solver names |
 
+### `app/ladder-xlsx.js` – the ladder spreadsheet (`LP.ladderXlsx`)
+
+| Function | Purpose |
+|---|---|
+| [`order`](src/app/ladder-xlsx.js#L30) | The tranches in reading order: existing holdings first, then by placement month and maturity, as the ladder shows them |
+| [`contract`](src/app/ladder-xlsx.js#L36) | Total interest, payout and effective yield of one tranche over its full life, also when it matures after the plan |
+| [`schedule`](src/app/ladder-xlsx.js#L44) | Every formula cell in plain JS: per tranche and month the opening balance, placement, capitalised interest, repayment, closing balance and interest paid out; the same per calendar year; the totals, the cash lines and the checks. Stored as cached values and read by the self-test |
+| [`build`](src/app/ladder-xlsx.js#L97) | `build(ctx, ExcelJS)` writes the three sheets (*Tranches* / *Tranchen*, *Monthly* / *Monatsplan*, *Yearly* / *Jahresplan*) with formulas, styles, conditional formats, row groups and print setup; returns the file, the schedule and the row layout |
+
 ### `app/wizard.js` – six-chapter setup (`A.wizard`)
 
 | Function | Purpose |
@@ -520,16 +586,53 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`W.render`](src/app/wizard.js#L174), [`W.go`](src/app/wizard.js#L194), [`W.show`](src/app/wizard.js#L196), [`W.finish`](src/app/wizard.js#L207) | Chapter navigation; edits only mark results stale, they never start a calculation |
 | [`rows`](src/app/wizard.js#L68), [`q`](src/app/wizard.js#L64), [`yesNo`](src/app/wizard.js#L59) | Repeating row editors, numbered questions and yes/no switches. "No" parks rows in `state.stash` instead of deleting them |
 
-### `app/export.js`, `selftest.js`, `main.js` – files, self-test, start-up
+### `app/handbook.js` – the handbook page (`A.handbook`)
+
+| Function | Purpose |
+|---|---|
+| [`chapters`](src/app/handbook.js#L41) | The chapter list of the current language in menu order, from the outline, the texts, the glossary, the changelog and `LP.hb.extra`; cached per language and number of extra chapters |
+| [`textCh`](src/app/handbook.js#L58), [`glossCh`](src/app/handbook.js#L68), [`newsCh`](src/app/handbook.js#L77), [`extraCh`](src/app/handbook.js#L84) | One chapter of each kind in the common shape `{ id, kind, title, lead, sections }` |
+| [`rich`](src/app/handbook.js#L94) / [`plain`](src/app/handbook.js#L101) | The text markup turned into HTML for the page, or into plain text for the search index |
+| [`fold`](src/app/handbook.js#L109) | Text folded for comparison: lower case, no accents, hyphens or apostrophes, ß as ss, umlauts once as two letters (*ueber*) and once as the plain vowel (*uber*), with a map back to the original positions |
+| [`index`](src/app/handbook.js#L121) | One search entry per chapter and section: title, text and chapter title, each in both folded forms |
+| [`score`](src/app/handbook.js#L143) / [`search`](src/app/handbook.js#L158) | Ranking: every word must occur in the section or its chapter's title, at least one in the section itself; words in a title, at the start of a word, the whole query as a phrase and an exact title count extra; ties keep the handbook's order |
+| [`ranges`](src/app/handbook.js#L167), [`highlight`](src/app/handbook.js#L179), [`snippet`](src/app/handbook.js#L184) | Where the search words are in a text; the text with them marked; a snippet of about 180 characters around the first one |
+| [`parse`](src/app/handbook.js#L329) / [`route`](src/app/handbook.js#L330) | An address taken apart into chapter and section; following it on `hashchange` and `popstate` |
+| [`show`](src/app/handbook.js#L342) / [`reveal`](src/app/handbook.js#L366) | Draws a chapter unless it is already on screen; scrolls to a section, focuses its heading and marks the search words in it |
+| [`laid`](src/app/handbook.js#L361) | Repeats that scroll once a theory chapter's layout is final, unless the reader has scrolled, typed or clicked since |
+| [`enter`](src/app/handbook.js#L393) / [`close`](src/app/handbook.js#L401) | Switch the page mode on (closing the step-by-step view if it is open) and off; `close` returns to the scroll position the page had |
+| [`render`](src/app/handbook.js#L415) | Draws everything again after a change of language or theme, keeping the section being read in place; also writes the version into the page footer |
+
+### `app/handbook/` – the theory chapters (`LP.hb.extra`, `LP.hb.lpChart`)
+
+In load order: `theory-de.js` and `theory-en.js` (the texts, `LP.hb.theoryText`), `simplex-chart.js`, `theory.js`. They load after `handbook.js`, which picks up the chapters whenever its list is next built.
+
+| Function | Purpose |
+|---|---|
+| [`chapter`](src/app/handbook/theory.js#L130) | One theory chapter in the `LP.hb.extra` shape; `th-lp`, `th-model`, `th-lex`, `th-int` and `th-check` are added in this order |
+| [`toHtml`](src/app/handbook/theory.js#L22) / [`plain`](src/app/handbook/theory.js#L40) | A text with `$…$`, `$$…$$` and glossary terms turned into HTML with MathJax delimiters, or into plain text for the search, with inline TeX as readable symbols |
+| [`mathjax`](src/app/handbook/theory.js#L48) | Loads MathJax ([`A.CDN.mathjax`](src/app/ui/dom.js#L13)) once, configured so that it typesets nothing by itself; after a failed load the next chapter tries again |
+| [`typeset`](src/app/handbook/theory.js#L93) / [`fallback`](src/app/handbook/theory.js#L87) | Typesets one chapter's formulas and returns a promise that settles when they are done, or when it has given up: if MathJax cannot be loaded within 20 seconds, the TeX source stays readable and a note says so. `render` hands this promise to the handbook |
+| [`start`](src/app/handbook/theory.js#L110) / [`stop`](src/app/handbook/theory.js#L122) | Renders a chapter and mounts the chart where its text has a `.th-chart` element; tears both down |
+| [`halfPlanes`](src/app/handbook/simplex-chart.js#L19), [`gains`](src/app/handbook/simplex-chart.js#L25), [`model`](src/app/handbook/simplex-chart.js#L27) | The toy problem: how much of €100,000 goes into a 12-month and how much into a 24-month deposit, as four conditions and an objective, shaped like a model from `model.js` |
+| [`walk`](src/app/handbook/simplex-chart.js#L37) | Solves it with `LP.simplex.Dense` and records every corner on the way: it wraps the solver's `pivot` method and watches its bound flags (`atUp`), so each corner drawn is one the solver visited |
+| [`corners`](src/app/handbook/simplex-chart.js#L67) / [`grid`](src/app/handbook/simplex-chart.js#L78) | The brute-force cross-check shown below the chart (every corner of the feasible region) and the best point on the €10,000 grid |
+| [`mount`](src/app/handbook/simplex-chart.js#L96) | The interactive SVG chart: the path with *Back*, *Next*, *Play* and *Start again*, sliders for both rates and the payment, a draggable condition, the whole-step grid; returns `{ destroy }` |
+
+`walk` depends on how `Dense` pivots and flips bounds. A change there can break the path the chart draws, and the cross-check line below the chart would then show the mismatch. Plans are not affected: each `Dense` starts from its model alone.
+
+### `app/export.js`, `selftest.js`, `main.js` – files, downloads, self-test, start-up
 
 | Function | Purpose |
 |---|---|
 | [`A.saveFile`](src/app/export.js#L11) | Download helper |
 | [`A.buildHtml`](src/app/export.js#L30) | Re-assembles the page from its own blocks, with the current state embedded |
-| [`A.exportXlsx`](src/app/export.js#L49) | Loads ExcelJS + JSZip on demand and builds the workbook |
+| [`A.xlsxLibs`](src/app/export.js#L44) | Loads ExcelJS and JSZip from the CDN, once, for either workbook |
+| [`A.exportXlsx`](src/app/export.js#L49) | Builds and saves the full Excel workbook |
+| [`ladderCtx`](src/app/export.js#L60) / [`A.exportLadderXlsx`](src/app/export.js#L61) | What the ladder spreadsheet is built from (plan, simulation, language, scenario name, time); the *Download* button's handler, which says why when the download is blocked and checks again after loading the library, in case the result changed meanwhile |
 | [`applyState`](src/app/main.js#L20) / [`applyRates`](src/app/main.js#L29) | JSON import of the full state (own format or the spec format) or of the rate table |
 | [`A.selftest`](src/app/selftest.js#L7) | The self-test described above |
-| [`wire`](src/app/main.js#L49) / [start-up](src/app/main.js#L112) | Event wiring, first render (blank slate, or the ready card for saved inputs) and a warm-up of the solver worker; the first optimisation waits for **Optimise** |
+| [`wire`](src/app/main.js#L49) / [start-up](src/app/main.js#L113) | Event wiring, first render (blank slate, or the ready card for saved inputs) and a warm-up of the solver worker; the first optimisation waits for **Optimise** |
 
 ## State format
 
@@ -552,17 +655,20 @@ The complete input is one JSON object (*Export / import → State as JSON*). The
 
 The importer also accepts the `deposit-savings-planner` JSON from the original specification and converts it with `fromWizardJson()`.
 
+This is version 1 of the format. A release after which saved inputs or exported JSON no longer load raises the app's MAJOR version (see [the changelog rule](#the-handbook-and-the-changelog)).
+
 ## Dependencies and deployment
 
-The app has no npm dependencies. Its libraries are loaded at run time from jsDelivr, with pinned versions:
+The app has no npm dependencies. Its libraries are loaded at run time from jsDelivr, with the pinned versions listed in [`A.CDN`](src/app/ui/dom.js#L7):
 
 | Library | Version | Used for |
 |---|---|---|
-| [ECharts](https://echarts.apache.org) | 5.5.1 | all charts |
+| [ECharts](https://echarts.apache.org) | 5.5.1 | the charts of the analysis and the step-by-step view (the ladder and the handbook's simplex chart are drawn without it) |
 | [HiGHS](https://github.com/lovasoa/highs-js) | 1.15.4 | LP solver and yes/no questions (WebAssembly) |
 | [javascript-lp-solver](https://github.com/JWally/jsLPSolver) | 0.4.24 | secondary LP solver |
-| [ExcelJS](https://github.com/exceljs/exceljs) | 4.4.0 | Excel export (loaded on demand) |
-| [JSZip](https://stuk.github.io/jszip/) | 3.10.1 | chart and Solver-name injection into the xlsx |
+| [ExcelJS](https://github.com/exceljs/exceljs) | 4.4.0 | Excel export and ladder spreadsheet (loaded on demand) |
+| [JSZip](https://stuk.github.io/jszip/) | 3.10.1 | chart and Solver-name injection into the full Excel export (loaded together with ExcelJS) |
+| [MathJax](https://www.mathjax.org) | 3.2.2 | formulas of the handbook's theory chapters, as SVG (`es5/tex-svg.js`); loaded only when a theory chapter is first opened. If it cannot load, the TeX source stays readable |
 
 The site is published by [`.github/workflows/pages.yml`](.github/workflows/pages.yml): on every push to `main` it runs `node build.mjs` and deploys the built file to GitHub Pages as `index.html`. If the build fails, nothing is deployed and the site keeps its last version.
 

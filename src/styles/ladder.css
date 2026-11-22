@@ -6,6 +6,7 @@
 .main.stale .btn.xl-dl[aria-disabled="true"] { opacity: 0.6; } /* the section is dimmed already: a little fainter than the switch beside it */
 .xl-ico { width: 16px; height: 16px; flex: none; color: var(--good); }
 .xl-ico path { stroke: var(--surface); }
+@media (max-width: 359px) { #sec-ladder .card-head .seg button { padding: 0 8px; } } /* switch and Download stay on one row at 320px */
 .gantt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
 .gantt { position: relative; min-width: 640px; }
 .g-axis { position: sticky; top: 0; height: 26px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }

@@ -77,9 +77,10 @@
       if (allOK) res.Tstar = t;
     }
     // sums up to T*
-    var gi = 0, gt = 0, lockShare = 0, n = 0, peak = 0;
-    for (t = 0; t <= res.Tstar; t++) { gi += res.intTG[t] + res.intFG[t]; gt += res.tax[t]; var tot = res.s[t] + res.locked[t]; if (tot > 0) { var sh = res.locked[t] / tot; lockShare += sh; n++; if (sh > peak) peak = sh; } }
-    res.interestToT = gi; res.taxToT = gt; res.lockShareAvg = n ? lockShare / n : 0; res.lockSharePeak = peak;
+    var gi = 0, gd = 0, gt = 0, lockShare = 0, n = 0, peak = 0;
+    for (t = 0; t <= res.Tstar; t++) { gi += res.intTG[t] + res.intFG[t]; gd += res.intFG[t]; gt += res.tax[t]; var tot = res.s[t] + res.locked[t]; if (tot > 0) { var sh = res.locked[t] / tot; lockShare += sh; n++; if (sh > peak) peak = sh; } }
+    // interestToT: all interest (overnight money and deposits); interestDepToT: the deposits' share of it
+    res.interestToT = gi; res.interestDepToT = gd; res.taxToT = gt; res.lockShareAvg = n ? lockShare / n : 0; res.lockSharePeak = peak;
     res.shortfall = res.firstShort >= 0 ? Math.max(0, P.floor[res.firstShort] - res.avail[res.firstShort]) : 0;
     return res;
   }

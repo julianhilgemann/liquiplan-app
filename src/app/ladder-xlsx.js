@@ -14,7 +14,7 @@
   // layout of the two schedule sheets (Monthly and Yearly use the same rows, so a yearly cell sums the monthly row it sits in)
   var C0 = 11; // first period column (K); A–J: number, label, rate, total and the terms of the tranche
   var R = { title: 1, sub: 2, mark: 3, head: 4, head2: 5, tot: 6, bop: 7, pl: 8, cap: 9, rep: 10, eop: 11, int: 12, chk: 13, chk2: 14, cash: 15, cPl: 16, cRep: 17, cInt: 18, cNet: 19, trs: 21, tr0: 22 };
-  var TR = { head: 8, row0: 9 }; // table on the tranche sheet
+  var TR = { panel: 3, panelN: 7, head: 9, row0: 10 }; // the tranche sheet: the info panel (rows panel…panelN), the column heads, the first tranche
   var LINES = { existing: ['bop', 'rep', 'eop', 'int'], simple: ['bop', 'pl', 'rep', 'eop', 'int'], annual: ['bop', 'pl', 'rep', 'eop', 'int'], compound: ['bop', 'pl', 'cap', 'rep', 'eop', 'int'] };
   // bar colours of the app's ladder (tokens --c-f1 … --c-f4, --c-ex), the maturity green, and the marks of the sheet
   // (T* is amber so that it shows on the navy column heads; "after the plan" is not yellow, which marks an input)
@@ -187,13 +187,14 @@
         cell.style = s;
       }
     }
-    // the tranche sheet. L: head (column heads), row0…rowN (the tranches; rowN < row0 when there are none), sum (grand total),
-    // legend (its bar; the sample of an input is in the row below), last (the closing note), inputs ([row, column] in the panel)
+    // the tranche sheet. L: panel…panelN (the info panel), head (column heads), row0…rowN (the tranches; rowN < row0 when there
+    // are none), sum (grand total), legend (its bar; the sample of an input is in the row below), last (the closing note),
+    // inputs ([row, column] in the panel)
     function lookTranches(ws, L) {
       var n = 14, r;
       dress(ws, 1, 1, n, PT.band); ws.getRow(1).height = 25.5; ws.getRow(2).height = 16.5;
-      for (r = 3; r <= 6; r++) dress(ws, r, 1, n, PT.panel);
-      dress(ws, 3, 1, n, PT.panelTop); dress(ws, 6, 1, n, PT.panelEnd);
+      for (r = L.panel; r <= L.panelN; r++) dress(ws, r, 1, n, PT.panel);
+      dress(ws, L.panel, 1, n, PT.panelTop); dress(ws, L.panelN, 1, n, PT.panelEnd);
       L.inputs.forEach(function (a) { dress(ws, a[0], a[1], a[1], PT.inputBox); });
       dress(ws, L.head, 1, n, PT.head); ws.getRow(L.head).height = 27;
       for (r = L.row0; r <= L.rowN; r++) {
@@ -241,6 +242,7 @@
     put(w1, 4, 1, t('lx_horizon'), ST.labP); put(w1, 4, 4, H, ST.intInL); put(w1, 4, 5, t('lx_months'), ST.lab);
     put(w1, 5, 1, t('lx_last'), ST.labP); fx(w1, 5, 4, 'EDATE(D3,D4-1)', lastMonth, ST.monL);
     put(w1, 6, 1, t('lx_amounts'), ST.labP); put(w1, 6, 4, t('lx_amountsV'), ST.info);
+    put(w1, 7, 1, t('lx_scope'), ST.labP); put(w1, 7, 4, t('lx_scopeV', { k: t('k_interest') }), ST.info); // why the interest here is lower than the app's tile
     put(w1, 3, 8, t('lx_ts'), ST.labP);
     if (Tst < 0) put(w1, 3, 10, t('lx_tsNone'), ST.labB);
     else { put(w1, 3, 10, monthDate(P, Math.min(Tst, H - 1)), ST.monInL); panelIn.push([3, 10]); put(w1, 3, 11, Tst >= H - 1 ? t('lx_tsAll') : t('lx_tsN', { n: Tst + 1 }), ST.stat); }
@@ -300,7 +302,7 @@
     txt.forEach(function (k, i) { put(w1, rt + i, 3, t(k), ST.leg); });
     put(w1, rt + txt.length + 1, 1, t('lx_advice'), ST.disc);
     page(w1, 1, TR.head + ':' + TR.head);
-    lookTranches(w1, { head: TR.head, row0: TR.row0, rowN: nT ? rLast : TR.row0 - 1, sum: rSum, legend: L0, last: rt + txt.length + 1, inputs: panelIn });
+    lookTranches(w1, { panel: TR.panel, panelN: TR.panelN, head: TR.head, row0: TR.row0, rowN: nT ? rLast : TR.row0 - 1, sum: rSum, legend: L0, last: rt + txt.length + 1, inputs: panelIn });
 
     // ===== 2 and 3: the schedules, one month or one calendar year per column =====
     function scheduleSheet(name, yearly) {

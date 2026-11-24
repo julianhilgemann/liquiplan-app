@@ -22,7 +22,8 @@
 //   6. the in-app self-test passes every line;
 //   7. no sideways overflow at 360, 768 and 1440 px in the analysis, the wizard, the step-by-step view and the handbook,
 //      and no gap between the handbook's pinned title and search while a chapter scrolls;
-//   8. README links into the code such as [`name()`](src/app/x.js#L42) point at a line that contains the name.
+//   8. README links into the code such as [`name()`](src/app/x.js#L42) point at a line that contains the name;
+//   9. CHANGELOG.md and the README's "What's new" are what scripts/changelog.mjs writes from the app's changelog.
 //
 // Needs Playwright with its browsers, installed globally (npm i -g playwright; npx playwright install). The page loads its
 // libraries (ECharts, HiGHS, MathJax, ExcelJS) from jsDelivr, so the check needs the network.
@@ -83,6 +84,13 @@ if (flag('update-baseline')) {
 // ---------- 8. README links ----------
 section('README links into the code' + (flag('strict-links') ? '' : ' (warnings only; --strict-links makes them fail)'));
 readmeLinks();
+
+// ---------- 9. the changelog on GitHub ----------
+section('Changelog in CHANGELOG.md and the README');
+{
+  const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'changelog.mjs'), '--check'], { cwd: ROOT, encoding: 'utf8' });
+  check(r.status === 0, (r.stdout.trim() || 'CHANGELOG.md and README.md match src/app/i18n/changelog.js'), r.stderr.trim());
+}
 finish();
 
 // ==================================================================================================================

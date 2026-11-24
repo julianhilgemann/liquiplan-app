@@ -3,6 +3,8 @@
 
    THE RULE: every user-visible change adds an item here, in German and in English, in the same commit as the change.
    Changes nobody using the app can notice (refactoring, tests, the build) get no item.
+   After an edit run `node scripts/changelog.mjs`: it writes this list, in English, to CHANGELOG.md and to the README
+   (the version line and "What's new"), and scripts/check.mjs fails while they differ.
 
    Version numbers: MAJOR.MINOR, with a third number for a release that only fixes things (1.3.1).
    - MINOR goes up with every release that adds or changes something users see.

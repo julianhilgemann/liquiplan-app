@@ -9,6 +9,7 @@ README.md is the developer documentation. Read its **Code guide** before adding 
 ```sh
 node build.mjs           # src/ → dist/index.html; open that file from file://
 node build.mjs --watch   # rebuild on every change in src/
+node scripts/changelog.mjs   # the app's changelog → CHANGELOG.md and the README's "What's new"
 node scripts/check.mjs   # build, then drive the app in a headless browser (see "Checking a change")
 ```
 
@@ -28,7 +29,7 @@ node scripts/check.mjs   # build, then drive the app in a headless browser (see 
 
 A user-visible change is complete when all three agree with the app:
 
-1. **Changelog**: an item in `src/app/i18n/changelog.js`, German and English, under the release being built. When the top entry is already live, start a new one; the version scheme is in that file's header. The app shows the top entry's version.
+1. **Changelog**: an item in `src/app/i18n/changelog.js`, German and English, under the release being built. When the top entry is already live, start a new one; the version scheme is in that file's header. The app shows the top entry's version. Then run `node scripts/changelog.mjs`: it writes the list to `CHANGELOG.md` and to the README's version line and *What's new* section, where GitHub shows it. Those lines are never edited by hand, and the check fails while they differ from `changelog.js`.
 2. **Handbook**: the section that describes the changed behaviour, in `src/app/i18n/handbook-de.js` and `handbook-en.js` (theory chapters: `src/app/handbook/theory-de.js` and `theory-en.js`). UI labels are written as `[[key]]` so they cannot drift from the app; the markup is explained at the top of `src/app/handbook.js`.
 3. **README**: the feature table, *Using the app*, the code guide and the function reference, wherever the change shows. Its links into the code carry line numbers; `scripts/check.mjs` reports the ones that no longer point at their symbol.
 

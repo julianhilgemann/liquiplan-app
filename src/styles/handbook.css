@@ -1,8 +1,11 @@
 /* ---------- Handbuch: the in-app handbook, a page mode like the wizard (phone: the chapter list and a chapter take turns) ---------- */
 /* --hb-top: what is pinned above the handbook (the toolbar where it is sticky); --hb-head: the title block where it is
-   pinned too (its height is measured, handbook.js sets --hb-head-h); --hb-bar: the search bar itself */
+   pinned too (its height is measured, handbook.js sets --hb-head-h); --hb-bar: the search bar itself.
+   Pinned blocks overlap by up to a pixel and never just touch: a height that is a fraction of a pixel would otherwise
+   leave a slit and the scrolling chapter shows through. So --hb-top is one pixel less than the toolbar (its 1px border
+   is thinner than a pixel at a fractional zoom) and --hb-head-h is rounded down. */
 .handbook { --hb-top: 0px; --hb-head: 0px; --hb-bar: 60px; max-width: 1120px; margin: 0 auto; padding: 24px 20px 40px; display: grid; gap: 4px; }
-@media (min-width: 1360px) { .handbook { --hb-top: var(--top-h); } }
+@media (min-width: 1360px) { .handbook { --hb-top: calc(var(--top-h) - 1px); } }
 @media (pointer: coarse) { .handbook { --hb-bar: 64px; } }
 .hb .shell, .hb .wizard, .hb .replay { display: none !important; }
 /* in the handbook the toolbar keeps the way back, language and appearance; in the wizard the handbook stays reachable */

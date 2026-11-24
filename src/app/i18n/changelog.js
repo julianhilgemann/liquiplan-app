@@ -14,6 +14,9 @@
   var LP = root.LP;
 
   LP.changelog = [
+    { version: '1.4.2', date: '2026-11-24', title: { de: 'Handbuch: Spalt über der Suche geschlossen', en: 'Handbook: gap above the search closed' }, items: [
+      { kind: 'fixed', de: 'Handbuch: Zwischen dem Titel und der Suche blieb ein haarfeiner Spalt, durch den beim Scrollen der Text des Kapitels zu sehen war. Titel und Suche schließen jetzt lückenlos aneinander an.', en: 'Handbook: a hairline gap remained between the title and the search, and the chapter’s text showed through it while scrolling. The title and the search now meet without a gap.' }
+    ] },
     { version: '1.4.1', date: '2026-11-22', title: { de: 'Zinsen: was die Zahl enthält', en: 'Interest: what the figure includes' }, items: [
       { kind: 'improved', de: 'Kachel „Zinsen bis T*“: Unter der Summe steht jetzt, wie viel davon aus Festgeld stammt. Der Rest sind Zinsen auf Tagesgeld.', en: 'Tile “Interest until T*”: below the total it now says how much of it comes from deposits. The rest is interest on overnight money.' },
       { kind: 'improved', de: 'Leiter als Tabelle: Eine Zeile im Kopf sagt, dass die Mappe nur Festgelder enthält und die Zinsen auf Tagesgeld darin fehlen. Die Liste der Tranchen beginnt deshalb eine Zeile tiefer.', en: 'Ladder spreadsheet: a line at the top says that the workbook holds fixed-term deposits only and leaves out the interest on overnight money. The list of tranches therefore starts one row lower.' }

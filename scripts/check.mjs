@@ -16,7 +16,8 @@
 //   4. every example (LP.presetIds) is optimised; its plan must pass the app's own verification, and its T* and placements
 //      must equal scripts/baseline.json (skipped with a note when HiGHS did not load: the fallback solver may differ);
 //   5. the in-app self-test passes every line;
-//   6. no sideways overflow at 360, 768 and 1440 px in the analysis, the wizard, the step-by-step view and the handbook;
+//   6. no sideways overflow at 360, 768 and 1440 px in the analysis, the wizard, the step-by-step view and the handbook,
+//      and no gap between the handbook's pinned title and search while a chapter scrolls;
 //   7. README links into the code such as [`name()`](src/app/x.js#L42) point at a line that contains the name.
 //
 // Needs Playwright with its browsers, installed globally (npm i -g playwright; npx playwright install). The page loads its
@@ -165,6 +166,20 @@ async function inBrowser(name) {
     await page.fill('#hbQ', ''); await page.evaluate(() => document.getElementById('langDe').click()); await settle(100);
     check(!missed.length, tag(`${SEARCHES.length} fixed searches`), missed.join('; '));
     await widths('the handbook (a theory chapter with its chart)', async () => { await page.evaluate(() => { location.hash = '#handbuch/th-lp'; }); await typeset(); });
+    // the pinned blocks must meet or overlap: a gap of a fraction of a pixel lets the scrolling chapter show through
+    const slits = [];
+    for (const w of [768, 1440]) {
+      await page.setViewportSize({ width: w, height: 900 }); await settle(250);
+      await page.evaluate(() => { location.hash = '#handbuch/th-lp'; }); await typeset(); await page.evaluate(() => window.scrollTo(0, 700)); await settle(150);
+      const g = await page.evaluate(() => {
+        const r = (s) => document.querySelector(s).getBoundingClientRect(), top = r('.top'), head = r('.hb-head'), bar = r('.hb-bar');
+        return { bar: bar.top - head.bottom, head: getComputedStyle(document.querySelector('.top')).position === 'sticky' ? head.top - top.bottom : 0 };
+      });
+      if (g.bar > 0.01) slits.push(`${w}px: ${g.bar.toFixed(2)}px between the title and the search`);
+      if (g.head > 0.01) slits.push(`${w}px: ${g.head.toFixed(2)}px between the toolbar and the title`);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0)); await page.setViewportSize({ width: 1280, height: 900 }); await settle(200);
+    check(!slits.length, tag('no gap between the pinned blocks of the handbook while a chapter scrolls'), slits.join(', '));
     await page.click('#btnHandbook'); await settle(300); // "Analyse": back to the analysis
 
     // ----- the examples: optimise, verify, compare with the baseline -----

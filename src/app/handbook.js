@@ -430,8 +430,10 @@
   function barBottom() { var b = document.querySelector('.hb-bar'); return b ? b.getBoundingClientRect().bottom : 0; }
   /* The title block is pinned above the search (handbook.css). The search, the chapter menu and the place a link scrolls
      to sit below it, so they need its height: --hb-head-h, measured whenever the block changes size (the handbook opens,
-     the language changes, the lead wraps in a narrower window). */
-  function headHeight() { var h = document.querySelector('.hb-head'); if (h && h.offsetHeight) $('handbook').style.setProperty('--hb-head-h', h.offsetHeight + 'px'); }
+     the language changes, the lead wraps in a narrower window). The height is a fraction of a pixel (the lead's line is
+     20.25px) and is rounded down: the search then overlaps the block by that fraction. Rounded up (offsetHeight does that
+     from .5 on) it left a slit between the two, and the chapter showed through while it scrolled. */
+  function headHeight() { var h = document.querySelector('.hb-head'), px = h ? Math.floor(h.getBoundingClientRect().height) : 0; if (px) $('handbook').style.setProperty('--hb-head-h', px + 'px'); }
   try { new ResizeObserver(headHeight).observe(document.querySelector('.hb-head')); } catch (e) { window.addEventListener('resize', headHeight); }
 
   // ---------- wiring ----------

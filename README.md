@@ -605,7 +605,7 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`laid`](src/app/handbook.js#L362) | Repeats that scroll once a theory chapter's layout is final, unless the reader has scrolled, typed or clicked since |
 | [`enter`](src/app/handbook.js#L394) / [`close`](src/app/handbook.js#L402) | Switch the page mode on (closing the step-by-step view if it is open) and off; `close` returns to the scroll position the page had |
 | [`render`](src/app/handbook.js#L416) | Draws everything again after a change of language or theme, keeping the section being read in place; also writes the version into the page footer |
-| [`headHeight`](src/app/handbook.js#L434) | Measures the pinned title block and stores its height as `--hb-head-h`, whenever the block changes size; the search, the chapter menu and the scroll target of a link sit below it |
+| [`headHeight`](src/app/handbook.js#L436) | Measures the pinned title block and stores its height, rounded down to whole pixels, as `--hb-head-h`, whenever the block changes size; the search, the chapter menu and the scroll target of a link sit below it. Rounded down, the search overlaps the title by the fraction instead of leaving a slit |
 
 ### `app/handbook/` – the theory chapters (`LP.hb.extra`, `LP.hb.lpChart`)
 

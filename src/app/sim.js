@@ -124,6 +124,7 @@
       if (p.amount > pr.max + 1e-6) errors.push({ code: 'max', p: p });
       if (!(pr.rate[p.t] > 0)) errors.push({ code: 'rate', p: p });
     });
+    if (P.trancheCap && P.trancheCap.on && (result.placements || []).length > P.trancheCap.left) errors.push({ code: 'count', n: (result.placements || []).length, max: P.trancheCap.left });
     var sim = run(P, withPins(P, result.placements));
     if (sim.Tstar < result.T) errors.push({ code: 'horizon', claimed: result.T, simulated: sim.Tstar, month: sim.firstShort });
     if (P.bankCap.on) {

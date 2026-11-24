@@ -8,7 +8,10 @@
   var hasData = V.hasData, mLabel = V.mLabel, chart = V.chart, axisStyle = V.axisStyle, tipStyle = V.tipStyle, compact = V.compact, toggleLegend = V.toggleLegend; // shared.js
   var balances = V.balances, balanceItems = V.balanceItems, balanceOption = V.balanceOption; // timeline.js
 
-  var GROUP = { start: 'start', probe: 'find', wealthLP: 'build', tieLP: 'build', milp: 'build', widen: 'build', ask: 'build', back: 'build', tie: 'build', slack: 'check', verify: 'check' };
+  /* With a limit on new deposits the trace has two more kinds: 'limit' (the plan found holds more deposits than allowed;
+     it carries that plan) and 'cap' (is there a plan up to a month within the limit?). Steps with `limit` belong to the
+     search within the limit, steps with `more` (the number of the round) to the search without a time limit. */
+  var GROUP = { start: 'start', probe: 'find', wealthLP: 'build', tieLP: 'build', milp: 'build', widen: 'build', ask: 'build', back: 'build', tie: 'build', limit: 'build', cap: 'build', slack: 'check', verify: 'check' };
   var NO_PLAN = { probe: 1, back: 1, slack: 1 }; // kinds that never carry a plan of their own
   var TARGET = { wealthLP: 1, tieLP: 1, milp: 1, widen: 1, back: 1, tie: 1 }; // kinds whose month is the month being planned for
   // on: the page is shown; i: current step; view: the result the steps were built from; menu: phone list view;
@@ -39,7 +42,8 @@
     list.push({ kind: 'verify', T: v.sim.Tstar, ok: true, plan: v.res.placements || [], sim: v.sim, solves: [] });
     var known = {}, last = 0, target = null, lo = sim0.Tstar, hi = sim0.Tstar;
     list.forEach(function (s, i) {
-      s.i = i; s.group = GROUP[s.kind]; s.T = num(s.T); s.from = num(s.from);
+      s.i = i; s.group = s.more ? 'more' : GROUP[s.kind]; s.T = num(s.T); s.from = num(s.from);
+      if (s.kind === 'limit') Object.keys(known).forEach(function (k) { if (known[k] === 'yes' && +k > sim0.Tstar) delete known[k]; }); // from here on a month counts as reachable only within the limit
       s.own = !NO_PLAN[s.kind] && Array.isArray(s.plan);
       s.prev = last; // the latest step before this one with a plan of its own (the first step always has one)
       if (s.own) last = i;
@@ -51,9 +55,11 @@
         if (s.kind === 'probe' && s.ok != null) known[s.T] = s.ok ? 'yes' : 'no';
         if ((s.kind === 'milp' || s.kind === 'widen' || s.kind === 'ask') && s.ok === true) known[s.T] = 'yes';
         if (s.kind === 'ask' && s.ok === false) known[s.T] = 'no';
+        if (s.kind === 'cap' && s.ok != null) known[s.T] = s.ok ? 'yes' : 'no';
+        if (s.kind === 'milp' && s.climb && s.ok === false && s.status === 'infeasible') known[s.T] = 'no';
         if (s.kind === 'verify' && s.T >= 0) known[s.T] = 'yes';
       }
-      if (s.kind === 'back' && s.from != null) known[s.from] = 'no';
+      if (s.kind === 'back' && s.from != null && !s.limit) known[s.from] = 'no';
       s.known = Object.assign({}, known);
       [s.T, s.from].forEach(function (m) { if (m != null) { lo = Math.min(lo, m); hi = Math.max(hi, m); } });
     });
@@ -102,6 +108,7 @@
     if (s.ok === true) return ['ok', t('rp_yes')];
     if (s.ok === false) return s.kind === 'tie' ? ['dash', t('rp_same')] : ['no', s.kind === 'milp' && s.status === 'unknown' ? t('rp_notFound') : t('rp_no')];
     if (s.kind === 'ask') return ['dash', t('rp_noAnswer')];
+    if (s.kind === 'cap') return ['dash', t('rp_notFound')];
     return null;
   }
 
@@ -109,8 +116,20 @@
   function qa(s) {
     var st = S.steps, P = S.view.P, H = P.H, T0 = st[0].T, m = esc(mon(s.T, true)), a = [], q = '', pill = null;
     var YES = { cls: 'ok', text: t('rp_yes') }, NO = { cls: 'bad', text: t('rp_no') }, eur = function (x, ref) { return esc(ref == null ? A.eur(x) : money(x, ref)); };
-    var div = A.term('lprel', t('rp_w_div'));
+    var div = A.term('lprel', t('rp_w_div')), cap = P.trancheCap || {}, capN = String(cap.left);
     switch (s.kind) {
+      case 'limit':
+        q = t('rp_q_limit', { n: capN }); pill = NO;
+        a.push(h('rp_a_limit', { k: esc(A.n0(s.n)), n: capN }));
+        if (P.pins.length) a.push(h('rp_a_limitPins', { p: String(P.pins.length), N: String(cap.max), n: capN }));
+        break;
+      case 'cap':
+        q = t('rp_q_cap', { m: mon(s.T, true), n: capN });
+        if (s.ok === true) { pill = YES; a.push(h('rp_a_capYes', { k: esc(A.n0(termOf(s.plan).n)), m: m })); }
+        else if (s.ok === false) { pill = NO; a.push(h('rp_a_capNo', { m: m, n: capN })); }
+        else { pill = { cls: 'warn', text: t('rp_notFound') }; a.push(h('rp_a_capUnknown')); }
+        if (st[s.i + 1] && st[s.i + 1].kind === 'cap') a.push(h('rp_a_next', { m: esc(mon(st[s.i + 1].T, true)) }));
+        break;
       case 'start':
         q = t('rp_q_start');
         if (s.T < 0) a.push(h('rp_a_startNone', { m: esc(mon(0, true)) }));
@@ -133,7 +152,7 @@
         a.push(s.own ? h('rp_a_tieLP') : h('rp_a_tieLPno'));
         break;
       case 'milp':
-        q = t('rp_q_milp', { m: mon(s.T, true) });
+        q = s.more ? t(s.climb ? 'rp_q_moreMonth' : 'rp_q_more', { m: mon(s.T, true), r: String(s.more) }) : t(s.limit ? 'rp_q_milpLimit' : 'rp_q_milp', { m: mon(s.T, true), n: capN });
         if (s.ok) {
           pill = YES;
           var bd = bound(s), w = num(s.obj), g = bd != null && w != null ? Math.max(0, bd - w) : null, tiny = cents(bd) ? 0.005 : 0.5;
@@ -149,9 +168,10 @@
           if (sd != null) a.push(h(tl ? 'rp_a_seeded' : 'rp_a_seededKept', { n: String(sd + 1) }));
           if (s.status === 'optimal' && tl) a.push(h('rp_a_optimal'));
           else if (s.status === 'feasible' && g != null && g >= tiny) a.push(h(tl ? 'rp_a_feasible' : 'rp_a_feasibleKept', { g: eur(g, bd) }));
+          if (s.limit && g != null && g >= tiny) a.push(h('rp_a_milpLimit'));
         } else {
           pill = s.status === 'unknown' ? { cls: 'warn', text: t('rp_notFound') } : NO;
-          a.push(s.status === 'infeasible' ? h('rp_a_milpNo', { m: m, denom: A.term('denom', t('rp_w_denom')) }) : h('rp_a_milpUnknown', { m: m }));
+          a.push(s.status === 'infeasible' ? (s.limit ? h('rp_a_capNo', { m: m, n: capN }) : h('rp_a_milpNo', { m: m, denom: A.term('denom', t('rp_w_denom')) })) : h('rp_a_milpUnknown', { m: m }));
         }
         break;
       case 'widen':
@@ -166,9 +186,9 @@
         else { pill = { cls: 'warn', text: t('rp_noAnswer') }; a.push(h('rp_a_askNull')); }
         break;
       case 'back':
-        q = t('rp_q_back', { m: mon(s.T, true), m2: mon(s.from, true) });
+        q = t(s.limit ? 'rp_q_backLimit' : 'rp_q_back', { m: mon(s.T, true), m2: mon(s.from, true) });
         var pv = st[s.i - 1];
-        a.push(h(pv && (pv.kind === 'milp' || pv.kind === 'widen' || pv.kind === 'ask') ? 'rp_a_backWhy' : 'rp_a_backWhy0', { m2: esc(mon(s.from, true)) }));
+        a.push(s.limit ? h('rp_a_backLimit', { n: capN }) : h(pv && (pv.kind === 'milp' || pv.kind === 'widen' || pv.kind === 'ask') ? 'rp_a_backWhy' : 'rp_a_backWhy0', { m2: esc(mon(s.from, true)) }));
         a.push(s.T > T0 ? h('rp_a_back') : s.T >= 0 ? h('rp_a_backStart', { m: m }) : h('rp_a_backNone'));
         break;
       case 'tie':
@@ -263,7 +283,7 @@
     if (mode === 'search') drawSearch(s); else drawPlan(s);
     renderFigs(s);
   }
-  var TITLE = { start: 'rp_v_start', wealthLP: 'rp_v_lp', tieLP: 'rp_v_lp', milp: 'rp_v_plan', tie: 'rp_v_plan', widen: 'rp_v_found', ask: 'rp_v_found', verify: 'rp_v_final' };
+  var TITLE = { start: 'rp_v_start', wealthLP: 'rp_v_lp', tieLP: 'rp_v_lp', milp: 'rp_v_plan', tie: 'rp_v_plan', widen: 'rp_v_found', ask: 'rp_v_found', limit: 'rp_v_free', cap: 'rp_v_found', verify: 'rp_v_final' };
   function drawPlan(s) {
     var P = S.view.P, H = P.H, st = S.steps, T0 = st[0].T, src = s, faded = false, cap = '';
     if (s.kind === 'probe') { src = st[0]; cap = t('rp_v_probe'); }
@@ -359,6 +379,15 @@
       case 'ask':
         if (s.own) f.push([L('rp_f_tr'), A.n0(termOf(s.plan).n)]);
         break;
+      case 'limit':
+        f.push([L('rp_f_tr'), A.n0(num(s.n) != null ? s.n : termOf(s.plan).n)]); f.push([A.term('maxdep', t('rp_f_allowed')), A.n0((P.trancheCap || {}).left || 0)]);
+        break;
+      case 'cap':
+        f.push([L('rp_f_asked'), mon(s.T)]);
+        if (s.own) f.push([L('rp_f_tr'), A.n0(termOf(s.plan).n)]);
+        f.push([A.term('maxdep', t('rp_f_allowed')), A.n0((P.trancheCap || {}).left || 0)]);
+        if (num(s.nodes) != null) f.push([L('rp_f_nodes'), A.n0(s.nodes)]);
+        break;
       case 'back':
         f.push([L('rp_f_given'), mon(s.from)]); f.push([L('rp_f_target'), s.T > T0 ? mon(s.T) : mon(s.T) + ' · ' + t('rp_g_start')]);
         break;
@@ -391,7 +420,7 @@
     return String(st);
   }
   function mixText(mix, pre) { // "189 monthly balances, 16 tax years" from { b: 189, x: 16 }; zero counts are left out
-    var out = [], other = 0, order = pre === 'r' ? 'bxmkw' : 'unyqz';
+    var out = [], other = 0, order = pre === 'r' ? 'bxmkwc' : 'unyqz';
     Object.keys(mix || {}).forEach(function (k) { if (order.indexOf(k) < 0) other += +mix[k] || 0; });
     order.split('').forEach(function (k) { if (+(mix || {})[k] > 0) out.push(plural('rp_' + pre + '_' + k, +mix[k])); });
     if (other > 0) out.push(plural('rp_' + pre + '_other', other));
@@ -415,9 +444,10 @@
       if (mr) row(t('rp_h_rows'), mr);
       if (mc) row(t('rp_h_cols'), mc);
       if (c.kind !== 'ask') row(t('rp_h_pivots'), num(c.pivots) != null ? A.n0(c.pivots) : t(/highs/i.test(c.solver || '') ? 'rp_h_noPivots' : 'rp_h_noPivots2'));
+      if (num(c.card) != null) row(t('rp_h_card'), t('rp_h_cardV', { n: A.n0(c.card) }));
       if (num(c.nodes) != null) row(t('rp_h_nodes'), A.n0(c.nodes));
       row(t('rp_h_status'), statusWord(s.kind, c.kind, c.status));
-      if (g.n > 1) row(t('rp_h_calls'), t('rp_h_callsSub', { n: A.n0(g.n) }));
+      if (g.n > 1) row(t('rp_h_calls'), t(s.limit && s.kind === 'milp' ? 'rp_h_callsLimit' : 'rp_h_callsSub', { n: A.n0(g.n) }));
       box.appendChild(dl);
     });
     box.appendChild(el('p', { class: 'rp-expl', text: t('rp_h_explain') }));

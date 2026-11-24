@@ -102,7 +102,7 @@
     return { status: r.status, x: r.x, obj: r.obj, pivots: pv };
   };
   EmbeddedBackend.prototype.milp = function (M, o) {
-    var p0 = LP.simplex.pivots(), r = LP.simplex.solveMILP(M, { timeLimit: o.timeLimit || 5, relGap: o.relGap, absGap: o.absGap, start: o.start });
+    var p0 = LP.simplex.pivots(), r = LP.simplex.solveMILP(M, { timeLimit: o.timeLimit || 5, relGap: o.relGap, absGap: o.absGap, start: o.start, stopAtFirst: o.first, rules: o.rules, greedy: o.greedy, onBetter: o.onBetter, onTick: o.onTick });
     if (!r.x) return { status: r.status, nodes: r.nodes, trail: r.trail, pivots: LP.simplex.pivots() - p0 };
     var p = polish(M, r.x);
     if (!p.ok) return { status: 'unknown', nodes: r.nodes, trail: r.trail, pivots: LP.simplex.pivots() - p0 };

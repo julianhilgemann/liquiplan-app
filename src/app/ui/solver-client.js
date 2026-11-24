@@ -29,6 +29,7 @@
   S.kill = function () { clearTimeout(S.wd); if (S.worker) { try { S.worker.terminate(); } catch (e) { /* ignore */ } S.worker = null; } S.gen++; S.ready = false; };
   S.arm = function (name, ms) {
     clearTimeout(S.wd);
+    ms = Math.min(ms, 2e9); // setTimeout takes at most 2^31 - 1 ms; the long searches without a time limit ask for more
     S.wd = setTimeout(function () { // the worker is stuck: drop the backend that hung and restart
       if (name === 'HiGHS') S.skip.highs = 'timeout'; else if (name === 'javascript-lp-solver') S.skip.jslp = 'timeout';
       else if (name === 'init') { if (!S.skip.highs) S.skip.highs = 'timeout'; else S.skip.jslp = 'timeout'; }
@@ -42,7 +43,12 @@
     if (m.type === 'ready') { S.ready = true; clearTimeout(S.wd); S.info.solver = m.solver; S.info.chain = m.chain; if (A.onSolverInfo) A.onSolverInfo(); }
     else if (m.type === 'beat') S.arm(m.name, m.budget);
     else if (m.type === 'demoted') { S.info.demoted.push({ name: m.name, why: m.why }); if (m.name === 'javascript-lp-solver') { S.skip.jslp = m.why; rememberSkip(); } }
-    else if (m.type === 'progress') { var j = S.jobs[m.id]; if (j && j.onProgress) j.onProgress(m); }
+    else if (m.type === 'progress') {
+      var j = S.jobs[m.id]; if (!j) return;
+      if (m.note === 'interim') j.interim = m.result; // search without a time limit: the plan of the usual budgets, kept in case the search is ended by hand
+      else if (m.note === 'better') j.best = { T: m.T, plan: m.plan, wealth: m.wealth }; // and every better plan since, in the order found
+      if (j.onProgress) j.onProgress(m);
+    }
     else if (m.type === 'result' || m.type === 'error') {
       var job = S.jobs[m.id]; if (!job) return;
       delete S.jobs[m.id];
@@ -55,7 +61,8 @@
     setTimeout(function () {
       if (!S.jobs[job.id]) return;
       var P = C.prepare(job.state, job.over);
-      LP.solve.optimize(P, job.cfg, new LP.solve.Engine(null), job.onProgress || function () { }).then(function (r) { delete S.jobs[job.id]; job.resolve(r); }, function (e) { delete S.jobs[job.id]; job.reject(e); });
+      // on the main thread a search without a time limit would freeze the page for good: the usual budgets apply
+      LP.solve.optimize(P, Object.assign({}, job.cfg, { unlimited: false }), new LP.solve.Engine(null), job.onProgress || function () { }).then(function (r) { delete S.jobs[job.id]; job.resolve(r); }, function (e) { delete S.jobs[job.id]; job.reject(e); });
     }, 20);
   };
   S.solve = function (state, over, cfg, onProgress) {
@@ -64,6 +71,28 @@
       S.jobs[job.id] = job;
       if (S.mainOnly) S.runMain(job); else { if (!S.worker) S.start(); S.send(job); }
     });
+  };
+  /* Search without a time limit: end it now and keep the best plan it has reported. The result is the interim one with
+     that plan in it; `interim` goes along untouched, in case the plan does not pass the verification. Returns false when
+     no run has an interim result yet. */
+  S.finishEarly = function () {
+    var any = false;
+    Object.keys(S.jobs).forEach(function (id) {
+      var j = S.jobs[id], r = j.interim, b = j.best; if (!r) return;
+      delete S.jobs[id]; any = true;
+      var out = Object.assign({}, r, { interim: r, notes: (r.notes || []).slice(), stages: Object.assign({}, r.stages, { unlimited: 'stopped' }) });
+      if (b && b.T >= r.T) {
+        out.placements = b.plan; out.wealth = b.wealth;
+        if (b.T > r.T) { // a later month than the interim plan reached: its shortfall figures and "not found" notes no longer apply
+          out.T = b.T; out.slack = null; out.slackLP = null;
+          out.notes = out.notes.filter(function (n) { var m = /_at_(\d+)$/.exec(n); return !m || +m[1] > b.T; });
+          if (b.T >= r.TLP) out.stages.conservative = false;
+        }
+      }
+      j.resolve(out);
+    });
+    if (any && !S.mainOnly) { S.kill(); S.start(); Object.keys(S.jobs).forEach(function (id) { S.send(S.jobs[id]); }); }
+    return any;
   };
   S.cancelAll = function () { // a running solve cannot be interrupted: restart the worker
     var had = Object.keys(S.jobs).length > 0;

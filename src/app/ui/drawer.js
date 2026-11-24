@@ -134,6 +134,11 @@
       field({ id: 'in-cap', label: t('f_cap'), value: s.bankCap.cap, min: 0, eur: true, set: function (v) { touch(function (st) { st.bankCap.cap = v; }); } })
     ]));
     body.appendChild(group('solver', t('grp_solver'), isOpen('solver', false), [
+      check(A.term('maxdep', t('f_maxOn')), s.trancheCap.on, function (v) { touch(function (st) { st.trancheCap.on = v; }); }, 'in-maxon'),
+      field({ id: 'in-max', label: t('f_maxN'), value: s.trancheCap.max, min: 1, max: 999, empty: 6, set: function (v) { touch(function (st) { st.trancheCap.max = Math.max(1, Math.round(v)); }, true); } }),
+      el('p', { class: 'small muted', text: t('f_maxHint') }),
+      check(A.term('nolimit', t('f_unlimited')), s.unlimited, function (v) { touch(function (st) { st.unlimited = v; }); }, 'in-unlimited'),
+      el('p', { class: 'small muted', text: t('f_unlimitedHint') }),
       field({ id: 'in-naive', label: A.term('base', t('f_naive')), value: s.naiveReserve, min: 0, max: 24, step: 1, set: function (v) { touch(function (st) { st.naiveReserve = v; }); } }),
       el('div', { class: 'small muted', id: 'chainInfo' })
     ]));

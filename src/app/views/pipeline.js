@@ -13,13 +13,19 @@
   A.schedule = function (delay) { clearTimeout(debounce); debounce = setTimeout(A.run, delay == null ? 700 : delay); };
   function summarize(P, sim, base) { return { T: sim.Tstar, Ttg: base.tg.Tstar, Tnv: base.naive.Tstar, interest: sim.interestToT, H: P.H }; }
   function baselines(P) { return { tg: SIM.allTagesgeld(P), naive: SIM.naive(P) }; }
-  A.solveState = async function (state, over, timeScale, onProgress) { // optimise + verify one state; used by the main run, scenarios and the self-test
+  /* Optimise + verify one state; used by the main run, the scenarios and the self-test. `unlimited` (main run only):
+     search on without a time limit once the plan of the usual budgets stands. */
+  A.solveState = async function (state, over, timeScale, onProgress, unlimited) {
     var P = C.prepare(state, over), base = baselines(P), hint = SIM.run(P, SIM.withPins(P, [])).Tstar;
-    var res = await A.solver.solve(state, over, { integer: true, loHint: hint, timeScale: timeScale || 1 }, onProgress);
+    var res = await A.solver.solve(state, over, { integer: true, loHint: hint, timeScale: timeScale || 1, unlimited: !!unlimited }, onProgress);
     var ver = SIM.verify(P, res);
+    if (res.interim) { // a search ended by hand: its best plan must pass like any other; if it does not, the plan of the usual budgets stands
+      var first = res.interim; delete res.interim;
+      if (!ver.ok) { res = Object.assign({}, first, { stages: Object.assign({}, first.stages, { unlimited: 'stopped' }) }); ver = SIM.verify(P, res); }
+    }
     return { P: P, res: res, ver: ver, sim: ver.sim, base: base };
   };
-  var STAGE_PCT = { search: 30, wealthLP: 45, tieLP: 52, milp: 60, milp2: 72, tie: 84, slack: 92 };
+  var STAGE_PCT = { search: 30, wealthLP: 45, tieLP: 52, milp: 60, milp2: 72, tie: 80, cap: 86, slack: 92, more: 95 };
   function setBusy(on, text, pct) {
     A.busy = on;
     var b = $('solverBadge'); b.className = 'badge ' + (on ? 'busy' : (A.view ? 'ok' : (A.lastError ? 'err' : '')));
@@ -48,6 +54,11 @@
   };
   function fresh() { $('main').classList.remove('stale'); } // results on screen match the inputs again
 
+  A.keepRun = function () { // search without a time limit: end it and go on with the best plan found so far
+    if (!RS.open || RS.phase !== 'main' || !RS.keep) return;
+    RS.keep = false; runStep('verify');
+    if (!A.solver.finishEarly()) RS.keep = true; // nothing to keep yet: the run goes on
+  };
   A.abortRun = function () { // stop the calculation; whatever is on screen stays, flagged when it no longer matches the inputs
     if (!RS.open) return;
     var inScen = RS.phase === 'scen';
@@ -74,10 +85,15 @@
     A.lastError = null; A.stale = false; $('wizStale').classList.add('hide'); $('staleNote').classList.add('hide'); $('btnOptimize').classList.remove('due');
     setBusy(true, A.solver.ready ? t('s_solving') : t('s_loading'), 6);
     var others = C.scenariosFor(st).filter(function (sc) { return sc !== st.rateScenario; });
-    runOpen(my, others.length);
+    var Pm = C.prepare(st), noLimit = !!st.unlimited && !A.solver.mainOnly;
+    runOpen(my, others.length, { cap: Pm.trancheCap.on, more: noLimit, P: Pm });
     if (!A.view) renderAll();
     try {
-      var r = await A.solveState(st, null, 1, function (p) { if (my !== runSeq) return; setBusy(true, t('s_stage_' + p.stage, { T: p.T != null ? p.T + 1 : '' }), STAGE_PCT[p.stage]); runStep(p.stage === 'milp2' ? 'milp' : p.stage, p); });
+      var r = await A.solveState(st, null, 1, function (p) {
+        if (my !== runSeq) return;
+        if (p.note !== 'tick' && p.note !== 'better') setBusy(true, t('s_stage_' + p.stage, { T: p.T != null ? p.T + 1 : '' }), STAGE_PCT[p.stage]);
+        runStep(p.stage === 'milp2' ? 'milp' : p.stage, p);
+      }, noLimit);
       if (my !== runSeq) return;
       runStep('verify');
       if (!r.ver.ok) {

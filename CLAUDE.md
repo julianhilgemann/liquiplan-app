@@ -21,7 +21,7 @@ node scripts/check.mjs   # build, then drive the app in a headless browser (see 
 - **Two languages, always.** Short UI strings are keys in `src/app/i18n/de.js` and `en.js`. A key missing in English silently shows the German text, so add both in the same edit. German is neutral (no "du"); English uses British spelling. Numbers are formatted the German way in both languages (`A.eur`, `A.pct`).
 - **Tokens, both themes.** Colours come from `src/styles/tokens.css`; charts read them with `A.css('--token')` when they draw and are redrawn on a theme change.
 - **Full-page views are page modes.** The wizard (`#app.wiz`), the step-by-step view (`#app.rp`) and the handbook (`#app.hb`) each put a class on `#app`, hide the workspace and trim the toolbar. A new full-page view follows that pattern.
-- **Plans are deterministic.** The same inputs give the same plan on every machine. A change outside `src/core/` and `src/solver/` leaves every plan identical; a change inside them states which plans move and why, and rewrites `scripts/baseline.json` (the check compares every example's plan with it).
+- **Plans are deterministic.** The same inputs give the same plan on every machine. The one exception is a search without a time limit that was ended by hand (`stages.unlimited === 'stopped'`). A change outside `src/core/` and `src/solver/` leaves every plan identical; a change inside them states which plans move and why, and rewrites `scripts/baseline.json` (the check compares every example's plan with it).
 - **Results render from `A.view`** and only after *Optimieren*. A control bound to results follows `A.view`, `A.stale` and `A.busy`.
 
 ## Three documents move with the code

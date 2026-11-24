@@ -6,12 +6,17 @@ A single-file web app that answers one question: **how long will my money safely
 
 **[▶ Open the app](https://julianhilgemann.github.io/liquiplan-app/)** · nothing to install, no account, everything runs in your browser.
 
+<!-- changelog:version (written by `node scripts/changelog.mjs` from src/app/i18n/changelog.js: edit that file, not these lines) -->
+**Version 1.5** · 24 November 2026 · [What's new](#whats-new)
+<!-- /changelog:version -->
+
 ![Overview: KPIs, input panel and the liquidity chart](docs/screenshots/overview.png)
 
 > **Not financial advice.** Liquiplan is a hobby project. Its results are model calculations with simplified assumptions and illustrative rates. Read the [disclaimer](#disclaimer) before relying on anything it shows.
 
 ## Contents
 
+- [What's new](#whats-new)
 - [What it does](#what-it-does)
 - [Using the app](#using-the-app)
 - [Glossary of German terms](#glossary-of-german-terms)
@@ -24,6 +29,38 @@ A single-file web app that answers one question: **how long will my money safely
 - [Disclaimer](#disclaimer)
 
 ---
+
+## What's new
+
+<!-- changelog:latest (written by `node scripts/changelog.mjs` from src/app/i18n/changelog.js: edit that file, not these lines) -->
+### 1.5 · Few deposits and a search without a time limit
+
+*24 November 2026*
+
+- **New:** Limit on new deposits: under Inputs → “Optimisation and baseline” the number of new deposits can be limited to any whole number. The optimiser then looks for the plan with at most that many deposits that lasts longest, and the “Liquidity secured until” tile names what the simplicity costs. Pinned tranches count. In example G four deposits instead of 23 reach the same last month.
+- **New:** Search on without a time limit: if wanted, the optimiser keeps searching after the usual plan, in rounds with ever larger budgets, until no better plan is possible. The dialog shows the round, the search nodes and the best plan so far; “Stop and keep this plan” ends the search and keeps it.
+- **Improved:** Step by step, the self-test, the methodology and the handbook know both settings. The inputs group “Solver and baseline” is now called “Optimisation and baseline”.
+
+<details>
+<summary>Before that: 1.4.2 and 1.4.1</summary>
+
+### 1.4.2 · Handbook: gap above the search closed
+
+*24 November 2026*
+
+- **Fixed:** Handbook: a hairline gap remained between the title and the search, and the chapter’s text showed through it while scrolling. The title and the search now meet without a gap.
+
+### 1.4.1 · Interest: what the figure includes
+
+*22 November 2026*
+
+- **Improved:** Tile “Interest until T\*”: below the total it now says how much of it comes from deposits. The rest is interest on overnight money.
+- **Improved:** Ladder spreadsheet: a line at the top says that the workbook holds fixed-term deposits only and leaves out the interest on overnight money. The list of tranches therefore starts one row lower.
+
+</details>
+
+All 8 releases since 1.0 (14 November 2026): [CHANGELOG.md](CHANGELOG.md).
+<!-- /changelog:latest -->
 
 ## What it does
 
@@ -451,7 +488,7 @@ The handbook ([`markup/handbook.html`](src/markup/handbook.html), [`app/handbook
 |---|---|
 | [`app/i18n/handbook-de.js`](src/app/i18n/handbook-de.js), [`handbook-en.js`](src/app/i18n/handbook-en.js) (`LP.hb.de`, `LP.hb.en`) | The text chapters, one entry each: `{ t: title, l: lead, s: [[section id, title, html], …] }`. Section ids are the same in both languages and unique in the page, because they are addresses |
 | [`app/i18n/glossary.js`](src/app/i18n/glossary.js) (`LP.i18n.gloss`) | The *Glossary* chapter, one section per term; the same entries are behind the dotted-underlined terms everywhere in the app |
-| [`app/i18n/changelog.js`](src/app/i18n/changelog.js) (`LP.changelog`) | The *What's new* chapter, and `A.version`: the version the app shows is the first entry's |
+| [`app/i18n/changelog.js`](src/app/i18n/changelog.js) (`LP.changelog`) | The *What's new* chapter, and `A.version`: the version the app shows is the first entry's. [`scripts/changelog.mjs`](scripts/changelog.mjs) writes the same list, in English, to [`CHANGELOG.md`](CHANGELOG.md) and to [What's new](#whats-new) at the top of this README |
 | `LP.hb.extra` | Chapters that other files add. [`app/handbook/theory.js`](src/app/handbook/theory.js) adds the five theory chapters there, with their texts in [`theory-de.js`](src/app/handbook/theory-de.js) and [`theory-en.js`](src/app/handbook/theory-en.js) and the chart in [`simplex-chart.js`](src/app/handbook/simplex-chart.js) |
 
 **Markup in the texts.** Titles and HTML of the text chapters may contain:
@@ -467,12 +504,12 @@ The theory texts use `$…$` for inline and `$$…$$` for display formulas (TeX,
 
 **Addresses are the only state.** Links in the handbook are plain links to `#handbuch/…`, and the page follows `hashchange` and `popstate`, so every chapter opened is a history entry. [`A.handbook`](src/app/handbook.js#L29) offers `open(id)`, `close()`, `render()` (after a change of language or theme) and `isOpen()`, and for tests `index`, `search` and `chapters`.
 
-**The changelog rule.** Every user-visible change adds an item to [`changelog.js`](src/app/i18n/changelog.js), in German and in English, in the same commit as the change (refactoring, tests and the build get none). Version numbers are MAJOR.MINOR, with a third number for a release that only fixes things (1.3.1): MINOR goes up with every release that adds or changes something users see, MAJOR only when saved inputs or the JSON format stop working with the new version (the [state format](#state-format) is v1). The handbook section that describes the changed behaviour and this README move with the change too.
+**The changelog rule.** Every user-visible change adds an item to [`changelog.js`](src/app/i18n/changelog.js), in German and in English, in the same commit as the change (refactoring, tests and the build get none). `node scripts/changelog.mjs` then writes the list to [`CHANGELOG.md`](CHANGELOG.md) and to this README: the version under the link to the app, and the section [What's new](#whats-new) with the newest release in full and the two before it folded away. Those lines stand between marker comments (`changelog:version`, `changelog:latest`) and are not edited by hand; the check fails while they differ from `changelog.js`. Version numbers are MAJOR.MINOR, with a third number for a release that only fixes things (1.3.1): MINOR goes up with every release that adds or changes something users see, MAJOR only when saved inputs or the JSON format stop working with the new version (the [state format](#state-format) is v1). The handbook section that describes the changed behaviour and this README move with the change too.
 
 ### Before a pull request
 
 - [`CLAUDE.md`](CLAUDE.md) holds the working rules for AI-assisted development of this repository: what the code relies on, which documents move with a change, how a change is checked and released. It is a useful checklist for any contributor.
-- Run `node scripts/check.mjs` before opening a pull request. It builds the app, drives it in a headless browser, compares the plans with a baseline and checks that the links from this README into the code still point at their functions.
+- Run `node scripts/check.mjs` before opening a pull request. It builds the app, drives it in a headless browser, compares the plans with a baseline and checks that the links from this README into the code still point at their functions and that [`CHANGELOG.md`](CHANGELOG.md) and [What's new](#whats-new) equal the app's changelog.
 
 ## Function reference
 

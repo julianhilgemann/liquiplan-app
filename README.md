@@ -81,6 +81,10 @@ Two optional settings shape the search. A **limit on the number of new deposits*
 <td colspan="2"><img src="docs/screenshots/steps.png" alt="Step-by-step view: the list of steps, the question of step 7 and its answer, the horizon strip and the progress of the integer search"><br><sub>Step by step: how the plan was found, here the integer search against the best case</sub></td>
 </tr>
 <tr>
+<td><img src="docs/screenshots/limit.png" alt="Retirement example limited to six new deposits: the setting in the inputs panel, and the first tile saying what the limit costs"><br><sub>A simple plan: six deposits instead of 91, and what that costs</sub></td>
+<td><img src="docs/screenshots/nolimit.png" alt="Progress dialog of the search without a time limit: round, search nodes, the best plan so far and the button to stop and keep it"><br><sub>Searching on without a time limit, until done or stopped</sub></td>
+</tr>
+<tr>
 <td><img src="docs/screenshots/handbook.png" alt="Handbook: search field, chapter menu in five groups and the Quick start chapter"><br><sub>Handbook: chapter menu, search, and a chapter</sub></td>
 <td><img src="docs/screenshots/theory.png" alt="Theory chapter: the simplex chart with the feasible region, the path to the optimum, sliders and the cross-check"><br><sub>Theory: the app's simplex walks to the optimum of a toy model</sub></td>
 </tr>

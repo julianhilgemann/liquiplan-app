@@ -44,9 +44,11 @@ The app builds a **deposit ladder** (*Festgeld-Leiter*): a schedule of placement
 
 Interest is a secondary goal by construction: it can never shorten T\*. There is no weighted sum of goals and no greedy heuristic doing the optimising. Every plan is re-computed by an independent simulator before it is shown.
 
+Two optional settings shape the search. A **limit on the number of new deposits** asks for a simple plan: the best ladder often has one small deposit per month (23 in example G, 91 in the retirement example), and with a limit of, say, six the optimiser looks for the best plan with at most six, and says what the simplicity costs. A **search without a time limit** keeps improving the plan after the usual result, in rounds with ever larger budgets, until nothing better is possible or you stop it and keep the best plan found.
+
 | Section | What you see |
 |---|---|
-| **KPIs** | T\*, runway in months, months gained against two baselines, interest until T\* (overnight money and deposits, with the deposits' share below), share of locked capital, the next action to take |
+| **KPIs** | T\*, runway in months, months gained against two baselines, interest until T\* (overnight money and deposits, with the deposits' share below), share of locked capital, the next action to take. With a limit on new deposits the first tile says what the limit costs |
 | **Timeline** | Month-end balances as stacked areas: current account, overnight money, deposits by term bucket, existing holdings, buffer line, shortfall zone |
 | **Strategies** | Optimised plan vs. "everything in overnight money" vs. a naive rate chaser, as available liquidity or total wealth |
 | **Ladder** | One bar per tranche from placement to maturity, per year or for the whole horizon; tap a bar for details. *Download* saves the ladder as a small spreadsheet for Excel and Google Sheets |
@@ -55,7 +57,7 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 | **Scenarios** | The whole optimisation re-run and re-verified under each interest-rate scenario |
 | **Monthly grid** | Month-by-month table. Extra need, extra income and a minimum liquidity can be overridden for single months |
 | **Step by step** | The decisions the optimiser took for the plan on screen, one at a time: each question and its answer, the months asked about so far, the plan at that step as month-end balances (or the progress of the integer search), and the linear system behind it |
-| **Methodology / Self-test** | The model explained inside the app, and a button that tests solver, simulator, Excel export and ladder spreadsheet against each other |
+| **Methodology / Self-test** | The model explained inside the app, and a button that tests solver, simulator, the limit on new deposits, Excel export and ladder spreadsheet against each other |
 | **Handbook** | A page of its own with sixteen chapters, from a quick start to five theory chapters with formulas and an interactive simplex chart, plus frequently asked questions, the glossary and *What's new*; a search finds every word |
 
 <table>
@@ -92,14 +94,16 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 
 - **Online**: open the [GitHub Pages site](https://julianhilgemann.github.io/liquiplan-app/).
 - **Your own copy**: save [the published page](https://julianhilgemann.github.io/liquiplan-app/Liquiditaetsplaner_20261114.html), or build it from this repository with `node build.mjs` (see the [code guide](#code-guide)), and open the file in a browser. It is one HTML file and needs no server. The page loads its charting, solver and Excel libraries from jsDelivr, and the formula typesetter when a theory chapter of the handbook is first opened. If the solver libraries cannot load, a solver built into the page takes over.
-- **First visit**: the app opens on a blank slate with two choices, *Open the wizard* or *Load example G*. **Optimise** stays greyed out until there is data. The setup wizard has six chapters, of which only the first two are required: starting liquidity and withdrawals, the economic baseline, expected central-bank rate steps, ongoing deposits, other recurring payments and new deposit offers. A chapter menu (a list on phones) jumps between them, and **Analysis** in the toolbar leads back. Once there is data, the gear button (*Inputs*) shows the same data as a side panel with a few extra settings (buffer, safety lead, denomination, tax, deposit-guarantee cap, pinned tranches).
+- **First visit**: the app opens on a blank slate with two choices, *Open the wizard* or *Load example G*. **Optimise** stays greyed out until there is data. The setup wizard has six chapters, of which only the first two are required: starting liquidity and withdrawals, the economic baseline, expected central-bank rate steps, ongoing deposits, other recurring payments and new deposit offers. A chapter menu (a list on phones) jumps between them, and **Analysis** in the toolbar leads back. Once there is data, the gear button (*Inputs*) shows the same data as a side panel with a few extra settings (buffer, safety lead, denomination, tax, deposit-guarantee cap, pinned tranches, a limit on the number of new deposits, the search without a time limit).
 - **Examples**: *Example G* (the reference case from the original specification), *Retirement with rental income* (20 years, pension from 2028, large one-off repairs, tax on) and *Rate trap* (example G plus a tempting 10-year deposit at 5.9 % that a naive rate chaser falls for).
 - **Rate scenarios**: own central-bank steps, current rates held constant, −1 pp from 2028, rising rates (+0.5 pp a year up to +1.5 pp), inverted curve.
 - **Calculation is manual**: nothing is computed until you press **Optimise**, not even when the page opens or an example is loaded. A card then confirms that the data is loaded and points to the button. After an input change the old results are greyed out until the next run. A progress dialog then ticks off each optimisation stage; *Cancel* stops the run and keeps the previous results on screen.
+- **A simple plan with few deposits**: in the inputs panel, the group *Optimisation and baseline* has *Limit the number of new deposits* and a whole number below it. The optimiser first works out the plan without the limit. If that plan keeps the limit, it stands unchanged. Otherwise the optimiser looks for the plan with at most that many new deposits that lasts longest and then leaves the most wealth. The *Liquidity secured until* tile says what the limit costs: how many deposits the plan would hold without it, and how much longer the money would last or how much more wealth would be left. Pinned tranches count towards the limit, existing holdings do not. In example G four deposits instead of 23 reach the same last month; in the retirement example six instead of 91 cost three months.
+- **Searching on without a time limit**: *Search on without a time limit* in the same group. The usual plan comes first. Then the progress dialog says *Plan found – still searching …* and shows the round, the search nodes examined and the best plan so far. The search ends by itself once it has proven that nothing better is possible (often within seconds for small plans, in practice never for large ones). *Stop and keep this plan* ends it at any time and continues with the best plan found, which is verified like any other; *Cancel* discards the run, and Escape keeps the plan once there is one. The comparison of the other rate scenarios and the self-test always use the usual budgets.
 - **Step by step**: a page of its own, like the wizard, that replays the decisions the optimiser took for the plan on screen, one at a time, with the list of steps beside it and *Back* / *Next* below. Three ways in: the *Step by step* button in the toolbar (an icon only in windows from 721 to 1519 px wide), *See how this was found* in the *Liquidity secured until* tile, and the button in the Methodology section. Without a current result (none yet, or the inputs have changed since), each of them runs **Optimise** first and opens the page when the run is over. On phones the list and the step take turns: *All steps* leads to the list, a tap on a step opens it. ← and → move one step, Home and End jump to the first and the last, and Escape, *Analysis* in the toolbar or *Back to the analysis* on the last step lead back.
-- **Handbook**: *Handbook* in the toolbar opens the in-app handbook, a page of its own like the wizard. Above the analysis the button is an icon only in windows from 721 to 1599 px wide; it is also there, with its label, on the blank slate and in the wizard. The blank slate (*New here? …*), the Methodology section (*Explained in the handbook*) and the foot of the page link into it as well. Sixteen chapters in five groups: *Getting started* (*What Liquiplan is*, *Quick start*), *Using Liquiplan* (*Entering your data*, *Reading the results*, *How-tos*, *Your data and privacy*), *Background* (*How the optimiser thinks*), *Theory* (*Linear programming in one picture*, *The ladder as a linear model*, *One goal after another*, *Whole steps and minimum amounts*, *Why the result can be trusted*) and *Reference* (*Frequently asked questions* with 15 questions, *Glossary*, *What's new*, *Disclaimer*). From 721 px width (in windows at least 520 px high) the title and the search stay in place while a chapter scrolls. The search above the chapter finds every word, with or without umlauts (`uber` and `ueber` both find *über*); ↑ / ↓ and Enter pick a result, and outside the theory chapters the words are marked in the section it opens. `/` jumps into the search, Escape clears it, and Escape anywhere else closes the handbook, as does the toolbar button, which reads *Analysis* while the handbook is open (*Wizard* if it was opened from the wizard).
+- **Handbook**: *Handbook* in the toolbar opens the in-app handbook, a page of its own like the wizard. Above the analysis the button is an icon only in windows from 721 to 1599 px wide; it is also there, with its label, on the blank slate and in the wizard. The blank slate (*New here? …*), the Methodology section (*Explained in the handbook*) and the foot of the page link into it as well. Sixteen chapters in five groups: *Getting started* (*What Liquiplan is*, *Quick start*), *Using Liquiplan* (*Entering your data*, *Reading the results*, *How-tos*, *Your data and privacy*), *Background* (*How the optimiser thinks*), *Theory* (*Linear programming in one picture*, *The ladder as a linear model*, *One goal after another*, *Whole steps and minimum amounts*, *Why the result can be trusted*) and *Reference* (*Frequently asked questions* with 17 questions, *Glossary*, *What's new*, *Disclaimer*). From 721 px width (in windows at least 520 px high) the title and the search stay in place while a chapter scrolls. The search above the chapter finds every word, with or without umlauts (`uber` and `ueber` both find *über*); ↑ / ↓ and Enter pick a result, and outside the theory chapters the words are marked in the section it opens. `/` jumps into the search, Escape clears it, and Escape anywhere else closes the handbook, as does the toolbar button, which reads *Analysis* while the handbook is open (*Wizard* if it was opened from the wizard).
 - **Handbook addresses** (in German, like the code: *Handbuch*): `#handbuch` opens the handbook (the chapter list on phones, otherwise the chapter read last, at first *What Liquiplan is*), `#handbuch/<chapter>` a chapter, `#handbuch/<chapter>/<section>` a section, and `#handbuch/<section-id>` finds a section by its id alone. Any part can be linked to: the app opened at `…/liquiplan-app/#handbuch/quick` starts on the quick start. Every chapter opened is a step in the browser history: Back goes back through the chapters and finally out of the handbook, and after leaving it, Back opens it again.
-- **Version and What's new**: the foot of the page shows the version (*Version 1.3*), which links to *What's new*, the handbook chapter that lists the changes of each version, newest first.
+- **Version and What's new**: the foot of the page shows the version (*Version 1.5*), which links to *What's new*, the handbook chapter that lists the changes of each version, newest first.
 - **Ladder spreadsheet**: *Download* in the head of *Building blocks of the deposit ladder* saves a small workbook (.xlsx, for Excel and Google Sheets) with every deposit of the plan, on three sheets. *Tranches* lists them with type, bank, term, placement and maturity month, principal, rate, interest convention, total interest, payout at maturity, effective yield and the interest that falls within the plan, with totals and principal-weighted averages. *Monthly* and *Yearly* show each tranche as a roll-forward per month and per calendar year: opening balance + placement + capitalised interest + repayment = closing balance, plus the interest it pays out. Above the tranches stand their totals, the cash view of the liquid accounts (placements flow out, repayments and interest flow in) and check rows that must be 0. Amounts are in accounting format, every derived cell is a live formula with its value stored, and the ladder's bars are drawn as conditional formats in the app's colours. The sheets are dressed as a financial model: navy bands for titles and column heads, blue bars for sections, a light blue row for each tranche and the grand total, pale yellow for inputs (blue text), lines above subtotals and totals, and dividers beside the *Total* column. A line in the info panel of *Tranches* says that the workbook holds fixed-term deposits only: its interest is the deposits' interest, which the *Interest until T\** tile shows as *of which deposits*, while the tile's total also counts the interest on overnight money. For a deposit with annual interest, *Payout at maturity* is what arrives in the maturity month; *Total payout* in the app's tranche details adds the interest paid out on the anniversaries. In German the sheets are *Tranchen*, *Monatsplan* and *Jahresplan*. The button is greyed out while there is no result, during a run and while the results are out of date; pressed then, it says why.
 - **Numbers**: every number field accepts a decimal comma or a decimal point, whatever language the browser is set to (`3,12` and `3.12` are the same rate). In amounts, `10.000` and `10,000` both mean ten thousand. The field echoes back what it understood, and text that is not a number is flagged and ignored instead of being read as 0.
 - **Export / import**: HTML with your inputs embedded, an Excel workbook with live formulas (the whole model in nine sheets; the ladder spreadsheet above is the lean one), the full state as JSON, and the rate table as JSON (for quick updates of offers).
@@ -108,7 +112,7 @@ Interest is a secondary goal by construction: it can never shorten T\*. There is
 
 ## Glossary of German terms
 
-The code and UI use German finance terms. The English UI translates them; here they are side by side. The app's own glossary is the fuller one: the handbook chapter *Glossary* explains 46 terms in both languages, from the same entries as the tooltips of the dotted-underlined terms ([`glossary.js`](src/app/i18n/glossary.js)).
+The code and UI use German finance terms. The English UI translates them; here they are side by side. The app's own glossary is the fuller one: the handbook chapter *Glossary* explains 48 terms in both languages, from the same entries as the tooltips of the dotted-underlined terms ([`glossary.js`](src/app/i18n/glossary.js)).
 
 | German | English | Meaning in the app |
 |---|---|---|
@@ -147,7 +151,7 @@ Everything runs on a **monthly grid** `t = 0 … H−1`. Month 0 is the first mo
 
 `prepare` is the only code shared between the solver and the simulator. It contains **no** payout, tax or balance logic, so the two sides can check each other.
 
-### 2. The model: [`buildModel(P, T, opt)`](src/solver/model.js#L48)
+### 2. The model: [`buildModel(P, T, opt)`](src/solver/model.js#L53)
 
 For a candidate horizon `T` the app builds a mixed-integer linear programme (MILP) with these columns:
 
@@ -159,7 +163,7 @@ q[y]   ≥ 0            taxable interest of calendar year y above the allowance
 z      ≥ 0            slack of month T (only for stage 4)
 ```
 
-**Balance row for every month** (`b<t>`, see [the balance rows](src/solver/model.js#L85)):
+**Balance row for every month** (`b<t>`, see [the balance rows](src/solver/model.js#L91)):
 
 ```text
 s[t] = s[t−1]·(1 + rTG[t]/12) + net[t] + payouts[t] − placements[t] − tax[t]
@@ -181,7 +185,7 @@ compound  (1 + r)^n · (1 + r·f/12) at maturity, taxed yearly on the accrued in
 
 **Minimum amounts are semi-integer**: a placement is either 0 or between `minU` and `maxU` units. External solvers get the classic binary formulation (`n ≥ minU·y`, `n ≤ maxU·y`). The embedded branch-and-bound handles it natively (`nativeSemi`) by branching on `n = 0` vs. `n ≥ minU`.
 
-**The deposit-guarantee cap** (optional) limits the open principal per bank. These rows are added **lazily**: solve, check with [`capViolations()`](src/solver/model.js#L241), add only the violated `bank|month` rows and solve again (up to 25 rounds). Exposure can only rise in a month where a tranche starts, so only those months are ever checked.
+**The deposit-guarantee cap** (optional) limits the open principal per bank. These rows are added **lazily**: solve, check with [`capViolations()`](src/solver/model.js#L259), add only the violated `bank|month` rows and solve again (up to 25 rounds). Exposure can only rise in a month where a tranche starts, so only those months are ever checked.
 
 **Options** of `buildModel` decide which candidate placements become columns:
 
@@ -189,8 +193,9 @@ compound  (1 + r)^n · (1 + r·f/12) at maturity, taxed yearly on the accrued in
 - `cand` restricts the columns to a candidate set proposed by an LP (see stage 2).
 - `grid` thins out placement months for very large models in the embedded solver.
 - `obj` selects the objective: `none` (feasibility), `wealth`, `term` or `slack`. `wealthMin` adds a lower bound on wealth (for stage 3).
+- `maxNew` limits the number of candidates an integer plan may use (see [the limit on new deposits](#a-limit-on-the-number-of-new-deposits) below). For the embedded solver the model carries it as `M.card = { cols, w, max }` without any row or column; for other solvers it writes a switch per candidate (`n ≤ maxU·y`) and one row `c: Σ y ≤ maxNew`.
 
-### 3. Four stages: [`optimize()`](src/solver/optimize.js#L22)
+### 3. Four stages: [`optimize()`](src/solver/optimize.js#L35)
 
 ```mermaid
 flowchart TD
@@ -208,15 +213,40 @@ The progress dialog shows these stages live while the app optimises, followed by
 
 <img src="docs/screenshots/progress.png" alt="Progress dialog listing the optimisation stages" width="720">
 
-**Stage 1: maximise T\*** ([code](src/solver/optimize.js#L61)). Feasibility is **monotone** in `T`: if months 0…T can all be covered, so can 0…T−1. The app therefore searches for the largest feasible `T` with LP relaxations (no integrality, fast). It starts from a known-feasible month (the simulator's horizon without any new placements, `loHint`), **gallops** upwards with doubling steps until the first infeasible month, then **bisects**. That is `O(log H)` LPs.
+**Stage 1: maximise T\*** ([code](src/solver/optimize.js#L76)). Feasibility is **monotone** in `T`: if months 0…T can all be covered, so can 0…T−1. The app therefore searches for the largest feasible `T` with LP relaxations (no integrality, fast). It starts from a known-feasible month (the simulator's horizon without any new placements, `loHint`), **gallops** upwards with doubling steps until the first infeasible month, then **bisects**. That is `O(log H)` LPs.
 
-**Stage 2: maximise wealth at T\*** ([LP bound](src/solver/optimize.js#L75), [MILP](src/solver/optimize.js#L91)). With `T` fixed, an LP maximises `s[T] + Σ open deposits incl. accrued interest`. Its value is an upper bound. The integer problem (denominations, minimum amounts) is then solved only on a **candidate set**: every (month, product) pair that the LP solutions used, plus all products in "event months" (month 0, existing maturities and the safety-lead months after them, and months with one-off income). This keeps the MILP small enough for a browser.
+**Stage 2: maximise wealth at T\*** ([LP bound](src/solver/optimize.js#L126), [MILP](src/solver/optimize.js#L142)). With `T` fixed, an LP maximises `s[T] + Σ open deposits incl. accrued interest`. Its value is an upper bound. The integer problem (denominations, minimum amounts) is then solved only on a **candidate set**: every (month, product) pair that the LP solutions used, plus all products in "event months" (month 0, existing maturities and the safety-lead months after them, and months with one-off income). This keeps the MILP small enough for a browser.
 
-**When the search finds no integer plan** ([code](src/solver/optimize.js#L99)). Sometimes the LP reaches `T` but no integer plan does, for example because €100 steps or a €1,000 minimum don't fit. And sometimes a plan exists but the search does not find it within its budget. The first month without a plan is given up (`T := T − 1`): it usually is out of reach, and proving that can take long. If the search then fails again one month lower, it is the search that is failing, not the months. HiGHS is then asked a plain yes/no question, first for the month that was given up and then for the current one: is there *any* integer plan up to this month? Without an objective the first plan HiGHS finds is optimal, so it stops there and returns it. A "yes" takes the month back, and stage 2 continues from that plan. At most two questions are asked per run. Without HiGHS the embedded search instead minimises the slack of month `T` on a widened candidate set (±1 month around every candidate). This is the only way T\* can end up below the LP value. The KPI then shows the LP bound and says whether the month was not reached or a plan was merely not found within the search budget.
+**When the search finds no integer plan** ([code](src/solver/optimize.js#L150)). Sometimes the LP reaches `T` but no integer plan does, for example because €100 steps or a €1,000 minimum don't fit. And sometimes a plan exists but the search does not find it within its budget. The first month without a plan is given up (`T := T − 1`): it usually is out of reach, and proving that can take long. If the search then fails again one month lower, it is the search that is failing, not the months. HiGHS is then asked a plain yes/no question, first for the month that was given up and then for the current one: is there *any* integer plan up to this month? Without an objective the first plan HiGHS finds is optimal, so it stops there and returns it. A "yes" takes the month back, and stage 2 continues from that plan. At most two questions are asked per run. Without HiGHS the embedded search instead minimises the slack of month `T` on a widened candidate set (±1 month around every candidate). This is the only way T\* can end up below the LP value. The KPI then shows the LP bound and says whether the month was not reached or a plan was merely not found within the search budget.
 
-**Stage 3: prefer short terms** ([LP](src/solver/optimize.js#L84), [MILP](src/solver/optimize.js#L143)). Among plans whose wealth is within a tolerance of the stage-2 optimum (€0.05 or 10⁻⁶ relative, whichever is larger), minimise `Σ amount × term`. Ties are common (several ladders reach the same wealth) and the shorter ones keep more options open.
+**Stage 3: prefer short terms** ([LP](src/solver/optimize.js#L135), [MILP](src/solver/optimize.js#L116)). Among plans whose wealth is within a tolerance of the stage-2 optimum (€0.05 or 10⁻⁶ relative, whichever is larger), minimise `Σ amount × term`. Ties are common (several ladders reach the same wealth) and the shorter ones keep more options open.
 
-**Stage 4: report the shortfall** ([code](src/solver/optimize.js#L165)). For month `T+1` minimise the slack `z` in `u[T+1] + z ≥ floor[T+1]`. LP and MILP give the amount that is at least missing to survive one more month.
+**Stage 4: report the shortfall** ([code](src/solver/optimize.js#L290)). For month `T+1` minimise the slack `z` in `u[T+1] + z ≥ floor[T+1]`. LP and MILP give the amount that is at least missing to survive one more month.
+
+#### A limit on the number of new deposits
+
+With `state.trancheCap` on, [`prepare()`](src/core/core.js#L74) puts `P.trancheCap = { on, max, left }` into the problem: `max` is the user's number and `left` what remains for the optimiser once the pinned tranches are counted. A relaxation cannot count deposits (with `y = n / maxU` a hundred small deposits cost less than one switch), so the limit only exists in integer models, and the stages above run first **without** it:
+
+1. The plan without the limit is worked out exactly as described above. If it holds at most `left` deposits, it is the result: a limit that does not bind changes nothing, down to the last placement.
+2. Otherwise ([code](src/solver/optimize.js#L208)) the result keeps that plan's month, number of deposits and wealth as `res.free`, the yardstick for what the limit costs, and the search starts again with `maxNew = left` in every integer model.
+3. **The latest month within the limit.** Feasibility is monotone here too (a plan up to `T` is a plan up to `T − 1`), and two months are known: the month of the plan without the limit (an upper end) and the month the money reaches without any new deposit (`loHint`, which needs none). An integer search asks "is there any plan up to month `T` within the limit?" for the upper end first and then bisects. It stops at its first plan; "no" is either proven on the candidate set or the budget ran out, and the result says which (`cap_infeasible_at_…`, `cap_timeout_at_…`). These questions use the candidate set of stage 2 as it is: more candidates made the search slower and no better at finding a plan.
+4. **Stages 2 to 4 at that month**, with the limit: the most wealth, starting from the plan the question returned, then the shortest terms, then the shortfall of the following month. The wealth search is followed by a local search ([`swapOne()`](src/solver/optimize.js#L93)): one placement of the plan at a time is set free while the others stay in the plan (`inPlan` in `buildModel`), and a short search looks for a better use of that one slot; after every gain it starts again.
+
+For the wealth search the candidate set of stage 2 grows by what the questions taught: the placements of every plan found, and the months in which their money comes back ([`addReturns()`](src/solver/optimize.js#L21)), because a plan with few deposits would place it again there. After the wealth search those months are added for its plan as well and the search runs on from it, twice at most.
+
+How the embedded branch-and-bound enforces the limit is described [below](#4-solvers-and-how-far-each-answer-is-trusted-engine). The independent simulator counts the placements itself ([`verify()`](src/app/sim.js#L114)).
+
+The search within the limit is a heuristic with a budget, like the integer search of stage 2: it finds good plans, it proves the best month only when its tree is exhausted, and the result says when it did not. It was checked against HiGHS on the explicit formulation with **every** month and product as a candidate (not only the candidate set). For example G and the rate trap under five rate scenarios with limits from 1 to 8, HiGHS confirms the app's T\* as the best possible in every case and, where it reaches optimality, the same wealth to the cent. For the retirement example (20 years, 91 deposits without a limit) HiGHS decides only the smallest limits within two minutes and agrees there; for larger limits neither side proves the last month. Larger limits never gave an earlier month in these tests.
+
+#### Searching on without a time limit
+
+With `cfg.unlimited` ([code](src/solver/optimize.js#L317)) the result of the stages above is only the start. `optimize()` reports it to the page as an interim result, then repeats three questions in rounds, round *r* with 4^*r* times the usual budget:
+
+1. Is there a plan for the next month (up to the LP bound, one month at a time, as long as a plan turns up)?
+2. Is there a plan with more wealth in the month reached, starting from the best so far?
+3. Is there one with shorter terms at that wealth?
+
+A question whose search tree was searched completely is settled and is not asked again. When all are settled the loop ends, and the result carries `stages.unlimited = 'complete'`. Every better plan is reported to the page as it is found, so the page can end the search at any moment and keep the best plan ([`S.finishEarly()`](src/app/ui/solver-client.js#L78)): the interim result with that plan in it, `stages.unlimited = 'stopped'`, verified like any other result. The budgets stay on the work clock, so the plan after a given round is the same on every machine; only a run ended by hand depends on when. On the main thread (no Web Worker) the usual budgets apply, because an open-ended search would freeze the page.
 
 Why lexicographic and not a weighted objective? A weighted sum needs a penalty weight that trades months of safety against euros of interest, and any finite weight can be "bought off" by a high enough rate. Solving goals strictly in order makes "interest never shortens T\*" a guarantee, not a tuning result.
 
@@ -224,7 +254,7 @@ Why lexicographic and not a weighted objective? A weighted sum needs a penalty w
 
 The optimisation runs in a **Web Worker**, built at runtime from the page's own `src-core` and `src-solver` script text via a Blob URL ([`S.start`](src/app/ui/solver-client.js#L11)). No separate worker file is needed, so the single HTML file works anywhere. On start the worker tries a chain of backends ([worker glue](src/solver/workerglue.js#L1)):
 
-1. **[HiGHS](https://highs.dev)** compiled to WebAssembly ([`HighsBackend`](src/solver/backends.js#L19)). It receives the model as CPLEX LP text from [`toLPString()`](src/solver/model.js#L265). LPs are retried with presolve off and then with the interior-point method if the first attempt fails.
+1. **[HiGHS](https://highs.dev)** compiled to WebAssembly ([`HighsBackend`](src/solver/backends.js#L19)). It receives the model as CPLEX LP text from [`toLPString()`](src/solver/model.js#L283). LPs are retried with presolve off and then with the interior-point method if the first attempt fails.
 2. **javascript-lp-solver** ([`JsLpBackend`](src/solver/backends.js#L53)), used for LPs only.
 3. **The embedded solver** ([`EmbeddedBackend`](src/solver/backends.js#L97)): a dense bounded-variable simplex plus branch-and-bound, written for this app. It is always present.
 
@@ -235,20 +265,23 @@ The optimisation runs in a **Web Worker**, built at runtime from the page's own 
 - **Yes/no questions** to HiGHS run on a **tick clock** ([`onTickClock`](src/solver/backends.js#L10)): while HiGHS answers, `performance.now()` and `Date.now()` return a counter that goes up by one per call, so its time limit is a fixed number of clock reads.
 - **Powers** such as `(1 + r)^n` are computed by repeated multiplication ([`powi`](src/core/core.js#L72)), because `Math.pow` may differ in the last bit between browsers, which is enough to send the search down another branch.
 
+The rounds of the search without a time limit are measured on the same work clock, each with four times the budget of the one before. A plan from such a search that was ended by hand is the one exception: it depends on the moment it was ended.
+
 The plan still depends on *which* LP solver loaded: HiGHS and the embedded simplex can return different optimal corners, and those decide the candidate set. When the fallback did the work, the result tile says so.
 
 HiGHS and javascript-lp-solver must each solve a tiny test MILP correctly on load (optimum 7) before they are used. Answers are trusted only as far as they were checked:
 
 - **Every MILP answer is "polished"** ([`polish()`](src/solver/simplex.js#L304)): the integer columns are rounded and fixed, and the continuous rest (liquidity, tax) is re-solved exactly. Results that don't survive this are discarded.
-- **[`Engine.milp`](src/solver/engine.js#L59)** runs the embedded branch-and-bound on the work clock. A plan known from elsewhere (the answer to a yes/no question) can be passed in as a starting point; the search can then only improve on it.
-- **[`Engine.lp`](src/solver/engine.js#L34)**: an optimum from javascript-lp-solver is accepted only if the embedded simplex reaches the same objective value, and an "infeasible" from it is never trusted. After two rejected answers the backend is dropped for the session. HiGHS is restarted after a crash, at most twice, before it is dropped.
+- **[`Engine.milp`](src/solver/engine.js#L62)** runs the embedded branch-and-bound on the work clock. A plan known from elsewhere (the answer to a yes/no question) can be passed in as a starting point; the search can then only improve on it.
+- **[`Engine.lp`](src/solver/engine.js#L35)**: an optimum from javascript-lp-solver is accepted only if the embedded simplex reaches the same objective value, and an "infeasible" from it is never trusted. After two rejected answers the backend is dropped for the session. HiGHS is restarted after a crash, at most twice, before it is dropped.
 - **Watchdog**: before each call the worker posts a heartbeat with a time budget ([`S.arm`](src/app/ui/solver-client.js#L30)). If the budget runs out, the main thread kills the worker, marks that backend as skipped (javascript-lp-solver for a week, via `localStorage`), restarts and re-sends the job. This watchdog is the only real-time limit left, and its budgets are generous so that a slow device is not mistaken for a hang. If even the embedded solver hangs, or Workers are unavailable, the embedded solver runs on the main thread ([`S.toMain`](src/app/ui/solver-client.js#L24)).
 
-**Inside the embedded solver** ([`Dense`](src/solver/simplex.js#L16), [`solveMILP`](src/solver/simplex.js#L329)):
+**Inside the embedded solver** ([`Dense`](src/solver/simplex.js#L16), [`solveMILP`](src/solver/simplex.js#L335)):
 
 - A **bounded-variable tableau simplex**: two-phase [primal](src/solver/simplex.js#L144) with artificial variables, and [dual simplex](src/solver/simplex.js#L199) re-optimisation after bound changes. Branch-and-bound keeps one tableau for the whole search: each node applies its bounds to whatever basis the solver last had (in depth-first order often its parent's, otherwise that of the node evaluated just before) and re-optimises from there instead of starting from scratch. A periodic [`refactor()`](src/solver/simplex.js#L66) rebuilds the tableau from the original rows to remove floating-point drift.
-- **Branch-and-bound** as a [depth-first search](src/solver/simplex.js#L422) with bound pruning and absolute/relative gap tolerances. A root heuristic (round everything down, fix it, re-solve) provides an early incumbent. The search cycles through three branching rules in slices of its work budget: chronological with semi-integer violations first and the down branch first (50 % of the budget), largest value (to 75 %), most fractional with the nearest branch first (to 100 %). It stops as soon as one rule has searched the tree completely.
+- **Branch-and-bound** as a [depth-first search](src/solver/simplex.js#L500) with bound pruning and absolute/relative gap tolerances. A root heuristic (round everything down, fix it, re-solve) provides an early incumbent. The search cycles through three branching rules in slices of its work budget: chronological with semi-integer violations first and the down branch first (50 % of the budget), largest value (to 75 %), most fractional with the nearest branch first (to 100 %). It stops as soon as one rule has searched the tree completely.
 - **Semi-integer branching**: a column with `0 < n < min` branches into `n = 0` and `n ≥ min`, with no binary helper variable.
+- **A limit on the number of columns in use** (`M.card`) is enforced by branching as well, without a row. When the LP answer of a node uses more columns than allowed, [`cardPick()`](src/solver/simplex.js#L404) chooses one of them and the node splits into *in the plan* (`n ≥ min`) and *out* (`n = 0`). Once as many columns are in as allowed, [`cardClose()`](src/solver/simplex.js#L417) fixes all the others at zero, and the LP spreads the money anew over the chosen ones. The three slices of the budget order this differently: the largest amount × term first, kept in the plan (a dive keeps the big rungs of the ladder and drops the rest); then the largest amount first; then the smallest amount × term first, dropped. A search that only needs any plan (`stopAtFirst`) starts with the last order, whose nodes are cheap. Before the tree, [`cardGreedy()`](src/solver/simplex.js#L473) makes a first choice by elimination: as long as the answer uses too many columns, it takes each of the smallest out on trial and drops for good the one whose loss costs the objective least; the subtree of that choice is searched first, with a small share of the budget. The root heuristic keeps only as many columns as allowed, and no plan with more is ever accepted.
 
 The handbook's chapter *Linear programming in one picture* runs this same `Dense` on a toy model with two deposits and draws every corner it visits on the way to the optimum ([`walk()`](src/app/handbook/simplex-chart.js#L37)).
 
@@ -266,22 +299,22 @@ The simulator deliberately **shares no code with the model**. It walks through t
 6. month-end records: the current account holds next month's outflow, the rest is overnight money,
 7. the month is **covered** if liquidity minus maturities still inside the safety lead is at least the floor (half-cent tolerance). T\* is the last month of the unbroken run of covered months.
 
-`verify()` checks every placement (denomination, minimum, maximum, rate > 0, inside the horizon), checks the bank cap, and checks that the simulated T\* is at least the solver's T\*. **A plan that fails is not shown**; an error explains why.
+`verify()` checks every placement (denomination, minimum, maximum, rate > 0, inside the horizon), checks the bank cap and the limit on the number of new deposits, and checks that the simulated T\* is at least the solver's T\*. **A plan that fails is not shown**; an error explains why.
 
 The two **baselines** are only simulated: [`allTagesgeld()`](src/app/sim.js#L95) keeps everything liquid, and [`naive()`](src/app/sim.js#L97) buys the highest-rate product each month (if it beats overnight money) with all cash above `floor + 3 × next month's need` (the reserve multiple is adjustable).
 
-### 6. Step by step: [`res.trace`](src/solver/optimize.js#L29) and [`A.replay`](src/app/views/replay.js#L17)
+### 6. Step by step: [`res.trace`](src/solver/optimize.js#L44) and [`A.replay`](src/app/views/replay.js#L20)
 
-`optimize()` keeps a record of its decisions and returns it with the plan as `res.trace = { v, hint, steps }` (`hint` is the no-placement horizon it started from). A **step** is one decision of the pipeline; [`mark()`](src/solver/optimize.js#L31) appends it and takes over the engine's log of the solver calls made since the previous step (`solves`), so every call belongs to exactly one step. The kinds follow the stages: `probe` (one per LP of the horizon search in stage 1), `wealthLP` and `tieLP` (the LPs of stages 2 and 3), `milp` (the integer search, with its `trail`: every better plan it found, and after how many search nodes), `ask` (a yes/no question to HiGHS) or `widen` (the widened search without HiGHS), `back` (a month given up), `tie` (the integer tie-break) and `slack` (stage 4). A step that produced a plan carries its placements (`plan`).
+`optimize()` keeps a record of its decisions and returns it with the plan as `res.trace = { v, hint, steps }` (`hint` is the no-placement horizon it started from). A **step** is one decision of the pipeline; [`mark()`](src/solver/optimize.js#L46) appends it and takes over the engine's log of the solver calls made since the previous step (`solves`), so every call belongs to exactly one step. The kinds follow the stages: `probe` (one per LP of the horizon search in stage 1), `wealthLP` and `tieLP` (the LPs of stages 2 and 3), `milp` (the integer search, with its `trail`: every better plan it found, and after how many search nodes), `ask` (a yes/no question to HiGHS) or `widen` (the widened search without HiGHS), `back` (a month given up), `tie` (the integer tie-break) and `slack` (stage 4). With a limit on new deposits there are two more: `limit` (the plan found holds more deposits than allowed; it carries that plan) and `cap` (is there a plan up to a month within the limit?), and the steps of the search within the limit carry `limit: true`. The steps of the search without a time limit carry `more`, the number of their round. A step that produced a plan carries its placements (`plan`).
 
 The trace is bookkeeping only. Nothing in it is read back by the search, and counting pivots does not advance the work clock, so it cannot change the plan. It is plain data and travels to the main thread with the result.
 
-The step-by-step view ([`A.replay`](src/app/views/replay.js#L17)) builds its list of steps from the trace ([`build()`](src/app/views/replay.js#L33)) and adds two of its own: the **starting point** first (the path without new deposits, simulated) and the **cross-check** last (the plan as the independent simulator of section 5 recomputed it). Each step shows:
+The step-by-step view ([`A.replay`](src/app/views/replay.js#L20)) builds its list of steps from the trace ([`build()`](src/app/views/replay.js#L36)) and adds two of its own: the **starting point** first (the path without new deposits, simulated) and the **cross-check** last (the plan as the independent simulator of section 5 recomputed it). Each step shows:
 
-- the question and its answer in plain language ([`qa()`](src/app/views/replay.js#L109)),
-- a horizon strip with every month asked about so far, marked reachable, not reachable or still open ([`renderStrip()`](src/app/views/replay.js#L221)),
-- the plan at that step as month-end balances: simulated with `LP.sim.run()` and drawn with the main chart's own functions ([`drawPlan()`](src/app/views/replay.js#L267)). A horizon probe shows the path without new deposits, with the months from there to the one asked about tinted, and a step without a plan of its own shows the latest one, faded. When the integer search found at least three better plans, the chart opens instead on the search progress: the wealth of the best plan so far over the search nodes, against the best case of the LP ([`drawSearch()`](src/app/views/replay.js#L296)); a switch shows the balances,
-- a few key figures, and *Under the hood*: for each kind of solver call the backend, the size of the linear system, its rows and columns by kind, pivots, nodes and the status ([`renderHood()`](src/app/views/replay.js#L400)).
+- the question and its answer in plain language ([`qa()`](src/app/views/replay.js#L116)),
+- a horizon strip with every month asked about so far, marked reachable, not reachable or still open ([`renderStrip()`](src/app/views/replay.js#L241)),
+- the plan at that step as month-end balances: simulated with `LP.sim.run()` and drawn with the main chart's own functions ([`drawPlan()`](src/app/views/replay.js#L287)). A horizon probe shows the path without new deposits, with the months from there to the one asked about tinted, and a step without a plan of its own shows the latest one, faded. When the integer search found at least three better plans, the chart opens instead on the search progress: the wealth of the best plan so far over the search nodes, against the best case of the LP ([`drawSearch()`](src/app/views/replay.js#L316)); a switch shows the balances,
+- a few key figures, and *Under the hood*: for each kind of solver call the backend, the size of the linear system, its rows and columns by kind, pivots, nodes and the status ([`renderHood()`](src/app/views/replay.js#L429)).
 
 ### 7. From months to calendar dates: [`trancheDates()`](src/app/views/ladder.js#L8)
 
@@ -311,7 +344,7 @@ The formulas were verified by recalculating them with an independent formula eng
 
 ### 10. Self-test: [`A.selftest()`](src/app/selftest.js#L7)
 
-The **Self-test** button runs eleven checks. For every example: the plan is verified and the simulated T\* ≥ the solver's T\*; the optimised T\* ≥ the all-overnight baseline. Then three property tests: the rate trap never ends worse than the plain case; **adding a product never shortens T\***; **adding an inflow never shortens T\***. Then the Excel export is built, re-opened with ExcelJS, and its formula values are compared with the web simulation (≤ 1 cent per month, same first shortfall). Finally the ladder spreadsheet is built for example G and read back: in every month the tranches' closing balances add up to the locked capital, the placement, repayment and interest lines match the simulator's to the cent, and every check row is 0.
+The **Self-test** button runs thirteen checks. For every example: the plan is verified and the simulated T\* ≥ the solver's T\*; the optimised T\* ≥ the all-overnight baseline. Then three property tests: the rate trap never ends worse than the plain case; **adding a product never shortens T\***; **adding an inflow never shortens T\***. Then two for the limit on new deposits: example G with at most four passes the verification, holds at most four and does not last longer than the plan without the limit; and a limit with room to spare leaves the plan unchanged, placement by placement. Then the Excel export is built, re-opened with ExcelJS, and its formula values are compared with the web simulation (≤ 1 cent per month, same first shortfall). Finally the ladder spreadsheet is built for example G and read back: in every month the tranches' closing balances add up to the locked capital, the placement, repayment and interest lines match the simulator's to the cent, and every check row is 0.
 
 ### Simplifications
 
@@ -397,13 +430,14 @@ Besides the plan, the result carries the trace of the run (`res.trace`). The ste
 
 If you want to read the code end to end, this is the order in which it executes when you press **Optimise**:
 
-1. [`A.run()`](src/app/views/pipeline.js#L63): cancels older runs, shows progress, calls `solveState` for the chosen scenario, then for every other scenario in the background.
-2. [`A.solveState()`](src/app/views/pipeline.js#L16): `prepare` on the main thread, simulates the baselines and the no-placement horizon (`loHint`), sends the job to the worker and verifies the result.
-3. [`S.solve()`](src/app/ui/solver-client.js#L61) → worker message `solve` → [`prepare()`](src/core/core.js#L74) → [`optimize()`](src/solver/optimize.js#L22).
-4. `optimize()` calls [`buildModel()`](src/solver/model.js#L48) for each stage and hands it to [`Engine.lp`](src/solver/engine.js#L34) / [`Engine.milp`](src/solver/engine.js#L59). After each decision it adds a step to the trace.
+1. [`A.run()`](src/app/views/pipeline.js#L74): cancels older runs, shows progress, calls `solveState` for the chosen scenario, then for every other scenario in the background.
+2. [`A.solveState()`](src/app/views/pipeline.js#L18): `prepare` on the main thread, simulates the baselines and the no-placement horizon (`loHint`), sends the job to the worker and verifies the result.
+3. [`S.solve()`](src/app/ui/solver-client.js#L68) → worker message `solve` → [`prepare()`](src/core/core.js#L74) → [`optimize()`](src/solver/optimize.js#L35).
+4. `optimize()` calls [`buildModel()`](src/solver/model.js#L53) for each stage and hands it to [`Engine.lp`](src/solver/engine.js#L35) / [`Engine.milp`](src/solver/engine.js#L62). After each decision it adds a step to the trace.
 5. The result returns to `solveState`, goes through [`verify()`](src/app/sim.js#L114), and lands in `A.view`.
 6. [`renderAll()`](src/app/views/render.js#L38) draws KPIs, charts, ladder, waterfall, actions, scenarios and grid from `A.view`.
-7. When the scenarios are done, `A.run` calls [`A.replay.runDone()`](src/app/views/replay.js#L496) with its run id ([`A.runId`](src/app/views/pipeline.js#L71)). If the step-by-step view was asked for before this run, it opens now.
+   With *Search on without a time limit* the worker first reports the plan of the usual budgets and every better plan after it; [`A.keepRun()`](src/app/views/pipeline.js#L57) (the dialog's *Stop and keep this plan*) ends the search and continues from step 5 with the best one.
+7. When the scenarios are done, `A.run` calls [`A.replay.runDone()`](src/app/views/replay.js#L526) with its run id ([`A.runId`](src/app/views/pipeline.js#L82)). If the step-by-step view was asked for before this run, it opens now.
 
 ### The handbook and the changelog
 
@@ -447,7 +481,7 @@ The theory texts use `$…$` for inline and `$$…$$` for display formulas (TeX,
 | [`isBusinessDay`, `nextBusinessDay`, `prevBusinessDay`](src/core/core.js#L43) | Business-day logic for order, value and maturity dates |
 | [`penultimateBusinessDay`](src/core/core.js#L51) | Order deadline for placements and the monthly transfer |
 | [`scenariosFor`](src/core/core.js#L58) / [`scenarioRate`](src/core/core.js#L59) | Available rate scenarios and the rate of a product in month *t* under a scenario |
-| [`prepare`](src/core/core.js#L74) | Input state → problem object `P` (timeline, rates, products, holdings, pins). `over` overrides horizon, scenario or a parallel rate shift |
+| [`prepare`](src/core/core.js#L74) | Input state → problem object `P` (timeline, rates, products, holdings, pins, the limit on new deposits as `P.trancheCap`). `over` overrides horizon, scenario or a parallel rate shift |
 
 ### `core/presets.js` – examples and the spec JSON reader (`LP.presets`, `LP.wizardJson`)
 
@@ -464,12 +498,12 @@ The theory texts use `$…$` for inline and `$$…$$` for display formulas (TeX,
 | [`unitFlows`](src/solver/model.js#L16) | Cash and taxable-interest events of €1 in a product (simple, annual, compound) |
 | [`unitAccrued`](src/solver/model.js#L31) | Value of €1 after *e* months, for deposits still open at T |
 | [`Model`](src/solver/model.js#L38) | Minimal sparse model container: `col()`, `row()`, `add()` |
-| [`buildModel`](src/solver/model.js#L48) | Builds the model for horizon T: [fixed tranches](src/solver/model.js#L55), [balance rows](src/solver/model.js#L85), tax rows, [candidate placements](src/solver/model.js#L111), wealth objective, [bank-cap rows](src/solver/model.js#L185) |
-| [`wealthOf`](src/solver/model.js#L209) / [`objOf`](src/solver/model.js#L214) | Evaluate wealth at T and the objective for a solution vector |
-| [`checkSolution`](src/solver/model.js#L217) | Generic feasibility check of a vector (bounds, rows, integrality, semi-integer) |
-| [`capViolations`](src/solver/model.js#L241) | Bank/month pairs where the cap is exceeded (for lazy rows) |
-| [`placementsOf`](src/solver/model.js#L254) | Solution vector → list of `{t, k, amount}` |
-| [`toLPString`](src/solver/model.js#L265) | Model → CPLEX LP format for HiGHS |
+| [`buildModel`](src/solver/model.js#L53) | Builds the model for horizon T: [fixed tranches](src/solver/model.js#L61), [balance rows](src/solver/model.js#L91), tax rows, [candidate placements](src/solver/model.js#L117), wealth objective, [bank-cap rows](src/solver/model.js#L203) |
+| [`wealthOf`](src/solver/model.js#L227) / [`objOf`](src/solver/model.js#L232) | Evaluate wealth at T and the objective for a solution vector |
+| [`checkSolution`](src/solver/model.js#L235) | Generic feasibility check of a vector (bounds, rows, integrality, semi-integer) |
+| [`capViolations`](src/solver/model.js#L259) | Bank/month pairs where the cap is exceeded (for lazy rows) |
+| [`placementsOf`](src/solver/model.js#L272) | Solution vector → list of `{t, k, amount}` |
+| [`toLPString`](src/solver/model.js#L283) | Model → CPLEX LP format for HiGHS |
 
 ### `solver/simplex.js` – the embedded solver (`LP.simplex`)
 
@@ -483,7 +517,8 @@ The theory texts use `$…$` for inline and `$$…$$` for display formulas (TeX,
 | [`now`](src/solver/simplex.js#L13) | The work clock: every limit of the embedded solver is measured on it |
 | [`PIVOTS`](src/solver/simplex.js#L14) / `pivots()` | Number of simplex pivots so far, read with `pivots()`, for the trace of a run. It only counts and never limits, so it cannot change a result |
 | [`polish`](src/solver/simplex.js#L304) | Fix rounded integers, re-solve the continuous rest exactly |
-| [`solveMILP`](src/solver/simplex.js#L329) | Branch-and-bound: root heuristic, [DFS](src/solver/simplex.js#L422), branching rules, gap control. Also returns the [`trail`](src/solver/simplex.js#L398): each better plan as the node count at which it was found and its objective (at most 300, always ending at the plan returned) |
+| [`cardPick`](src/solver/simplex.js#L404) / [`cardClose`](src/solver/simplex.js#L417) / [`cardGreedy`](src/solver/simplex.js#L473) | Inside `solveMILP`, for a model with a limit on the number of columns in use (`M.card`): the column to branch on when a node's answer uses too many; the path that fixes every other column at zero once as many are in as allowed; a first choice of columns by elimination with look-ahead |
+| [`solveMILP`](src/solver/simplex.js#L335) | Branch-and-bound: root heuristic, [DFS](src/solver/simplex.js#L500), branching rules, gap control, the limit of `M.card`. `stopAtFirst` ends at the first plan; `onBetter` and `onTick` tell the caller of every better plan and that the search is alive. Also returns the [`trail`](src/solver/simplex.js#L439): each better plan as the node count at which it was found and its objective (at most 300, always ending at the plan returned) |
 
 ### `solver/backends.js`, `engine.js`, `optimize.js` – backends and the lexicographic optimisation (`LP.solve`)
 
@@ -497,8 +532,10 @@ The backends behind one interface, the engine that decides which backend answers
 | [`Engine`](src/solver/engine.js#L16) | Picks the backend, cross-checks, falls back, demotes unreliable backends, keeps statistics and a log of every answer used (`Engine.log`) |
 | [`rec`](src/solver/engine.js#L23) / [`mix`](src/solver/engine.js#L22) | One log entry per answer: kind of call, backend, model size, rows and columns counted by kind, pivots, nodes, status |
 | [`supportKeys`](src/solver/optimize.js#L6) / [`eventMonths`](src/solver/optimize.js#L9) / [`addNeighbours`](src/solver/optimize.js#L16) | Build the MILP candidate sets from LP solutions |
-| [`optimize`](src/solver/optimize.js#L22) | The four stages, knife-edge handling and lazy cap rows; returns the trace of its decisions as `res.trace` |
-| [`mark`](src/solver/optimize.js#L31) | Adds one step to the trace, with the engine's log of the calls made for it |
+| [`addReturns`](src/solver/optimize.js#L21) | Adds the months in which the money of a plan comes back, with every product, to a candidate set |
+| [`optimize`](src/solver/optimize.js#L35) | The four stages, knife-edge handling and lazy cap rows; with a limit on new deposits the search within it ([code](src/solver/optimize.js#L208)), with `cfg.unlimited` the rounds without a time limit ([code](src/solver/optimize.js#L317)); returns the trace of its decisions as `res.trace` |
+| [`tieBreak`](src/solver/optimize.js#L116) / [`swapOne`](src/solver/optimize.js#L93) | Inside `optimize`: stage 3 as an integer problem on the support of a plan; the local search for more wealth within a limit on new deposits |
+| [`mark`](src/solver/optimize.js#L46) | Adds one step to the trace, with the engine's log of the calls made for it |
 
 ### `solver/workerglue.js` – worker protocol
 
@@ -528,12 +565,13 @@ In load order: `dom.js`, `state.js`, `format.js`, `tooltip.js`, `solver-client.j
 |---|---|
 | [`A.CDN`](src/app/ui/dom.js#L7) | The pinned addresses of every library the page loads (see [Dependencies](#dependencies-and-deployment)) |
 | [`el`](src/app/ui/dom.js#L18) | Builds a DOM element from a tag, properties and children; used for nearly all markup the scripts create |
-| [`normalize`](src/app/ui/state.js#L12) / [`loadState`](src/app/ui/state.js#L32) | Fill defaults; load from `localStorage`, else the embedded state, else a blank state ([`A.blankState`](src/app/ui/state.js#L28)) |
-| [`A.save`](src/app/ui/state.js#L39) | Debounced save to `localStorage` |
+| [`normalize`](src/app/ui/state.js#L12) / [`loadState`](src/app/ui/state.js#L35) | Fill defaults; load from `localStorage`, else the embedded state, else a blank state ([`A.blankState`](src/app/ui/state.js#L31)) |
+| [`A.save`](src/app/ui/state.js#L42) | Debounced save to `localStorage` |
 | [`t`](src/app/ui/format.js#L7), [`A.eur`](src/app/ui/format.js#L15), [`A.monthLabel`](src/app/ui/format.js#L52), … | Translation and number/date formatting |
-| [`S.start`](src/app/ui/solver-client.js#L11), [`S.solve`](src/app/ui/solver-client.js#L61), [`S.arm`](src/app/ui/solver-client.js#L30), [`S.onMsg`](src/app/ui/solver-client.js#L41) | Solver client: worker from Blob, job queue, watchdog, main-thread fallback |
+| [`S.start`](src/app/ui/solver-client.js#L11), [`S.solve`](src/app/ui/solver-client.js#L68), [`S.arm`](src/app/ui/solver-client.js#L30), [`S.onMsg`](src/app/ui/solver-client.js#L42) | Solver client: worker from Blob, job queue, watchdog, main-thread fallback. `onMsg` also keeps the interim result and the best plan a search without a time limit reports |
+| [`S.finishEarly`](src/app/ui/solver-client.js#L78) | Ends a search without a time limit: resolves the job with the interim result and the best plan reported, and restarts the worker |
 | [`A.parseNum`](src/app/ui/format.js#L25) / [`A.numField`](src/app/ui/format.js#L62) | Read a typed number with either decimal sign; the one number field used by the drawer, the wizard and the monthly grid |
-| [`A.renderSide`](src/app/ui/drawer.js#L33) | The input drawer (basics, need and buffer, products, holdings, payments, one-offs, pins, tax and cap) |
+| [`A.renderSide`](src/app/ui/drawer.js#L33) | The input drawer (basics, need and buffer, products, holdings, payments, one-offs, pins, tax and cap, and *Optimisation and baseline* with the limit on new deposits and the search without a time limit) |
 
 ### `app/views/` – pipeline and result views
 
@@ -541,9 +579,9 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 
 | Function | Purpose |
 |---|---|
-| [`A.solveState`](src/app/views/pipeline.js#L16) | Optimise + verify one state (used by the main run, scenarios and the self-test) |
-| [`A.run`](src/app/views/pipeline.js#L63) / [`A.markStale`](src/app/views/pipeline.js#L41) | Run the pipeline; mark results as out of date after an input change. A run sets [`A.runId`](src/app/views/pipeline.js#L71) and, once complete, [calls `A.replay.runDone`](src/app/views/pipeline.js#L103) |
-| [`renderKpis`](src/app/views/kpis.js#L7) | KPI tiles |
+| [`A.solveState`](src/app/views/pipeline.js#L18) | Optimise + verify one state (used by the main run, scenarios and the self-test). Its last argument turns on the search without a time limit (main run only); the plan of a search ended by hand must pass the verification, or the plan of the usual budgets stands |
+| [`A.run`](src/app/views/pipeline.js#L74) / [`A.markStale`](src/app/views/pipeline.js#L47) | Run the pipeline; mark results as out of date after an input change. A run sets [`A.runId`](src/app/views/pipeline.js#L82) and, once complete, [calls `A.replay.runDone`](src/app/views/pipeline.js#L119) |
+| [`renderKpis`](src/app/views/kpis.js#L7) | KPI tiles; the first one also says what a limit on new deposits costs and how a search without a time limit ended |
 | [`renderMain`](src/app/views/timeline.js#L61) | Liquidity and locked-capital area chart (ECharts) |
 | [`balances`](src/app/views/timeline.js#L16), [`balanceItems`](src/app/views/timeline.js#L8), [`balanceOption`](src/app/views/timeline.js#L48) | The parts of that chart for one simulated plan: series and tooltip, legend entries, chart options. Shared by the main chart and the step-by-step view |
 | [`renderStrat`](src/app/views/strategies.js#L9) | Strategy comparison |
@@ -555,12 +593,12 @@ One file per result view, plus `shared.js` (what the views have in common), `ren
 | [`renderGrid`](src/app/views/grid.js#L6) / [`setOv`](src/app/views/grid.js#L32) | Monthly grid with editable overrides |
 | [`renderAll`](src/app/views/render.js#L38) | Draws every view from `A.view`, or the blank slate and the ready card when there is no result yet |
 | [`chart`](src/app/views/shared.js#L19) / [`toggleLegend`](src/app/views/shared.js#L36) | One ECharts instance per chart element; legends whose entries switch a series on and off |
-| [`runOpen`](src/app/views/progress.js#L64) / [`runStep`](src/app/views/progress.js#L29) | The progress dialog: opens for a run and ticks off the solver's stages |
-| [`A.abortRun`](src/app/views/pipeline.js#L51) | Cancels a run; what is on screen stays |
-| [`A.replay.open`](src/app/views/replay.js#L490) / [`close`](src/app/views/replay.js#L481) / [`runDone`](src/app/views/replay.js#L496) | Enter and leave the step-by-step view. Without a current result `open` runs the optimisation first, and `runDone` opens the view once that run is complete |
-| [`A.replay.sync`](src/app/views/replay.js#L462) / [`render`](src/app/views/replay.js#L431) | Label and state of the entry points; draws the current step |
-| [`build`](src/app/views/replay.js#L33) | Trace → list of steps, with the starting point and the cross-check added, and what is known about each month after each step |
-| [`qa`](src/app/views/replay.js#L109), [`renderStrip`](src/app/views/replay.js#L221), [`drawPlan`](src/app/views/replay.js#L267), [`drawSearch`](src/app/views/replay.js#L296), [`renderFigs`](src/app/views/replay.js#L324), [`renderHood`](src/app/views/replay.js#L400) | One step: question and answer, horizon strip, month-end balances, search progress, key figures, *Under the hood* |
+| [`runOpen`](src/app/views/progress.js#L90) / [`runStep`](src/app/views/progress.js#L47) | The progress dialog: opens for a run and ticks off the solver's stages. The stages of the limit on new deposits and of the search without a time limit are listed only when the setting is on; the latter shows its round, the search nodes and the best plan so far |
+| [`A.abortRun`](src/app/views/pipeline.js#L62) / [`A.keepRun`](src/app/views/pipeline.js#L57) | Cancels a run (what is on screen stays); ends a search without a time limit and continues with its best plan |
+| [`A.replay.open`](src/app/views/replay.js#L520) / [`close`](src/app/views/replay.js#L511) / [`runDone`](src/app/views/replay.js#L526) | Enter and leave the step-by-step view. Without a current result `open` runs the optimisation first, and `runDone` opens the view once that run is complete |
+| [`A.replay.sync`](src/app/views/replay.js#L492) / [`render`](src/app/views/replay.js#L461) | Label and state of the entry points; draws the current step |
+| [`build`](src/app/views/replay.js#L36) | Trace → list of steps, with the starting point and the cross-check added, and what is known about each month after each step |
+| [`qa`](src/app/views/replay.js#L116), [`renderStrip`](src/app/views/replay.js#L241), [`drawPlan`](src/app/views/replay.js#L287), [`drawSearch`](src/app/views/replay.js#L316), [`renderFigs`](src/app/views/replay.js#L344), [`renderHood`](src/app/views/replay.js#L429) | One step: question and answer, horizon strip, month-end balances, search progress, key figures, *Under the hood* |
 
 ### `app/xlsx.js` – Excel export (`LP.xlsx`)
 
@@ -657,10 +695,12 @@ The complete input is one JSON object (*Export / import → State as JSON*). The
 | `pins[]` | Pinned tranches: `{month, productId, amount}` |
 | `overrides` | Monthly grid overrides keyed by `YYYY-MM`: `{extraNeed, extraIn, minLiq}` |
 | `tax`, `bankCap` | `{on, church, allowance}` and `{on, cap}` |
+| `trancheCap` | `{on, max}`: at most `max` new deposits in the plan (a whole number ≥ 1; pinned tranches count) |
+| `unlimited` | `true`: after the usual plan, search on without a time limit |
 
 The importer also accepts the `deposit-savings-planner` JSON from the original specification and converts it with `fromWizardJson()`.
 
-This is version 1 of the format. A release after which saved inputs or exported JSON no longer load raises the app's MAJOR version (see [the changelog rule](#the-handbook-and-the-changelog)).
+Fields added later have defaults, so older files still load: `trancheCap` and `unlimited` came with 1.5 and are off unless set. This is version 1 of the format. A release after which saved inputs or exported JSON no longer load raises the app's MAJOR version (see [the changelog rule](#the-handbook-and-the-changelog)).
 
 ## Dependencies and deployment
 

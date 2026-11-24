@@ -1,5 +1,5 @@
 {
-  "note": "T* and a digest (FNV-1a of JSON.stringify(res.placements)) per example under its default rate scenario, solved with HiGHS. Rewrite with: node scripts/check.mjs --update-baseline",
+  "note": "T* and a digest (FNV-1a of JSON.stringify(res.placements)) per example under its default rate scenario, solved with HiGHS; \"+maxN\" is the same example with at most N new deposits. Rewrite with: node scripts/check.mjs --update-baseline",
   "presets": {
     "g": {
       "rateScenario": "events",
@@ -8,12 +8,26 @@
       "placements": 23,
       "digest": "157431cc"
     },
+    "g+max4": {
+      "rateScenario": "events",
+      "Tstar": 32,
+      "T": 32,
+      "placements": 4,
+      "digest": "2367393d"
+    },
     "ruhestand": {
       "rateScenario": "current",
       "Tstar": 187,
       "T": 187,
       "placements": 91,
       "digest": "7714432a"
+    },
+    "ruhestand+max6": {
+      "rateScenario": "current",
+      "Tstar": 184,
+      "T": 184,
+      "placements": 6,
+      "digest": "6bc3a0eb"
     },
     "zinsfalle": {
       "rateScenario": "events",

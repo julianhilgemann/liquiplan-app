@@ -22,7 +22,8 @@
   function mix(list) { var o = {}; for (var i = 0; i < list.length; i++) { var c = list[i].name.charAt(0); o[c] = (o[c] || 0) + 1; } return o; }
   function rec(eng, kind, b, r) {
     var M = r.M;
-    eng.log.push({ kind: kind, solver: b.name, rows: M.rows.length, cols: M.cols.length, mixR: mix(M.rows), mixC: mix(M.cols), pivots: r.pivots != null ? r.pivots : null, nodes: r.nodes != null ? r.nodes : null, status: r.status });
+    eng.log.push({ kind: kind, solver: b.name, rows: M.rows.length, cols: M.cols.length, mixR: mix(M.rows), mixC: mix(M.cols), pivots: r.pivots != null ? r.pivots : null, nodes: r.nodes != null ? r.nodes : null, status: r.status,
+      card: M.card ? M.card.max : null }); // a limit on the number of placements that the search enforces without a row of its own
   }
   Engine.prototype.active = function () { return this.primary && !this.dead ? this.primary : this.embedded; };
   Engine.prototype.note = function (name) { this.stats.by[name] = (this.stats.by[name] || 0) + 1; };
@@ -55,14 +56,16 @@
   };
   /* Integer problems: embedded branch-and-bound for `timeLimit` seconds on the work clock (capped by `embTime`).
      The outcome depends on the model alone, not on the machine. 'unknown' means the budget ran out without a plan.
-     o.start = { M, x }: a plan of another model of the same scenario to begin with (columns are matched by name). */
+     o.start = { M, x }: a plan of another model of the same scenario to begin with (columns are matched by name).
+     o.first: stop at the first plan. o.rules, o.greedy: passed on to the search (simplex.js). o.onBetter(M, x, obj, nodes),
+     o.onTick(nodes): told of every better plan, and now and then that the search is alive. */
   Engine.prototype.milp = async function (build, o) {
     this.stats.milp++;
     o = o || {};
     var M = build(true), te = Math.min(o.timeLimit || 4, o.embTime || 1.2), start = null;
     if (o.start) { start = new Float64Array(M.cols.length); for (var j = 0; j < M.cols.length; j++) { var from = o.start.M.byName[M.cols[j].name]; start[j] = from != null ? o.start.x[from] : 0; } }
     this.beat(this.embedded.name, te * 30000 + 30000); // real-time watchdog only: generous, so that a slow device is not mistaken for a hang
-    var e = this.embedded.milp(M, { timeLimit: te, relGap: o.relGap, absGap: o.absGap, start: start }); e.M = M;
+    var e = this.embedded.milp(M, { timeLimit: te, relGap: o.relGap, absGap: o.absGap, start: start, first: o.first, rules: o.rules, greedy: o.greedy, onTick: o.onTick, onBetter: o.onBetter ? function (x, obj, nodes) { o.onBetter(M, x, obj, nodes); } : null }); e.M = M;
     if (e.status === 'optimal' || e.status === 'feasible') { this.note(this.embedded.name); rec(this, 'milp', this.embedded, e); return e; }
     var r = { status: e.status === 'infeasible' ? 'infeasible' : 'unknown', M: M, nodes: e.nodes, trail: e.trail, pivots: e.pivots };
     rec(this, 'milp', this.embedded, r); return r;

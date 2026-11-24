@@ -27,6 +27,15 @@
       var li = line(t('st_monoI', { a: '…', b: '…' })), si = LP.presets.g();
       si.oneoffs.push({ id: 'oX', date: '2027-09-15', amount: 6000, label: 'Zufluss' });
       var ri = await solve(si); li.done(ri.ver.ok && ri.sim.Tstar >= o.sim.Tstar, t('st_monoI', { a: (o.sim.Tstar + 1) + ' M', b: (ri.sim.Tstar + 1) + ' M' }));
+      // the limit on new deposits: example G with at most four, and a limit with room to spare, which must leave the plan as it is
+      var nF = o.res.placements.length, lm = line(t('st_max', { p: t('p_g'), n: 4, k: '…', a: '…', f: nF, b: (o.sim.Tstar + 1) + ' M' })), sm = LP.presets.g();
+      sm.trancheCap = { on: true, max: 4 };
+      var rm = await solve(sm);
+      lm.done(rm.ver.ok && rm.res.placements.length <= 4 && rm.sim.Tstar <= o.sim.Tstar && rm.sim.Tstar >= rm.base.tg.Tstar, t('st_max', { p: t('p_g'), n: 4, k: rm.res.placements.length, a: (rm.sim.Tstar + 1) + ' M', f: nF, b: (o.sim.Tstar + 1) + ' M' }));
+      var lf = line(t('st_maxFree', { n: nF + 5, k: '…' })), sf = LP.presets.g();
+      sf.trancheCap = { on: true, max: nF + 5 };
+      var rf = await solve(sf);
+      lf.done(rf.ver.ok && JSON.stringify(rf.res.placements) === JSON.stringify(o.res.placements), t('st_maxFree', { n: nF + 5, k: rf.res.placements.length }));
       var lx = line(t('st_xlsx', { d: '…', e: '…' }));
       try {
         await A.xlsxLibs();

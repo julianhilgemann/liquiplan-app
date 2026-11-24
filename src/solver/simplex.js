@@ -325,12 +325,20 @@
     return { ok: true, x: out, obj: LP.model.objOf(M, out) };
   }
 
-  /* branch and bound; opts: {timeLimit (s on the work clock), absGap, relGap, stopAtFirst, start (a solution vector to begin with)} */
+  /* branch and bound; opts: {timeLimit (s on the work clock), absGap, relGap,
+       stopAtFirst, start (a solution vector to begin with), rules (the branching rules, see below), greedy (with a limit:
+       look-ahead widths of the eliminations tried first, see cardGreedy), onBetter(x, obj, nodes) (told of every better
+       plan), onTick(nodes, obj | null) (told now and then that the search is alive)}
+     M.card = { cols, w, max }: at most `max` of the columns `cols` may be above zero. No row says so: a node whose
+       answer uses more of them branches on one column, "in the plan" (at least its minimum) or "out" (zero), and once
+       `max` columns are in, all the others are fixed at zero. w ranks the columns (see cardPick). */
   function solveMILP(M, opts) {
     opts = opts || {};
     var t0 = now(), deadline = t0 + 1000 * (opts.timeLimit || 5);
     var ints = [], j;
     for (j = 0; j < M.cols.length; j++) if (M.cols[j].int) ints.push(j);
+    var card = M.card && M.card.cols && M.card.cols.length ? M.card : null, inCard = null, wCard = null;
+    if (card) { inCard = new Uint8Array(M.cols.length); wCard = new Float64Array(M.cols.length); for (j = 0; j < card.cols.length; j++) { inCard[card.cols[j]] = 1; wCard[card.cols[j]] = card.w ? card.w[j] : 1; } }
     var S = new Dense(M), st = S.solveLP(deadline);
     if (st !== 'optimal') return { status: st === 'limit' ? 'unknown' : st, x: null, nodes: 0 };
     var x = S.x();
@@ -380,7 +388,40 @@
       var xs = S.x();
       return { x: xs, objMin: S.objMin(xs) };
     }
-    var varRule = 'chronosemi', childRule = 'down';
+    var varRule = 'chronosemi', childRule = 'down', cardRule = 'span';
+    // ----- limit on the number of columns in use (M.card) -----
+    function cardUsed(xs) { var n = 0; for (var a = 0; a < card.cols.length; a++) if (xs[card.cols[a]] > 0.5) n++; return n; }
+    /* The column to branch on when the answer of a node uses more columns than allowed (-1: it does not).
+       'span': the largest amount times term first, 'size': the largest amount first; both try "in the plan" first, so
+       a dive keeps the big rungs of the ladder and drops the rest. 'drop': the smallest amount times term first,
+       "out" first. Ties go to the column that comes first. */
+    function cardIn(path) { // the columns that are in the plan on this path: by their own lower bound, or by a decision of the search
+      var a, on = {}, n = 0;
+      for (a = 0; a < card.cols.length; a++) if (lb0[card.cols[a]] >= 1) { on[card.cols[a]] = 1; n++; }
+      for (a = 0; a < path.length; a++) if (inCard[path[a].v] && path[a].lo >= 1 && !on[path[a].v]) { on[path[a].v] = 1; n++; }
+      return { on: on, n: n };
+    }
+    function cardPick(xs, path) {
+      var a, c, n = 0, on, best = -1, bs = 0, s;
+      for (a = 0; a < card.cols.length; a++) if (xs[card.cols[a]] > 1e-6) n++;
+      if (n <= card.max) return -1;
+      on = cardIn(path).on;
+      for (a = 0; a < card.cols.length; a++) {
+        c = card.cols[a]; if (!(xs[c] > 1e-6) || on[c]) continue;
+        s = cardRule === 'size' ? xs[c] : xs[c] * wCard[c];
+        if (best < 0 || (cardRule === 'drop' ? s < bs : s > bs)) { best = c; bs = s; }
+      }
+      return best;
+    }
+    // a path with as many columns "in" as allowed: every other column of the limit is fixed at zero (null: too many are in)
+    function cardClose(path) {
+      var a, st = cardIn(path), n = st.n, on = st.on, out;
+      if (n > card.max) return null;
+      if (n < card.max) return path;
+      out = path.filter(function (p) { return !inCard[p.v] || on[p.v]; });
+      for (a = 0; a < card.cols.length; a++) if (!on[card.cols[a]]) out.push({ v: card.cols[a], lo: 0, up: 0 });
+      return out;
+    }
     function violation(xs) {
       var bestJ = -1, bestS = 1e-6, v, f, sc;
       for (var a = 0; a < ints.length; a++) {
@@ -395,21 +436,30 @@
       }
       return bestJ;
     }
-    var rejected = 0, trail = []; // trail: each better plan as { n: nodes so far, v: its objective }, for the trace of a run
+    var rejected = 0, trail = [], quiet = false; // trail: each better plan as { n: nodes so far, v: its objective }, for the trace of a run
     function tryIncumbent(xs, objMin) {
       var p = polish(M, xs);
       if (!p.ok) { rejected++; return false; }
+      if (card && cardUsed(p.x) > card.max) { rejected++; return false; }
       var om = sgn * (p.obj - M.objConst);
-      if (om < incMin - 1e-9) { incMin = om; incumbent = p.x; if (trail.length >= 300) trail.pop(); trail.push({ n: nodes, v: p.obj }); } // full: the newest replaces the last, so the trail always ends at the plan returned
+      if (om < incMin - 1e-9) { // full: the newest replaces the last, so the trail always ends at the plan returned
+        incMin = om; incumbent = p.x; if (trail.length >= 300) trail.pop(); trail.push({ n: nodes, v: p.obj });
+        if (opts.onBetter && !quiet) opts.onBetter(p.x, p.obj, nodes);
+      }
       return true;
     }
-    if (opts.start) tryIncumbent(opts.start, 0); // a plan known from elsewhere: the search can only improve on it
+    if (opts.start) { quiet = true; tryIncumbent(opts.start, 0); quiet = false; } // a plan known from elsewhere: the search can only improve on it (and the caller knows it already)
     // root heuristic: round all integer columns down, fix them, re-solve the continuous rest
     (function () {
-      var path = [];
-      for (var a = 0; a < ints.length; a++) {
+      var path = [], keep = null, a;
+      if (card) { // with a limit: only its largest columns (amount times term) stay, the others go to zero
+        var used = card.cols.filter(function (c) { return x[c] > 1e-6; }).sort(function (p, q) { return (x[q] * wCard[q] - x[p] * wCard[p]) || (p - q); });
+        keep = new Uint8Array(M.cols.length); for (a = 0; a < used.length && a < card.max; a++) keep[used[a]] = 1;
+      }
+      for (a = 0; a < ints.length; a++) {
         var c = ints[a], v = Math.floor(x[c] + 1e-6), semi = M.cols[c].semi;
         if (semi && v > 0 && v < semi) v = 0;
+        if (keep && inCard[c] && !keep[c]) v = 0;
         v = Math.max(lb0[c], Math.min(ub0[c], v));
         path.push({ v: c, lo: v, up: v });
       }
@@ -417,12 +467,41 @@
       if (r && r !== FAIL) tryIncumbent(r.x, r.objMin);
       applyPath([]);
     })();
+    /* With a limit: a first choice of columns by elimination. As long as the answer uses too many columns, each of its
+       `look` smallest (amount times term) is taken out on trial, and the one whose loss costs the objective least goes
+       for good. The path returned fixes every column that is left over at zero; the search looks at that subtree first. */
+    function cardGreedy(look) {
+      var path = [], a, c, r, used, best, bestObj, t;
+      while (true) {
+        if (now() > deadline) return null;
+        r = evalNode(path); nodes++;
+        if (!r || r === FAIL) return null;
+        used = card.cols.filter(function (c) { return r.x[c] > 1e-6; });
+        if (used.length <= card.max) break;
+        used = used.filter(function (c) { return lb0[c] < 1; }).sort(function (p, q) { return (r.x[p] * wCard[p] - r.x[q] * wCard[q]) || (p - q); });
+        best = -1; bestObj = 0;
+        for (a = 0; a < used.length && a < look; a++) {
+          t = evalNode(path.concat([{ v: used[a], lo: 0, up: 0 }])); nodes++;
+          if (t && t !== FAIL && (best < 0 || t.objMin < bestObj - 1e-9)) { best = used[a]; bestObj = t.objMin; }
+        }
+        if (best < 0) return null; // none of them can go
+        path.push({ v: best, lo: 0, up: 0 });
+      }
+      var out = {}; for (a = 0; a < path.length; a++) out[path[a].v] = 1;
+      for (a = 0; a < card.cols.length; a++) { c = card.cols[a]; if (!out[c] && !(r.x[c] > 1e-6)) path.push({ v: c, lo: 0, up: 0 }); }
+      return path;
+    }
     var limit = true, total = deadline - now();
-    var rules = opts.rules || [['chronosemi', 'down', 0.5], ['large', 'down', 0.75], ['mostfrac', 'nearest', 1]];
-    function dfs(until) { // depth-first search; returns true when the tree was searched completely
-      var stack = [{ path: [], bound: rootMin }];
+    // each rule: [which column to branch on, which child first, share of the budget used up when it ends, order for a limit (cardPick)].
+    // A search for any plan within a limit starts with 'drop': its nodes are cheap, and it finds a plan, or shows there is none, soonest.
+    var rules = opts.rules || (card && opts.stopAtFirst ? [['chronosemi', 'down', 0.5, 'drop'], ['chronosemi', 'down', 0.85, 'span'], ['mostfrac', 'nearest', 1, 'size']]
+      : [['chronosemi', 'down', 0.5, 'span'], ['large', 'down', 0.75, 'size'], ['mostfrac', 'nearest', 1, 'drop']]);
+    var tick = 0;
+    function dfs(until, from) { // depth-first search from the root (or below the path `from`); returns true when that tree was searched completely
+      var stack = [{ path: from || (card ? cardClose([]) || [] : []), bound: rootMin }];
       while (stack.length) {
         if (now() > until || (opts.maxNodes && nodes >= opts.maxNodes)) return false;
+        if (opts.onTick && (++tick & 255) === 0) opts.onTick(nodes, incumbent ? sgn * incMin + M.objConst : null);
         var node = stack.pop();
         if (incumbent && (node.bound >= incMin - 1e-9 || gapOK(node.bound))) continue;
         nodes++;
@@ -430,13 +509,15 @@
         if (res === FAIL) { incomplete = true; continue; }
         if (!res) continue;
         if (incumbent && (res.objMin >= incMin - 1e-9 || gapOK(res.objMin))) continue;
-        var bj = violation(res.x);
+        var bc = card ? cardPick(res.x, node.path) : -1, bj = bc >= 0 ? bc : violation(res.x);
         if (bj < 0) { tryIncumbent(res.x, res.objMin); if (opts.stopAtFirst && incumbent) return false; continue; }
         var v = res.x[bj], semi = M.cols[bj].semi, plo = lb0[bj], pup = ub0[bj], k;
         for (k = 0; k < node.path.length; k++) if (node.path[k].v === bj) { plo = node.path[k].lo; pup = node.path[k].up; }
         var base = node.path.filter(function (p) { return p.v !== bj; });
         var down, upc, downFirst = true;
-        if (semi && v < semi - 1e-6 && v > 1e-6) {
+        if (bc >= 0) { // too many columns in use: this one is out (zero), or in (at least its minimum)
+          down = { v: bj, lo: plo, up: 0 }; upc = { v: bj, lo: Math.max(plo, semi || 1), up: pup }; downFirst = cardRule === 'drop';
+        } else if (semi && v < semi - 1e-6 && v > 1e-6) {
           down = { v: bj, lo: plo, up: 0 }; upc = { v: bj, lo: Math.max(plo, semi), up: pup }; downFirst = v < semi / 2;
         } else {
           var fl = Math.floor(v + 1e-9);
@@ -445,12 +526,20 @@
         }
         var cd = down.up >= down.lo ? { path: base.concat([down]), bound: res.objMin } : null;
         var cu = upc.lo <= upc.up ? { path: base.concat([upc]), bound: res.objMin } : null;
+        if (cu && card && inCard[bj]) { cu.path = cardClose(cu.path); if (!cu.path) cu = null; }
         if (downFirst) { if (cu) stack.push(cu); if (cd) stack.push(cd); } else { if (cd) stack.push(cd); if (cu) stack.push(cu); }
       }
       return true;
     }
+    // with a limit: the choices of the elimination come first, each with a small share of the budget for its amounts
+    for (var gi = 0; card && opts.greedy && gi < opts.greedy.length && !(opts.stopAtFirst && incumbent) && now() < deadline; gi++) {
+      var gp = cardGreedy(opts.greedy[gi]);
+      if (gp) { varRule = 'chronosemi'; childRule = 'down'; dfs(Math.min(deadline, now() + 0.08 * total), gp); }
+      applyPath([]);
+    }
     for (var ri = 0; ri < rules.length; ri++) {
-      varRule = rules[ri][0]; childRule = rules[ri][1];
+      if (opts.stopAtFirst && incumbent) break;
+      varRule = rules[ri][0]; childRule = rules[ri][1]; cardRule = rules[ri][3] || 'span';
       incomplete = false;
       if (dfs(Math.min(deadline, t0 + (deadline - t0) * rules[ri][2])) && !incomplete) { limit = false; break; }
       if (now() > deadline) break;

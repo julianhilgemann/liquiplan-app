@@ -87,6 +87,7 @@
       tax: { on: !!(state.tax && state.tax.on), rate: 0, allowance: 0 },
       bankCap: { on: !!(state.bankCap && state.bankCap.on), cap: num(state.bankCap && state.bankCap.cap, 100000) },
       naiveReserve: Math.max(0, num(state.naiveReserve, 3)),
+      trancheCap: { on: false, max: 0, left: 0 },
       needStartIdx: 0, months: [], need: [], recIn: [], recOut: [], oneIn: [], oneOut: [], extraNeed: [], extraIn: [],
       inflow: [], outflow: [], net: [], floor: [], manualMin: [], rTG: [], year: [], isDec: [],
       products: [], existing: [], pins: [], warnings: []
@@ -172,6 +173,9 @@
       if (!pr || ti < 0 || ti >= H) { P.warnings.push({ code: 'pin_ignored', id: pn.id }); return; }
       P.pins.push({ id: pn.id, t: ti, k: pr.k, amount: amt });
     });
+    // limit on the number of new deposits in the plan: pinned ones count, so `left` is what the optimiser may add
+    var tc = state.trancheCap;
+    if (tc && tc.on && isFinite(+tc.max) && +tc.max >= 0) { var mxN = Math.floor(+tc.max + 1e-9); P.trancheCap = { on: true, max: mxN, left: Math.max(0, mxN - P.pins.length) }; }
     return P;
   }
 

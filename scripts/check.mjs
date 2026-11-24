@@ -14,11 +14,15 @@
 //      unresolved markup ([[key]], {term}, raw TeX), no broken #handbuch link, no MathJax error, and the same section ids
 //      in both languages; a few fixed searches find what they should;
 //   4. every example (LP.presetIds) is optimised; its plan must pass the app's own verification, and its T* and placements
-//      must equal scripts/baseline.json (skipped with a note when HiGHS did not load: the fallback solver may differ);
-//   5. the in-app self-test passes every line;
-//   6. no sideways overflow at 360, 768 and 1440 px in the analysis, the wizard, the step-by-step view and the handbook,
+//      must equal scripts/baseline.json (skipped with a note when HiGHS did not load: the fallback solver may differ).
+//      Two examples are optimised a second time with a limit on the number of new deposits (LIMITS): the plan must keep
+//      it, must not reach a later month than the plan without the limit, and must equal its own baseline entry;
+//   5. the search without a time limit: one run that ends by itself with the plan of the usual budgets, and one that is
+//      ended by hand and must keep a verified plan;
+//   6. the in-app self-test passes every line;
+//   7. no sideways overflow at 360, 768 and 1440 px in the analysis, the wizard, the step-by-step view and the handbook,
 //      and no gap between the handbook's pinned title and search while a chapter scrolls;
-//   7. README links into the code such as [`name()`](src/app/x.js#L42) point at a line that contains the name.
+//   8. README links into the code such as [`name()`](src/app/x.js#L42) point at a line that contains the name.
 //
 // Needs Playwright with its browsers, installed globally (npm i -g playwright; npx playwright install). The page loads its
 // libraries (ECharts, HiGHS, MathJax, ExcelJS) from jsDelivr, so the check needs the network.
@@ -38,6 +42,7 @@ const flag = (name) => args.includes('--' + name);
 const opt = (name, dflt) => { const a = args.find((x) => x.startsWith('--' + name + '=')); return a ? a.split('=')[1] : dflt; };
 const BROWSERS = opt('browser', 'chromium') === 'all' ? ['chromium', 'firefox', 'webkit'] : [opt('browser', 'chromium')];
 const WIDTHS = [360, 768, 1440];
+const LIMITS = { g: 4, ruhestand: 6 }; // examples that are also optimised with a limit on the number of new deposits
 
 // ---------- reporting ----------
 const failures = [], warnings = [], notes = [];
@@ -65,17 +70,17 @@ section('Translations');
   check(!onlyDe.length && !onlyEn.length, `de.js and en.js have the same ${dk.length} keys`, [onlyDe.length && 'only in de: ' + onlyDe.join(', '), onlyEn.length && 'only in en: ' + onlyEn.join(', ')].filter(Boolean).join('; '));
 }
 
-// ---------- 3.–6. in the browser ----------
+// ---------- 3.–7. in the browser ----------
 const pw = loadPlaywright();
 const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
-const fresh = { note: 'T* and a digest (FNV-1a of JSON.stringify(res.placements)) per example under its default rate scenario, solved with HiGHS. Rewrite with: node scripts/check.mjs --update-baseline', presets: {} };
+const fresh = { note: 'T* and a digest (FNV-1a of JSON.stringify(res.placements)) per example under its default rate scenario, solved with HiGHS; "+maxN" is the same example with at most N new deposits. Rewrite with: node scripts/check.mjs --update-baseline', presets: {} };
 for (const name of BROWSERS) await inBrowser(name);
 if (flag('update-baseline')) {
   if (Object.keys(fresh.presets).length) { writeFileSync(BASELINE, JSON.stringify(fresh, null, 2) + '\n'); note('wrote ' + BASELINE.slice(ROOT.length + 1)); }
   else check(false, 'update the baseline', 'no plan solved with HiGHS, nothing written');
 }
 
-// ---------- 7. README links ----------
+// ---------- 8. README links ----------
 section('README links into the code' + (flag('strict-links') ? '' : ' (warnings only; --strict-links makes them fail)'));
 readmeLinks();
 finish();
@@ -186,24 +191,58 @@ async function inBrowser(name) {
     section(tag('Plans'));
     const presets = await page.evaluate(() => LP.presetIds.slice());
     await page.click('#emptyExample'); await settle(300);
-    for (const id of presets) {
-      await page.selectOption('#selPreset', id); await settle(200);
+    // optimises what is loaded and checks the plan; `limit`: the highest number of new deposits it may hold
+    const plan = async (id, key, limit) => {
       await page.click('#btnOptimize');
-      const done = await page.waitForFunction(() => LP.app.view && !LP.app.busy && !LP.app.stale, null, { timeout: 240000 }).then(() => true, () => false);
-      if (!check(done, tag(`${id}: optimised`), 'no result within 4 minutes')) continue;
+      const done = await page.waitForFunction(() => LP.app.view && !LP.app.busy && !LP.app.stale, null, { timeout: 300000 }).then(() => true, () => false);
+      if (!check(done, tag(`${key}: optimised`), 'no result within 5 minutes')) return;
       const r = await page.evaluate(() => {
         const v = LP.app.view, s = JSON.stringify(v.res.placements); let h = 2166136261;
         for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-        return { scenario: LP.app.state.rateScenario, solver: v.res.solver, Tstar: v.sim.Tstar, T: v.res.T, placements: v.res.placements.length, digest: h.toString(16).padStart(8, '0'), verified: LP.sim.verify(v.P, v.res).ok };
+        return { scenario: LP.app.state.rateScenario, solver: v.res.solver, Tstar: v.sim.Tstar, T: v.res.T, placements: v.res.placements.length, digest: h.toString(16).padStart(8, '0'), verified: LP.sim.verify(v.P, v.res).ok, free: v.res.free || null };
       });
-      check(r.verified, tag(`${id} (${r.scenario}): the plan passes the verification, T* ${r.Tstar}, ${r.placements} placements, ${r.solver}`));
-      if (r.solver !== 'HiGHS') { note(tag(`${id}: solved by ${r.solver}, not HiGHS; baseline comparison skipped`)); continue; }
-      fresh.presets[id] = { rateScenario: r.scenario, Tstar: r.Tstar, T: r.T, placements: r.placements, digest: r.digest };
-      if (flag('update-baseline')) continue;
-      const b = baseline && baseline.presets[id];
-      if (!b) { check(false, tag(`${id}: baseline`), 'no entry in scripts/baseline.json (run with --update-baseline)'); continue; }
-      check(b.rateScenario === r.scenario && b.Tstar === r.Tstar && b.digest === r.digest, tag(`${id}: same plan as the baseline`),
+      check(r.verified, tag(`${key} (${r.scenario}): the plan passes the verification, T* ${r.Tstar}, ${r.placements} placements, ${r.solver}`));
+      if (limit != null) check(r.placements <= limit && (!r.free || r.Tstar <= r.free.T), tag(`${key}: at most ${limit} new deposits, and no later month than the plan without the limit` + (r.free ? ` (${r.free.n} deposits, T* ${r.free.T})` : '')), `${r.placements} deposits, T* ${r.Tstar}`);
+      if (r.solver !== 'HiGHS') { note(tag(`${key}: solved by ${r.solver}, not HiGHS; baseline comparison skipped`)); return; }
+      fresh.presets[key] = { rateScenario: r.scenario, Tstar: r.Tstar, T: r.T, placements: r.placements, digest: r.digest };
+      if (flag('update-baseline')) return;
+      const b = baseline && baseline.presets[key];
+      if (!b) { check(false, tag(`${key}: baseline`), 'no entry in scripts/baseline.json (run with --update-baseline)'); return; }
+      check(b.rateScenario === r.scenario && b.Tstar === r.Tstar && b.digest === r.digest, tag(`${key}: same plan as the baseline`),
         `baseline T* ${b.Tstar} digest ${b.digest} (${b.rateScenario}), now T* ${r.Tstar} digest ${r.digest} (${r.scenario})`);
+    };
+    for (const id of presets) {
+      await page.selectOption('#selPreset', id); await settle(200);
+      await plan(id, id, null);
+      if (!LIMITS[id]) continue; // the same example with a limit on the number of new deposits
+      await page.evaluate((n) => LP.app.touch((st) => { st.trancheCap = { on: true, max: n }; }, true), LIMITS[id]); await settle(200);
+      await plan(id, `${id}+max${LIMITS[id]}`, LIMITS[id]);
+    }
+
+    // ----- the search without a time limit: one that ends by itself, one that is ended by hand -----
+    section(tag('Search without a time limit'));
+    const result = () => page.waitForFunction(() => LP.app.view && !LP.app.busy && !LP.app.stale, null, { timeout: 300000 }).then(() => true, () => false);
+    const state = () => page.evaluate(() => {
+      const v = LP.app.view, s = JSON.stringify(v.res.placements); let h = 2166136261;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      return { solver: v.res.solver, Tstar: v.sim.Tstar, digest: h.toString(16).padStart(8, '0'), verified: LP.sim.verify(v.P, v.res).ok, ended: (v.res.stages || {}).unlimited || null, steps: v.res.trace ? v.res.trace.steps.length : 0 };
+    });
+    await page.selectOption('#selPreset', 'g'); await settle(200);
+    await page.evaluate((n) => LP.app.touch((st) => { st.trancheCap = { on: true, max: n }; st.unlimited = true; }, true), LIMITS.g); await settle(200);
+    await page.click('#btnOptimize');
+    if (check(await result(), tag(`g+max${LIMITS.g}, without a time limit: ended by itself`), 'no result within 5 minutes')) {
+      const r = await state(), b = baseline && baseline.presets[`g+max${LIMITS.g}`];
+      check(r.verified && r.ended === 'complete' && (r.solver !== 'HiGHS' || flag('update-baseline') || !b || b.digest === r.digest), tag('the search was completed and the plan is the one of the usual budgets (it was proven best there already)'), `ended: ${r.ended}, digest ${r.digest}`);
+    }
+    await page.evaluate(() => LP.app.touch((st) => { st.trancheCap.on = false; }, true)); await settle(200);
+    await page.click('#btnOptimize');
+    const keep = await page.waitForFunction(() => !document.getElementById('runKeep').classList.contains('hide'), null, { timeout: 180000 }).then(() => true, () => false);
+    if (check(keep, tag('g, without a time limit: the plan of the usual budgets is offered while the search goes on'), 'the button to keep the plan did not appear')) {
+      await settle(2500); await page.click('#runKeep');
+      if (check(await result(), tag('g: ended by hand'), 'no result within 5 minutes')) {
+        const r = await state(), b = baseline && baseline.presets.g;
+        check(r.verified && r.ended === 'stopped' && r.steps > 0 && (!b || r.Tstar >= b.Tstar), tag(`the best plan was kept: verified, T* ${r.Tstar}, with its step-by-step record`), `ended: ${r.ended}, verified ${r.verified}, T* ${r.Tstar}`);
+      }
     }
 
     // ----- layout of the analysis, the wizard and the step-by-step view (with a result on screen) -----

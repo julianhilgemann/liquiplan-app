@@ -44,10 +44,16 @@
   Model.prototype.add = function (r, c, v) { if (v !== 0 && Math.abs(v) > 1e-11) { var R = this.rows[r]; R.idx.push(c); R.val.push(v); } };
 
   /* opt: { obj:'none'|'wealth'|'term'|'slack', integer:bool, nativeSemi:bool, allowBeyond:bool,
-            cand: null | {key:1}, wealthMin: number|null } */
+            cand: null | {key:1}, wealthMin: number|null, maxNew: number|null, inPlan: null | {key:1} }
+     inPlan: candidates that must be used, at least at their minimum amount (the local search of optimize.js).
+     maxNew: the plan may use at most this many candidates (integer models only; a relaxation cannot count).
+       nativeSemi: no rows or columns for it. M.card = { cols, w, max } tells the embedded branch-and-bound, which
+         enforces the limit by branching (w: months of term per column, to rank the placements).
+       otherwise: a switch y per candidate (n <= maxU * y) and one row 'c': the sum of all switches <= maxNew. */
   function buildModel(P, T, opt) {
     var INF = Infinity, D = P.denom, lead = P.lead, K = P.products.length;
     var slack = opt.obj === 'slack';
+    var limited = !!opt.integer && opt.maxNew != null && isFinite(opt.maxNew), cardCols = [], cardW = [], cardY = [];
     var M = new Model(opt.obj === 'wealth' ? 'max' : 'min');
     var rho = [], t, i, j, k;
     for (t = 0; t <= T; t++) rho.push(P.rTG[t] / 12);
@@ -125,15 +131,22 @@
         if (opt.grid > 1 && tau % opt.grid !== 0 && !(opt.gridEv && opt.gridEv[tau])) continue; // coarse placement grid (large models in the embedded solver)
         var maxU = Math.min(pr.maxU, Math.max(pr.minU, Math.ceil(capBound / D)));
         var objc = opt.obj === 'term' ? D * L / 1000 : 0;
-        var c = M.col('n' + tau + '_' + k, 0, maxU, !!opt.integer, objc);
+        var c = M.col('n' + tau + '_' + k, opt.inPlan && opt.inPlan[tau + '_' + k] ? Math.max(1, pr.minU) : 0, maxU, !!opt.integer, objc);
         M.cols[c].ubImplied = maxU < pr.maxU;
-        var semi = pr.minU > 1;
+        var semi = pr.minU > 1, yc = -1;
         if (semi && opt.integer) {
           if (opt.nativeSemi) M.cols[c].semi = pr.minU;
           else {
-            var yc = M.col('y' + tau + '_' + k, 0, 1, true, 0);
+            yc = M.col('y' + tau + '_' + k, 0, 1, true, 0);
             var ra = M.row('ma' + c, 0, INF); M.add(ra, c, 1); M.add(ra, yc, -pr.minU);
             var rb = M.row('mb' + c, -INF, 0); M.add(rb, c, 1); M.add(rb, yc, -maxU);
+          }
+        }
+        if (limited) {
+          if (opt.nativeSemi) { cardCols.push(c); cardW.push(L); }
+          else {
+            if (yc < 0) { yc = M.col('y' + tau + '_' + k, 0, 1, true, 0); var rc = M.row('mb' + c, -INF, 0); M.add(rc, c, 1); M.add(rc, yc, -maxU); }
+            cardY.push(yc);
           }
         }
         var co = {}; // balance-row coefficients
@@ -169,6 +182,11 @@
         }
         cands.push({ col: c, t: tau, k: k });
       }
+    }
+    // ----- optional limit on the number of new placements -----
+    if (limited) {
+      if (opt.nativeSemi) M.card = { cols: cardCols, w: cardW, max: Math.max(0, Math.floor(opt.maxNew)) };
+      else if (cardY.length) { var cr = M.row('c', -INF, Math.max(0, Math.floor(opt.maxNew))); for (i = 0; i < cardY.length; i++) M.add(cr, cardY[i], 1); }
     }
     // ----- wealth at T: s[T] + open deposits incl. accrued interest -----
     var wConst = FR[T] + Fopen;
